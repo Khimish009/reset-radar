@@ -1,0 +1,102 @@
+{
+  "data": [
+    {
+      "id": "claudedevs",
+      "handle": "ClaudeDevs",
+      "profile_url": "https://x.com/ClaudeDevs",
+      "classification": "official",
+      "priority": "primary",
+      "affiliation_evidence_url": "https://x.com/claudeai/status/2044779666477646187",
+      "reset_evidence_urls": [
+        "https://x.com/ClaudeDevs/status/2102438800836489554",
+        "https://x.com/ClaudeDevs/status/2102438803013333469",
+        "https://x.com/ClaudeDevs/status/2094856679250919746",
+        "https://x.com/ClaudeDevs/status/2064464557951852643",
+        "https://x.com/ClaudeDevs/status/2055347539923308703"
+      ],
+      "last_reviewed_at": "2026-10-17",
+      "active": true
+    },
+    {
+      "id": "lydiahallie",
+      "handle": "lydiahallie",
+      "profile_url": "https://x.com/lydiahallie",
+      "classification": "team_member",
+      "priority": "primary",
+      "affiliation_evidence_url": "https://github.com/lydiahallie",
+      "reset_evidence_urls": [
+        "https://x.com/lydiahallie/status/2095967323412930677"
+      ],
+      "last_reviewed_at": "2026-10-17",
+      "active": true
+    },
+    {
+      "id": "alexalbert",
+      "handle": "alexalbert__",
+      "profile_url": "https://x.com/alexalbert__",
+      "classification": "team_member",
+      "priority": "additional",
+      "affiliation_evidence_url": "https://www-cdn.anthropic.com/files/4zrzovbb/website/9ea9e1e39a9cddf7a79b164a0ae5341ae4006f01.pdf",
+      "reset_evidence_urls": [
+        "https://x.com/alexalbert__/status/2064467657483829441"
+      ],
+      "last_reviewed_at": "2026-10-17",
+      "active": true
+    },
+    {
+      "id": "bcherny",
+      "handle": "bcherny",
+      "profile_url": "https://x.com/bcherny",
+      "classification": "relay",
+      "priority": "additional",
+      "affiliation_evidence_url": "https://www.linkedin.com/in/bcherny",
+      "reset_evidence_urls": [
+        "https://x.com/bcherny/status/2047375800945783056"
+      ],
+      "last_reviewed_at": "2026-10-17",
+      "active": true
+    },
+    {
+      "id": "claudeai",
+      "handle": "claudeai",
+      "profile_url": "https://x.com/claudeai",
+      "classification": "official",
+      "priority": "context",
+      "affiliation_evidence_url": "https://claude.com/",
+      "reset_evidence_urls": [],
+      "last_reviewed_at": "2026-10-17",
+      "active": true
+    },
+    {
+      "id": "anthropicai",
+      "handle": "AnthropicAI",
+      "profile_url": "https://x.com/AnthropicAI",
+      "classification": "official",
+      "priority": "context",
+      "affiliation_evidence_url": "https://www.anthropic.com/",
+      "reset_evidence_urls": [
+        "https://www.anthropic.com/claude-opus-5-5"
+      ],
+      "last_reviewed_at": "2026-10-17",
+      "active": true
+    },
+    {
+      "id": "amorriscode",
+      "handle": "amorriscode",
+      "profile_url": "https://x.com/amorriscode",
+      "classification": "team_member",
+      "priority": "optional",
+      "affiliation_evidence_url": "https://github.com/amorriscode",
+      "reset_evidence_urls": [],
+      "last_reviewed_at": "2026-10-17",
+      "active": true
+    }
+  ],
+  "meta": {
+    "api_version": "v1",
+    "generated_at": "2026-10-21T17:12:27.863Z",
+    "content_revision": "371643df80cca0ae",
+    "editorial_reviewed_at": "2026-10-17T05:59:18Z",
+    "coverage_start": "2026-04-16"
+  }
+}

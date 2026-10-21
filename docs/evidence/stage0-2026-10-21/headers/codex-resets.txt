@@ -1,0 +1,8 @@
+HTTP/2 200 
+date: Wed, 21 Oct 2026 17:12:50 GMT
+content-type: application/json; charset=utf-8
+content-length: 35703
+x-robots-tag: noindex
+access-control-allow-origin: *
+cache-control: public, max-age=300
+etag: "811a700fd9a6acc18e737b6e3cec7b81"

@@ -1,6 +1,6 @@
 # AGENTS.md — instructions for Codex CLI (Reset Radar | AI Limits)
 
-You are implementing a small **open-source AI reset monitoring product** in this repo. Read `README.md`, **all** `docs/*.md`, `manual/OWNER_CHECKLIST.md` and `git status` first. Follow this document over any conflicting task suggestions; flag contradictions rather than inventing requirements. Documentation version **v3 / 2026-10-21**.
+You are implementing a small **open-source AI reset monitoring product** in this repo. At startup, read `AGENTS.md`, `README.md`, the current handoff linked from README, and specifications relevant to the owner's task; inspect `git status`, including staged and unstaged changes. Read other documentation and `manual/OWNER_CHECKLIST.md` as needed for the work. Do not reread every `docs/*.md` by default. Follow these project constraints and the owner's explicit task instructions; flag contradictions rather than inventing requirements. Documentation version **v3 / 2026-10-21**.
 
 ## The approved architecture is fixed
 
@@ -13,7 +13,7 @@ You are implementing a small **open-source AI reset monitoring product** in this
 
 ## Current authorization and phase gates
 
-1. **Default permitted task = Stage 0 only**, defined in `docs/08_DEVELOPMENT_PLAN.md` and `prompts/START_CODEX.md`. Investigate BOTH upstream API contracts, data rights and semantics; update evidence docs. Do not implement the backend or website on Stage 0.
+1. **The active stage and task scope come from the latest explicitly approved owner assignment.** Use `docs/08_DEVELOPMENT_PLAN.md` and the relevant specifications for that scope. A prepared prompt, historical handoff, completed review or passing CI does not authorize starting another stage. Without an explicit implementation assignment, limit work to read-only assessment and clarify the intended scope before implementation; do not choose a default stage.
 2. Work on **one stage only** and stop for owner approval before next stage. Maintain checklists and acceptance criteria. Report in **Russian**.
 3. Do not force-push, merge, delete branches, push to remote, open PR, change remote secrets, create D1 prod DB, run remote migrations, enable production publish, or deploy anything without separate explicit owner permission. Local file edits/tests only by default.
 4. Prod publication is a separate operation from prod deploy. Bootstrap historic upstream snapshots **without publishing them**, for each provider individually; production starts in `dry_run`.

@@ -1,0 +1,569 @@
+--- before/docs/04_EXTERNAL_APIS.md
++++ after/docs/04_EXTERNAL_APIS.md
+@@ -1,47 +1,104 @@
+-# 04 — Public source APIs: contracts, semantics and verification gaps
++# 04 — Внешние API: проверенные контракты Stage 0
+ 
+-Research date **2026-10-21**. All sources are **independent third-party community trackers**, not official Anthropic/OpenAI usage APIs. Do not request subscribers' credentials.
++Проверка **2026-10-21, UTC**. Все три трекера — независимые community sources, не официальные API аккаунтов Anthropic/OpenAI. Публичное чтение не требует ключей или cookies пользователей.
++
++Исследование Stage 0 выполнено; принятие результатов владельцем **ожидается**. GO здесь означает техническую пригодность с оговорками, а не разрешение реализации или публикации. Журнал HTTP: [11_SOURCES.md](11_SOURCES.md). Правила и примеры: [22_STAGE0_TRUTH_TABLE.md](22_STAGE0_TRUTH_TABLE.md).
+ 
+ ## A. Claude — clauderesets.com
+ 
+-Official tracker docs (not official Anthropic): https://clauderesets.com/api/docs  
+-OpenAPI schema: https://clauderesets.com/api/openapi.json
++Первичные [API docs](https://clauderesets.com/api/docs) и [OpenAPI](https://clauderesets.com/api/openapi.json), а также обязательные [status](https://clauderesets.com/api/v1/status), [resets](https://clauderesets.com/api/v1/resets), [sources](https://clauderesets.com/api/v1/sources) реально вернули **HTTP 200**.
+ 
+-Public no-key read-only API. Attribution **required**; send descriptive `User-Agent`, cache **at least 60s**, support `ETag/If-None-Match`, `304`, `429 Retry-After`, `503` and problem+json. Manually curated; latency and completeness uncertain. `/api/v1/status` reportedly includes `latest_reset`, `announced_reset`, `reset_offers`, `meta.content_revision`; `/api/v1/resets` supplies paginated history with `revision`, `event_status`, `kind`, `time_precision`, sources, filters. `/api/v1/sources` provenance. The counted history counts `usage_reset + confirmed`, not the distinct banked offers. Corrections may disappear from the normal counted feed; **absence alone isn't retraction**.
++### Наблюдалось через HTTP
+ 
+-**Stage 0 must fetch status/resets/sources, verify real top-level path (`data`, `meta`), offers, statuses, cursors, ETags and sample correction behavior.** In the preparation environment direct JSON responses were not accessible, so the documented shapes are hypotheses pending live validation.
++- OpenAPI 3.1.0; status/sources имеют `{data, meta}`, resets — `{data, pagination, meta}`.
++- `data` статуса: `latest_reset`, `latest_ambiguous`, `announced_reset`, `active_watch`, `reset_offers`, `stats`, `filters`. Анонс и watch сейчас null.
++- История: **12 уникальных событий**, все `usage_reset + confirmed`, `allocation=subscription_usage`, `time_precision=exact`, `revision=1`. Даты объявлений **2026-04-23 — 2026-09-04**. У всех `effective_at=null`: exact относится к `announced_at`, не к применению. Нельзя переносить это время в `deliveredAt/effectiveAt`.
++- `audience.plans` реально бывает массивом, строкой `all` или `subscribers`. Сохранять scope, statement, exclusions, windows; часть сбросов относится лишь к отдельным планам/пострадавшим пользователям.
++- Отдельный offer `2026-09-22-opus-5-5-reset`: `credit + confirmed`, **revision=2**, `effective_at=null`, `reset_offer.expires_on=2026-10-22`, планы Pro/Max/Team. Это предложение ручного redeem, не потреблённый сброс. Точное время и timezone дедлайна не установлены. [Страница Anthropic](https://www.anthropic.com/claude-opus-5-5), прочитанная web-инструментом, также подтверждает возможность сохранить сброс для последующего использования; точный дедлайн из неё не следует.
++- `sources[]` события содержит URL, original/relay, автора, время, excerpt. `/sources` вернул **7** записей с классификацией, приоритетом и evidence URLs. Аффилиация авторов здесь — утверждение трекера; каждый профиль независимо не проверен.
++- `meta.content_revision=371643df80cca0ae`, `coverage_start=2026-04-16`, `editorial_reviewed_at=2026-10-17T05:59:18Z`. Свежий `generated_at` означает формирование ответа, не новый редакционный просмотр.
++- Полный resets: `has_more=false`, `next_cursor=null`, `revision_changed=false`. Дополнительно реально пройдены две страницы `limit=2` через выданный cursor: без пересечений, с одинаковой content_revision. Это полный текущий counted feed, не архив всех отозванных событий.
++- Слабые ETag присутствуют. Условный status GET через 100 секунд вернул **200 с новым ETag**. Claude 304 не наблюдался, причина смены validator не установлена. HTTP 200 сам по себе не доказывает материальную редакцию.
+ 
+-## B. Codex — codexreset.ai
++### Только документировано / не встретилось в снимке
+ 
+-Developer docs: https://codexreset.ai/developers/  
+-Proposed read endpoint: **GET `https://codexreset.ai/api/v1/resets.json`** (no key). Other endpoints (forecasts, signals, status) are **not needed** for MVP. Page docs describe edge caching ~5 minutes; upstream asks clients to cache and poll **at most once per minute**; our five-minute cron is compliant.
++| Поле | Контракт OpenAPI |
++|---|---|
++| kind | usage_reset, limit_increase, credit, policy_change, incident |
++| event_status | announced, confirmed, cancelled, retracted |
++| time_precision | exact или date; date-only использует announced_on, announced_at=null; utc_day может быть null |
++| correction | null либо `{kind, reason, at}`, где kind — correction или retraction |
++| Редакция | ID/slug сохраняется, revision и revised_at меняются |
++| Пагинация | limit 1..100 (default 20), cursor, from/to, order, audience, window; revision_changed сигнализирует перепубликацию |
+ 
+-Publicly documented fields (still require live payload verification):
++Ненулевые будущий анонс/correction, date-only, cancelled/retracted не наблюдались. Offer revision=2 подтверждает наличие ревизии, но предыдущая версия не получена. По [docs](https://clauderesets.com/api/docs) отозванные/отменённые события остаются на event page и уходят из counted history; исчезновение строки не доказывает withdrawal. Проверка известных event pages/feeds потребует решения в адаптере. Недокументированный JSON detail endpoint не предполагается.
+ 
+-- top-level `schema_version`, `generated_at`, `source`, `events[]`, `scheduled` (nullable), `attribution`.
+-- event `id`, `date`, `ts`, `kind` (e.g. `regular` / `banked`), `scope`, `summary`, `url`, `seeded`.
+-- **`announced_at`** timestamp of source post; **`delivered_at`** actual delivery only when confirmed, otherwise `null` — do not equate them.
+-- `delivered_source_url`, `delivery_reported_delay`, `delivery_note_en`.
+-- `scheduled.certainty` (`announced` or `hinted`), `day`, `scheduled_for`, `url`, `announced_at`. Only `announced` may be considered for future-event posts after eligibility/source checks; `hinted` -> no automatic publish.
+-- Historical records before 2026-09-10 may be `seeded: true` from `codex-resets.com`. They require attribution to that archive **if republished**; in our first baseline they are not sent at all.
++### Опрос и права
+ 
+-**Critical mapping nuance:** A Codex `kind=regular` event with a linked announcement and `delivered_at=null` **does not prove actual reset completion**. Source wording may explicitly say “all reset/propagated”, but default classification should be *announced / needs review* unless explicit hard evidence supports confirmed delivery. Never auto-announce personal account availability.
++[Fair use](https://clauderesets.com/api/docs) разрешает публичное чтение, требует описательный User-Agent, кэш **минимум 60 секунд**, ссылку на Claude Resets везде, где показываются данные. Status/resets реально имеют `public, max-age=60, stale-while-revalidate=120`; sources — max-age=300. 304, 429 с Retry-After, 503 и problem+json документированы; ошибки намеренно не провоцировались.
+ 
+-`codex-resets.com` is the older archive and an existing Telegram example (https://codex-resets.com/). The user also noted an API link on that site; Stage 0 should inspect this endpoint/permission if available. Do **not** silently swap providers; decide one primary Codex source, record provenance, and treat fallback as future separate decision.
++**GO с оговорками:** чтение, хранение необходимых фактов/provenance в D1, ограниченная публичная история с атрибуцией. **NO-GO:** полная официальная история, персональные квоты, точное время применения из announced_at, credit как использованный reset. Прочие kind требуют review перед классификацией существенного policy change.
+ 
+-Attribution preferred by CodexReset (not necessarily a legal license grant): link to codexreset.ai; include original X announcement URL. Confirm terms and rate-limit expectations. 
++## B. Codex — кандидат codexreset.ai
+ 
+-## C. Telegram Bot API
++[Developer docs](https://codexreset.ai/developers/) и [JSON](https://codexreset.ai/api/v1/resets.json) вернули **HTTP 200**. Forecast/signals/MCP не входят в MVP.
+ 
+-https://core.telegram.org/bots/api : `sendMessage`, `getMe`, `getChat`, response `ok/result.message_id`, errors with `parameters.retry_after`. Channel bot needs only **Post Messages** admin permission. `TELEGRAM_BOT_TOKEN` is secret; reject token in logs. Public `@channel`/numeric ID must be verified by owner.
++### Наблюдалось через HTTP
+ 
+-Potential `/start` personal interaction is not automatic: it needs a configured Telegram webhook or polling update receiver. Do not expose a public unauthenticated publish endpoint. Stage 8 optional private-chat welcome can be approved separately.
++- Один JSON-снимок без пагинации: `schema_version=1`, `generated_at=2026-10-21T16:03:45Z`, source, attribution, events[], `scheduled=null`.
++- **62 уникальных строковых ID**, даты **2025-09-17 — 2026-10-17**: regular=54, banked=8; seeded=true у 53, false у 9. Все ID текущей выборки — ID постов X; устойчивость при будущих редакциях не доказана контрактом.
++- У всех 62 непустые ts и announced_at, в снимке равны. Docs допускают null для старых seeded, таких здесь нет. Из date нельзя восстанавливать отсутствующий timestamp.
++- delivered_at заполнен у **6**, пуст у **56**. Один из шести — banked: доставка кредита не равна его использованию. Пять delivery URLs ведут на конкретный X-пост, один — только на главную codex-resets.com: слабое evidence, review.
++- Реальные scope: all, paid, Plus+Pro+Business, Plus+Pro, affected. Это неоднородная строка, не наш enum; неизвестную аудиторию не расширять до all.
++- Также есть summary, summary_unavailable, url, delivered_source_url, delivery_reported_delay, delivery_note_en. Все delay flags сейчас false; реальные true не проверены.
++- Реальные headers: `public, max-age=300`, ETag `"811a700fd9a6acc18e737b6e3cec7b81"`, CORS `*`, X-Robots-Tag=noindex. Через 88 секунд условный GET вернул **304** с пустым телом. ETag в 304 отсутствовал — прежний validator нужно сохранить.
++- revision/явного статуса отзыва/журнала изменений нет. Изменение материальных полей требует аудита; исчезновение события или scheduled не доказывает отзыв.
+ 
+-## Stage 0 checklist (must finish before coding)
++### Только документировано / ограничения evidence
+ 
+-1. HTTP status, headers, JSON shape, conditional requests from each API and actual examples.
+-2. Observed `kind/status/delivered/offer` permutations + unknown/new enum handling.
+-3. Stable event IDs, revisability, pagination, upstream timestamps, token-less request limits.
+-4. Source rights/credit and originality restrictions; don't copy site assets.
+-5. Truth-policy decision table for both providers with tests/fixtures; mark every fixture `captured` or `synthetic`.
+-6. Go/no-go: if no reliable distinction for a particular kind of Codex event, restrict public category rather than inventing evidence.
++[Docs](https://codexreset.ai/developers/) описывают scheduled.certainty=announced|hinted, day, nullable scheduled_for, when_text, url, source, announced_at. Ненулевого scheduled сейчас нет. Производный when_text не повышает точность исходного дня. Только явный актуальный будущий анонс может стать announced_future. Старый regular без delivery — needs_review, а не фиктивное будущее событие.
++
++Например, `2109812216212099456` объявлен `2026-10-13T01:03:25Z`, доставка указана `2026-10-13T05:06:06Z`, со ссылкой на другой пост. Полный оригинальный текст X независимо не прочитан: web-инструмент сообщил 403. Это пока утверждение трекера со ссылкой; confirmed_applied условен до проверки достаточного доказательства. Главная трекера вместо конкретного подтверждения недостаточна.
++
++### Опрос, права и выбор
++
++[Fair use](https://codexreset.ai/developers/) разрешает API use без ключа, просит обратную ссылку, кэширование и частоту ниже примерно 1 запроса/минуту. Наш 5-минутный Cron укладывается в ориентир. Для seeded истории до 2026-09-10 сохранять seeded, attribution.seed_archive и ссылку на [codex-resets.com](https://codex-resets.com/), даже если публичная модель использует historicalSeed.
++
++**Предлагаемый основной источник — CodexReset:** отдельные announcement/delivery поля и явная архивная provenance. **Владелец ещё не выбрал источник.** Оговорка: альтернатива содержит запись 20 октября, которой здесь нет. Свежий generated_at не доказывает актуальный охват.
++
++**Условный GO:** чтение и история с точными evidence/seeded метками. **NO-GO:** автоматическое подтверждение по kind=regular, истечению времени, scope=all или слабому delivery URL; hinted-прогнозы; полная официальная статистика; публикация baseline в Telegram.
++
++## C. Отдельная альтернатива — codex-resets.com
++
++На [главной](https://codex-resets.com/) найдены [API docs](https://codex-resets.com/api/docs) и через Swagger — [OpenAPI 3.1.0](https://codex-resets.com/api/openapi.json). Это **другой контракт**; общий оператор с codexreset.ai не установлен.
++
++- Реальные [status](https://codex-resets.com/api/v1/status) и [resets?limit=100](https://codex-resets.com/api/v1/resets?limit=100): HTTP 200, envelopes data/meta и data/pagination/meta.
++- **64 уникальных ID**, regular=58, banked=6, has_more=false, next_cursor=null. Диапазон announced_at **2025-09-17T04:02:52.000Z — 2026-10-20T06:33:48.000Z**. source.type=x_post у 61, observed у 3; наблюдение не всегда имеет оригинальный пост.
++- Reset содержит id, reset_type, announced_at, text, source. По контракту announced_at может означать первое наблюдение. Нет отдельных delivered_at, audience, revision, seeded. Status содержит latest_reset, scheduled_reset, active_watch, stats; scheduled/watch сейчас null. Watch — AI forecast, исключён.
++- Status cache: `max-age=30, s-maxage=60, stale-while-revalidate=300`; resets HTTP 200: `max-age=60, s-maxage=300, stale-while-revalidate=300`. Условный GET реально дал **304**, но max-age вырос до **14400** при прежнем s-maxage=300. TTL 200/304 различается; минутную свежесть не предполагать. OpenAPI описывает cursor, limit 1..100, 429/503; многостраничный обход альтернативы не проверялся, 64 строки поместились в одну страницу.
++- [API docs](https://codex-resets.com/api/docs) разрешает использование без ключа с обязательной ссылкой при показе. Числовой rate limit в изученных документах не найден; 5 минут — наш осторожный план, не обещанная провайдером квота.
++
++Совпадают **52 ID** двух снимков; 12 только у альтернативы, 10 только у CodexReset. Например, ID объявления `2109812216212099456` в CodexReset ссылается на delivery post `2109873287853707513`; альтернатива использует **второй ID** как свою запись. Простое объединение строк или автоматическая смена источника создадут дубли/неверные counts.
++
++**GO как исследованная альтернатива, подключение не утверждено.** Более свежие записи — плюс; отсутствие раздельной delivery-модели — минус. Fallback, слияние архивов и announced_at как delivery **NO-GO** без отдельного решения.
++
++## D. Показ через D1, права и полнота
++
++Все три изученные API docs разрешают API use/показ с условиями credit. Путь «серверный GET → необходимые структурированные факты и provenance в D1 → собственные краткие формулировки и ссылки» соответствует описанному использованию. Специальная лицензия на полный D1 mirror, длинные редакционные тексты, активы или исходные посты не установлена. Расширение до массового зеркала требует уточнения **до публикации**. Авторы не контактировались.
++
++Все три robots.txt доступны и разрешают публичные пути; Claude запрещает /admin/. Robots и CORS не дают контентную лицензию; noindex JSON не отменяет API use. Не копировать оформление/иллюстрации/длинные summaries. Наша политика требует primary URL и tracker credit; seeded Codex — также archive credit.
++
++Полный снимок feed не доказывает полную историю: Claude coverage с 16 апреля, первый полученный event 23 апреля; CodexReset импортировал 53 записи и отстаёт от альтернативы. Нельзя переносить upstream average в наш stats или предсказывать следующий reset. **Интервалы применения не вычислять по времени объявления.** Date-only без установленного UTC day не помещать в UTC-месяц путём подстановки полуночи. lastSuccessfulSyncAt, generated_at, editorial review и дата события — разные часы.
++
++## E. Telegram — последующие этапы
++
++[Bot API](https://core.telegram.org/bots/api) относится к будущему publisher (sendMessage/getMe/getChat, message_id, retry_after). Stage 0 **не проверял Telegram**, токены, handles, Cloudflare, D1 или будущий Worker API. /start остаётся отдельным согласованием; публичного HTTP publish-trigger не будет.
++
++## Checklist Stage 0
++
++- [x] Реальные обязательные endpoints и API-ссылка альтернативы.
++- [x] Headers, conditional GET, JSON/IDs/offers/revisions, проверка границ пагинации; пробелы отмечены.
++- [x] Fair use/credit, robots, ограниченный показ через D1, неполнота истории.
++- [x] Отдельные go/no-go и captured/synthetic примеры.
++- [ ] Принятие владельцем источника Codex и truth policy.
++- [ ] Отдельное разрешение Stage 1. Следующий этап не начат.
+--- before/docs/09_DECISIONS.md
++++ after/docs/09_DECISIONS.md
+@@ -17,11 +17,41 @@
+ | ADR-011 | No personal balances/tokens/login, no next reset guarantees | agreed | Feeds are public events only |
+ | ADR-012 | Staging+dry-run+per-provider bootstrap and separate owner production approval | agreed | Protect against historical spam and false claims |
+ | ADR-013 | Dark navy/cyan/amber identity; paired but different channel/bot icons | agreed | Independent brand recognition |
+-| ADR-014 | **MIT license suggested**, but no final license or name in notice chosen | **pending owner** | Public != licensed; add `LICENSE` after explicit owner approval |
+-| ADR-015 | API providers: Claude Resets + CodexReset as candidate, codex-resets as alternative | **pending Stage 0** | Must verify live payloads, reuse/terms and evidence |
++| ADR-014 | Starter docs say license pending; existing tracked `LICENSE` already contains MIT, copyright 2026 Salman | **contradiction for owner to reconcile** | Stage 0 preserves the existing license; does not infer a new approval or alter legal terms |
++| ADR-015 | Claude Resets feasible with limits; CodexReset recommended primary, codex-resets remains separately researched alternative | **Stage 0 research done; pending owner acceptance** | Live JSON/headers checked; delivery evidence, history and source equivalence have material limits; see below |
+ | ADR-016 | Website URL/GitHub username and Telegram handles | **pending verification** | Never invent live URLs from placeholders |
+ | ADR-017 | `stale` threshold 30 min, public caching 60–300s | **initial proposal; validate** | Balance recency, costs and transparent freshness |
+ | ADR-018 | No external visitor analytics/ads in initial version | agreed initial restraint | Privacy and simplicity; can revisit |
++| ADR-019 | Proposed truth mapping separates announcement time, applied evidence and banked credit; old unconfirmed announcements go to needs_review | **proposed, pending owner** | Exact announcement time does not prove application time; see docs/22_STAGE0_TRUTH_TABLE.md |
++| ADR-020 | No silent Codex fallback or union of archive rows | **proposed, pending owner** | 62 vs 64 rows, only 52 matching IDs; announcement and delivery posts can be different IDs for one reset |
++| ADR-021 | Persist source metadata and own sync times separately; no completeness claim from successful HTTP | **Stage 0 finding; threshold remains proposed** | generated_at/editorial_reviewed_at/event dates measure different things; keep ADR-017 as a proposal |
++
++## Stage 0 — результаты 2026-10-21
++
++Исследование выполнено в пределах разрешённого этапа; **Stage 1 не начат**. Доказательства: [HTTP journal](11_SOURCES.md), [contracts/rights](04_EXTERNAL_APIS.md), [truth table и captured/synthetic примеры](22_STAGE0_TRUTH_TABLE.md).
++
++| Provider/source | Технический вывод | Ограничения и решение владельца |
++|---|---|---|
++| Claude / clauderesets.com | **GO с оговорками** для чтения и атрибутированной истории фактов | 12 confirmed usage_reset и отдельный offer revision=2; exact относится к объявлению, effective_at=null. 304/реальные отзывы не наблюдались. Принять evidence/credit policy |
++| Codex / codexreset.ai | **Условный GO**, рекомендуемый основной кандидат | 62 записи, 53 seeded, 56 без delivery timestamp. Проверять достаточное delivery evidence; X-посты независимо не прочитаны. Последняя запись 17 октября при наличии у альтернативы записи 20 октября. Владелец выбирает источник |
++| Codex / codex-resets.com | **GO как исследованная альтернатива**, подключение не утверждено | 64 записи и отдельный API. Нет раздельных delivery/revision/seeded полей; observed не всегда имеет оригинальный пост. Не делать fallback автоматически |
++
++Все три источника **NO-GO** для полной официальной истории, личных квот и гарантированного следующего сброса. Для production Telegram **NO-GO сейчас**: нет реализации, baseline или разрешения публикации. Изученный fair use поддерживает ограниченный показ фактов через D1 с credit, не устанавливает лицензию на полное зеркало редакционных текстов/активов. Авторы не контактировались.
++
++### Обнаруженные расхождения; существующие файлы не исправлялись за пределами Stage 0
++
++1. `LICENSE` уже содержит MIT, хотя README/START_HERE/docs/21/manual считают её незавершённой. Это существующее состояние, не разрешение агенту выбрать другую лицензию или переписать её. Владельцу согласовать документацию с лицензией отдельной задачей.
++2. `.gitignore` исключает docs/, manual/, prompts/. `git ls-files docs manual prompts` пуст: документы существуют локально, но не отслеживаются. Поэтому `git status --short` и обычный `git diff` не показывают Stage 0 правки. Проверка выполняется относительно временной копии до изменений. Gitignore/index не менялись; для Git review владелец должен отдельно решить, как включить документы в репозиторий.
++3. Проектная модель требует точные applied/delivered instants для интервалов, а Claude отдаёт exact announcement time и null effective_at. Codex-архивы также используют разные времена/ID. Будущие stats должны соблюдать docs/18 и не выдавать интервалы объявлений за интервалы применения. Схему/реализацию Stage 0 не меняет.
++
++### Что нужно принять до Stage 1
++
++- [ ] Выбрать CodexReset либо отдельно согласовать альтернативу, учитывая freshness и различия evidence/ID.
++- [ ] Принять truth table: null delivery, banked, hinted, unknown, date-only и corrections остаются безопасными отдельными состояниями.
++- [ ] Принять ограниченную историю/credit и нерешённые случаи evidence; полный mirror текстов не разрешён найденными условиями.
++- [ ] Дать отдельное разрешение на Stage 1. Оно не разрешает push/PR, remote resources, деплой или публикацию.
++
++Результаты typecheck/lint/Vitest/build отсутствуют: package.json и реализация ещё не созданы. Выполнены HTTP и локальные проверки captured JSON/документов, не тесты будущего продукта. **Не развёрнуто / не опубликовано.**
+ 
+ ## Changes require an ADR
+ 
+--- before/docs/11_SOURCES.md
++++ after/docs/11_SOURCES.md
+@@ -1,29 +1,108 @@
+-# 11 — Sources, evidence register and references
++# 11 — Журнал источников и доказательств Stage 0
+ 
+-**Checked 2026-10-21 where accessible.** Source docs describe intended behavior; actual HTTP JSON still requires a **local Stage 0** check and schema assertions. Third-party trackers are NOT official Anthropic/OpenAI subscription API.
++Проверено **2026-10-21**. Время ниже — **UTC по HTTP Date**, не время события. [Выводы](04_EXTERNAL_APIS.md), [правила и fixtures](22_STAGE0_TRUTH_TABLE.md).
+ 
+-| Source | Link | What it supports / caution |
+-|---|---|---|
+-| Claude Resets API docs | https://clauderesets.com/api/docs | Community public read-only schema, source policies and attribution; direct API responses may be blocked here, Codex must verify. |
+-| Claude Resets OpenAPI | https://clauderesets.com/api/openapi.json | Contract hypothesis; no hard assumption until live check. |
+-| CodexReset developer docs | https://codexreset.ai/developers/ | Public no-key `api/v1/resets.json`; separate `announced_at` and `delivered_at`; seeded archive attribution; ~5min edge cache, poll <=1/min. |
+-| Codex Resets archive | https://codex-resets.com/ | Existing history and Telegram example; API link inspect in Stage 0, not the same source as CodexReset.ai. |
+-| Telegram Bot API | https://core.telegram.org/bots/api | `sendMessage`, errors, permissions, message IDs. |
+-| Cloudflare Cron | https://developers.cloudflare.com/workers/configuration/cron-triggers/ | Worker scheduled handler; actual cron timing is best effort. |
+-| Cloudflare Workers limits | https://developers.cloudflare.com/workers/platform/limits/ | Free daily request, CPU and memory quotas — current limits may change. |
+-| Cloudflare D1 pricing | https://developers.cloudflare.com/d1/platform/pricing/ | Free included read/write/storage quotas and paid pricing. |
+-| Cloudflare D1 limits | https://developers.cloudflare.com/d1/platform/limits/ | Free database maximum 500MB and account total storage 5GB (as of Oct 2026). |
+-| GitHub Pages create site | https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site | Free on GitHub Free in **public** repo, build from same repository. |
+-| Pages custom workflows | https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages | GitHub Actions deployments. |
+-| GitHub licensing | https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository | Public visibility is not an automatic open-source grant; choose explicit license. |
++## Прямые HTTP-наблюдения
+ 
+-## Known verified details vs Stage 0 unknowns
++Публичные запросы без ключей, User-Agent ResetRadar-Stage0/0.1 (главный агент дополнил назначением исследования). Sandbox первоначально не разрешал DNS: curl exit 6 / urllib URLError, HTTP 000 — **транспортная ошибка, не ответ upstream**. После разрешённого выхода за sandbox прямой HTTP заработал.
+ 
+-- **Verified on developer documentation page:** CodexReset JSON endpoint path, distinct delivery fields, scheduled hint/announcement states, `seeded`, attribution and suggested ≤1 request/minute. Still must fetch actual JSON and evaluate event quality.
+-- **Documentation described but not fully live-verified here:** Claude `status`, `resets`, `sources`, offers and revisions. Do not write implementation that hardcodes assumed JSON without Stage 0 evidence.
+-- **Decision pending:** feasibility and reuse policy of any `codex-resets.com` API. Do not copy tracker text/screenshots or treat similar sites as identical.
+-- **Cloudflare and GitHub:** static GitHub Pages can serve built frontend; Worker must supply API with compatible CORS; D1 free quotas enforced, not a blank check.
++| ID | URL | UTC | HTTP / Content-Type | Cache-Control; ETag |
++|---|---|---|---|---|
++| C1 | https://clauderesets.com/api/docs | 17:12:26 | 200 text/html | public, max-age=300, stale-while-revalidate=600; `W/"960c56c6c91580db"` |
++| C2 | https://clauderesets.com/api/openapi.json | 17:12:26 | 200 application/json | public, max-age=3600, stale-while-revalidate=7200; `W/"4e3b880cc8668581"` |
++| C3 | https://clauderesets.com/api/v1/status | 17:12:27 | 200 application/json | public, max-age=60, stale-while-revalidate=120; `W/"d74fd335f90b7688"` |
++| C4 | https://clauderesets.com/api/v1/resets | 17:12:27 | 200 application/json | public, max-age=60, stale-while-revalidate=120; `W/"5a74920c6aefbc53"` |
++| C5 | https://clauderesets.com/api/v1/sources | 17:12:27 | 200 application/json | public, max-age=300, stale-while-revalidate=600; `W/"4bb466f6afe1057f"` |
++| C6 | https://clauderesets.com/api/v1/status + If-None-Match C3 | 17:14:07 | **200**, не 304 | новый ETag `W/"d14fc9c3ff0b7ffa"`; повторное тело не сохранено |
++| C7 | https://clauderesets.com/api/v1/resets?limit=2 | 17:16:28 | 200 application/json | public, max-age=60, stale-while-revalidate=120; has_more=true |
++| C8 | https://clauderesets.com/api/v1/resets?limit=2&cursor=eyJkIjoiMjAyNi0wOS0wMSIsImkiOjE3ODgyODc3MjcwMDAsImlkIjoiMjAyNi0wOS0wMS1hbGwtdXNlcnMiLCJyIjoiMzcxNjQzZGY4MGNjYTBhZSJ9 | 17:20:00 | 200 application/json | public, max-age=60, stale-while-revalidate=120; has_more=true |
++| X1 | https://codexreset.ai/developers/ | 17:12:23 | 200 text/html | public, max-age=0, must-revalidate; ETag отсутствует |
++| X2 | https://codexreset.ai/api/v1/resets.json | 17:12:50 | 200 application/json | public, max-age=300; `"811a700fd9a6acc18e737b6e3cec7b81"` |
++| X3 | https://codexreset.ai/api/v1/resets.json + If-None-Match X2 | 17:14:18 | **304**, тело пустое | public, max-age=300; ETag в 304 отсутствует |
++| A1 | https://codex-resets.com/ | 17:12:52 | 200 text/html | private, no-store |
++| A2 | https://codex-resets.com/api/docs | 17:13:28 | 200 text/html | public, max-age=300, s-maxage=3600 |
++| A3 | https://codex-resets.com/api/openapi.json | 17:14:00 | 200 application/json | public, max-age=300, s-maxage=3600, stale-while-revalidate=86400; `"b64bbd2e9f7230b86ea8e18b2158acfb07c399b4b78dda48657563adcdf1c056"` |
++| A4 | https://codex-resets.com/api/v1/status | 17:14:19 | 200 application/json | public, max-age=30, s-maxage=60, stale-while-revalidate=300; `"83846850e95e8e6dfbc16c4570e493c7b6ce1dcfc06cf38315db20d03c163184"` |
++| A5 | https://codex-resets.com/api/v1/resets?limit=100 | 17:14:18 | 200 application/json | public, max-age=60, s-maxage=300, stale-while-revalidate=300; `"d621edc68612c4d664854eedd7968f343dd4cbb12b394946cc634c2758b52a53"` |
++| A6 | https://codex-resets.com/api/v1/resets?limit=100 + If-None-Match A5 | 17:16:06 | **304**, тело пустое | public, max-age=14400, s-maxage=300, stale-while-revalidate=300; ETag как A5 |
+ 
+-## Updating evidence
++C3–C5, C7–C8, X2 и A3–A5 имеют CORS `*`; X2/X3 — X-Robots-Tag=noindex. Это не проверка CORS будущего Worker, которому нужен собственный allowlist.
+ 
+-Record: date/time, endpoint, status, content-type, cache headers, ETag/retry-after, paginated/full snapshot behavior, actual shape, license/fair-use, example sanitized fixture, unresolved uncertainty. Include evidence URL in any downstream factual notification.
++У альтернативы TTL различался: A5 HTTP 200 имел max-age=60, A6 HTTP 304 — max-age=14400. Это реальное расхождение headers; не предполагать одинаковый TTL для 200/304 или гарантированную минутную свежесть. s-maxage в обоих ответах 300.
++
++[Claude robots](https://clauderesets.com/robots.txt), [CodexReset robots](https://codexreset.ai/robots.txt), [альтернатива robots](https://codex-resets.com/robots.txt) реально вернули 200 и разрешают публичные пути; Claude запрещает /admin/. Robots не даёт контентную лицензию. Fair-use условия взяты из C1, X1, A2; отдельная лицензия полного зеркала текстов не установлена.
++
++### Что подтверждено и что осталось непроверенным
++
++- C4: 12 строк, has_more=false. C7/C8: по 2 строки, первая пара ID 2026-09-04-max-weekly / 2026-09-01-all-users, вторая 2026-07-16-all-users / 2026-07-09-all-users. Пересечений нет, content_revision одинакова, revision_changed=false. Все последующие малые страницы не обходились: полный текущий counted snapshot уже получен C4.
++- X2: 62 строки без pagination, 53 seeded, 6 delivered_at не null. A5: 64 строки, has_more=false. Пересечение ID — 52; разные ID могут обозначать один reset.
++- У C3 announced_reset=null, у X2 scheduled=null, у A4 scheduled_reset=null. Ненулевые варианты, date-only, отмены/отзывы — только контракт и synthetic примеры. Offer revision=2 реально есть, предыдущая версия не получена.
++- Claude 304 не наблюдался. 429/Retry-After/503 и upstream timeout не провоцировались. Claude/альтернативная OpenAPI описывают ошибки; точный error-контракт CodexReset не установлен.
++- Web-чтение https://x.com/thsottiaux/status/2109873287853707513 и https://x.com/thsottiaux/status/2111492673890824348 сообщило 403. Прямой curl к X не запускался. Полный текст оригинала независимо не подтверждён.
++- [Anthropic Opus 5.5](https://www.anthropic.com/claude-opus-5-5) прочитана web-инструментом: подтверждает семантику сохранённого сброса; HTTP headers не измерялись.
++
++## Снимки и команды
++
++Raw headers/bodies временно сохранены под /tmp/reset-radar-stage0-claude/, /tmp/reset-radar-stage0-codex-*, /tmp/reset-radar-stage0-archive-*, /tmp/reset-radar-stage0-claude-page*. Они могут исчезнуть после сеанса. Постоянные минимальные captured-проекции без summaries находятся в [truth table](22_STAGE0_TRUTH_TABLE.md); это не полные parser fixtures.
++
++| Снимок | SHA-256 исходных bytes |
++|---|---|
++| C3 status.body | e7b6a9d58567d496f6be5136b6e703a2d04f25f99d4e08d671e1face0eeb0445 |
++| C4 resets.body | b0379b28aa7f7b65dd8eb5cc3e404b6ba19a237b6c3411802af1ef751d43825f |
++| X2 codex-resets.json | 3071942d524168e816366fcf60508d629e91b7592ab344edd62acf68bdcb42ed |
++| A5 archive-resets.json | d621edc68612c4d664854eedd7968f343dd4cbb12b394946cc634c2758b52a53 |
++
++C1–C6 получены субагентом через Python urllib.request, timeout 20s. Остальные прямые проверки — curl, timeout 30s (X1 — 25s). Главный агент перечитал сохранённые Claude JSON/headers/docs/OpenAPI. C6 известен по выводу команды агента, повторное тело не архивировано.
++
++Фактически выполненная форма GET (URL/output менялись по строкам таблицы):
++
++```sh
++curl --silent --show-error --connect-timeout 10 --max-time 30 \
++  --user-agent 'ResetRadar-Stage0/0.1 (public API feasibility research)' \
++  --dump-header /tmp/reset-radar-stage0-codex-resets.headers \
++  --output /tmp/reset-radar-stage0-codex-resets.json \
++  --write-out 'HTTP %{http_code}\nURL %{url_effective}\n' \
++  https://codexreset.ai/api/v1/resets.json
++```
++
++Для X3 добавлен `--header 'If-None-Match: "811a700fd9a6acc18e737b6e3cec7b81"'`, output codex-conditional.headers/body. Для A6 аналогично использован точный A5 ETag. Интервалы >60 секунд выдержаны.
++
++Для повторной проверки Claude владельцем (рекомендация, **не выполненная команда**):
++
++```sh
++curl --silent --show-error --max-time 30 --user-agent 'ResetRadar-Stage0/0.1' \
++  --dump-header /tmp/claude-status.headers --output /tmp/claude-status.json \
++  https://clauderesets.com/api/v1/status
++# Подождать >=60 секунд, взять ТОЧНЫЙ ETag с кавычками из headers.
++curl --silent --show-error --max-time 30 --user-agent 'ResetRadar-Stage0/0.1' \
++  --header 'If-None-Match: REPLACE_WITH_EXACT_ETAG_INCLUDING_QUOTES' \
++  --dump-header /tmp/claude-conditional.headers --output /tmp/claude-conditional.body \
++  https://clauderesets.com/api/v1/status
++```
++
++200 допустим: сравнивать content_revision/материальные поля отдельно от generated_at. Не провоцировать 429/503; будущие тесты используют synthetic responses.
++
++## Дополнительное обнаружение API
++
++Навык Postman API Discovery: read-only Orbit POST https://api.buildwithorbit.ai/v1/search?limit=5, HTTP 200. Отправлены только задача и публичные домены. В пяти результатах нет подходящего ресурса выбранных доменов; предложены другие сервисы, включая **codex-reset.com** (другое написание). Это ограничение конкретного результата поиска, не отсутствие API вообще. /integrate не вызывался, workspace/зависимости/аккаунты не создавались. Четвёртый источник не добавлен. Контракты получены из первичных URL выше.
++
++## Другие проектные ссылки — не перепроверялись в Stage 0
++
++| URL | Назначение |
++|---|---|
++| https://core.telegram.org/bots/api | будущий publisher |
++| https://developers.cloudflare.com/workers/configuration/cron-triggers/ | Cron |
++| https://developers.cloudflare.com/workers/platform/limits/ | квоты Workers перед настройкой |
++| https://developers.cloudflare.com/d1/platform/pricing/ | квоты/цены D1 перед настройкой |
++| https://developers.cloudflare.com/d1/platform/limits/ | ограничения D1 |
++| https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site | hosting |
++| https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages | reviewed Pages workflow |
++| https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository | справка о лицензии |
++
++Stage 0 не проверял тарифы/квоты, Telegram, Cloudflare, Pages или будущий Worker API. Старую общую пометку checked на них не переносить.
++
++## Локальная проверка результатов
++
++Выполнено `python3 /tmp/verify_reset_radar_stage0.py`: **55 assertions PASS** — envelopes/counts/IDs, offers, различие announcement/delivery, порядок двух cursor-страниц, labels и значения 7 captured-проекций против raw, 12 synthetic vectors, SHA-256 и локальные ссылки. Это разовая проверка снимков/документов, **не полный JSON Schema validator и не тесты будущего приложения**. Новые зависимости не устанавливались.
++
++`git diff --check HEAD` — exit 0, но проверяет только tracked files и не охватывает ignored docs. Для каждого из трёх исходных документов дополнительно выполнен `git diff --no-index --check /tmp/reset-radar-stage0-baseline/<name> docs/<name>`, для нового — сравнение с /dev/null: exit 1 из-за различий, сообщений об ошибках whitespace нет. Читаемый diff сохранён в /tmp/reset-radar-stage0-review.diff. Typecheck, lint, Vitest, integration tests и website build **не запускались**: реализации/package.json нет; Stage 1 не начат.
+--- before/docs/22_STAGE0_TRUTH_TABLE.md
++++ after/docs/22_STAGE0_TRUTH_TABLE.md
+@@ -0,0 +1,250 @@
++# 22 — Stage 0: правила классификации и маркированные примеры
++
++**2026-10-21. Предложение для принятия владельцем.** Источники/HTTP: [04](04_EXTERNAL_APIS.md), [11](11_SOURCES.md). Ни одно правило не разрешает публикацию сейчас. Общие будущие gates: источник утверждён, полный baseline отдельно для provider, новая допустимая материальная transition, достаточное evidence, точные audience/precision, отсутствие stale/schema uncertainty, dry_run и отдельное разрешение публикации. Исторический baseline — **ноль Telegram-сообщений**, включая недавно датированные строки.
++
++## Source → raw → normalized → eligibility
++
++Порядок проверок важен: явный отзыв/исправление и неизвестная схема проверяются до обычного confirmed; banked не превращается в consumed reset из-за delivery timestamp. Истёкшее время не создаёт доказательство.
++
++| Источник | Raw и необходимое evidence | Наше состояние | Будущая публичная eligibility после общих gates |
++|---|---|---|---|
++| Claude | usage_reset + confirmed; источник однозначно говорит о выполнении, provenance достаточна | confirmed_applied | История; push только новой transition. Exact announced_at остаётся временем поста; effective/delivered не выдумывать |
++| Claude | announced, явный ещё актуальный будущий анонс с источником | announced_future | Отдельный анонс с оговоркой, не confirmed |
++| Claude | announced, срок прошёл, evidence выполнения нет | needs_review | Нет автоматического push/confirmed metrics |
++| Claude | credit/reset_offers, подтверждено предложение ручного redeem | banked_offer | Только предложение, audience и date-only expiry. Истёкший offer не показывать активным; expiry не является withdrawal/consumption |
++| Claude | correction.kind=correction + содержательное проверяемое исправление | correction | Связать с прежним event/revision; для push нужно существенное изменение ранее опубликованного факта |
++| Claude | cancelled/retracted или correction.kind=retraction с evidence | withdrawal | Сохранить историю; уточнить прежнюю публикацию, если была |
++| Claude | limit_increase/policy_change/incident либо unknown kind/status/field | needs_review | Ручная оценка; не превращать любое confirmed в reset, не вводить новый enum без решения |
++| CodexReset | regular, delivered_at и точный delivered_source_url; проверено явное подтверждение выполнения | confirmed_applied | Сохранять отдельно announced/delivered, область применения; это не проверка личного аккаунта |
++| CodexReset | regular, delivered_at=null; нет отдельно проверенного доказательства | needs_review | Старый анонс не становится будущим или доставленным; delivery_reported_delay=false не подтверждает delivery |
++| CodexReset | delivered_at заполнен, URL только главная/нет достаточного подтверждения | needs_review | Нет автоматической confirmation/push |
++| CodexReset | banked независимо от delivered_at; evidence именно бонусного кредита | banked_offer | Начисление/предложение, не использование. Нет срока/механики — не придумывать |
++| CodexReset | scheduled.certainty=announced, официальный актуальный будущий анонс проверен | announced_future | Date-only остаётся date-only, scheduled_for=null не заменяется полночью |
++| CodexReset | scheduled.certainty=hinted, unknown certainty или просроченный анонс без confirmation | needs_review | Нет push и прогнозов как факта |
++| CodexReset | edited/deleted row или scheduled исчез | Само по себе перехода нет | Хранить последнюю историю; только явное дополнительное evidence даёт correction/withdrawal |
++| Codex Resets, альтернатива | regular + announced_at; source=observed или нет отдельного delivery evidence | needs_review | Не подключён; время наблюдения не delivery |
++| Codex Resets, альтернатива | banked + достаточное evidence | banked_offer | Только после отдельного выбора источника/сопоставления, без fallback |
++| Все | unknown fields/enums/schema_version, конфликт precision/evidence | needs_review либо отклонённый snapshot с сохранением кеша | Не принимать новые confirmed автоматически; записать безопасную диагностику |
++| Все | 304/429/503/timeout, missing row/page | Не событие и не withdrawal | 304 сохраняет кеш, учитывает успешную проверку; ошибки не стирают историю. Для 304 нужен ранее валидный snapshot |
++
++Для CodexReset correction/withdrawal — наши состояния, **не upstream enum**. Нужны проверяемое исправление/отзыв и связь с исходной записью. Строка не теряется при изменении feed. Известные schema fields допускаются с их проверенными значениями; неизвестное отправляется на review. Отказ одной upstream не должен останавливать другую.
++
++## Captured fixtures — сокращённые проекции реального HTTP
++
++JSON ниже — **captured**, поля только выбраны из оригиналов, значения не придуманы. Это постоянные примеры исследования, **не полные fixtures для schema/parser tests**: опущены editorial summary/title, excerpts и часть полей/массивов. Fixture metadata и check — наши пояснения. Полные raw временно под /tmp, hashes в журнале. Источник остаётся третьей стороной; присутствие URL не доказывает независимое прочтение первичного поста.
++
++```json
++[
++  {
++    "fixture": "captured",
++    "source": "https://clauderesets.com/api/v1/status",
++    "capturedAt": "2026-10-21T17:12:27Z",
++    "path": "data.latest_reset",
++    "projection": {
++      "id": "2026-09-04-max-weekly",
++      "kind": "usage_reset",
++      "event_status": "confirmed",
++      "time_precision": "exact",
++      "announced_at": "2026-09-04T20:08:45Z",
++      "announced_on": null,
++      "utc_day": "2026-09-04",
++      "effective_at": null,
++      "reset_offer": null,
++      "audience": {
++        "scope": "limited",
++        "statement": "everyone on a Claude Max plan",
++        "plans": [
++          "max"
++        ],
++        "exclusions": null
++      },
++      "windows": [
++        "weekly"
++      ],
++      "url": "https://clauderesets.com/resets/2026-09-04-max-weekly",
++      "revision": 1,
++      "correction": null,
++      "sources": [
++        {
++          "url": "https://x.com/lydiahallie/status/2095967323412930677",
++          "role": "original"
++        }
++      ]
++    },
++    "check": "confirmed record; announced_at is not exact application time"
++  },
++  {
++    "fixture": "captured",
++    "source": "https://clauderesets.com/api/v1/status",
++    "capturedAt": "2026-10-21T17:12:27Z",
++    "path": "data.reset_offers[0]",
++    "projection": {
++      "id": "2026-09-22-opus-5-5-reset",
++      "kind": "credit",
++      "event_status": "confirmed",
++      "time_precision": "exact",
++      "announced_at": "2026-09-22T16:44:06Z",
++      "announced_on": null,
++      "utc_day": "2026-09-22",
++      "effective_at": null,
++      "reset_offer": {
++        "expires_on": "2026-10-22"
++      },
++      "audience": {
++        "scope": "limited",
++        "statement": "Pro, Max, and Team users",
++        "plans": [
++          "pro",
++          "max",
++          "team"
++        ],
++        "exclusions": null
++      },
++      "windows": [
++        "unspecified"
++      ],
++      "url": "https://clauderesets.com/resets/2026-09-22-opus-5-5-reset",
++      "revision": 2,
++      "correction": null,
++      "sources": [
++        {
++          "url": "https://x.com/ClaudeDevs/status/2102438800836489554",
++          "role": "original"
++        },
++        {
++          "url": "https://x.com/ClaudeDevs/status/2102438803013333469",
++          "role": "original"
++        },
++        {
++          "url": "https://www.anthropic.com/claude-opus-5-5",
++          "role": "original"
++        }
++      ]
++    },
++    "check": "credit remains offer; date-only expiry; revision=2"
++  },
++  {
++    "fixture": "captured",
++    "source": "https://codexreset.ai/api/v1/resets.json",
++    "capturedAt": "2026-10-21T17:12:50Z",
++    "projection": {
++      "id": "2111492673890824348",
++      "date": "2026-10-17",
++      "ts": "2026-10-17T16:20:57Z",
++      "kind": "regular",
++      "scope": "all",
++      "url": "https://x.com/thsottiaux/status/2111492673890824348",
++      "seeded": false,
++      "announced_at": "2026-10-17T16:20:57Z",
++      "delivered_at": null,
++      "delivered_source_url": null,
++      "delivery_reported_delay": false
++    },
++    "check": "null delivery -> needs_review"
++  },
++  {
++    "fixture": "captured",
++    "source": "https://codexreset.ai/api/v1/resets.json",
++    "capturedAt": "2026-10-21T17:12:50Z",
++    "projection": {
++      "id": "2109812216212099456",
++      "date": "2026-10-13",
++      "ts": "2026-10-13T01:03:25Z",
++      "kind": "regular",
++      "scope": "all",
++      "url": "https://x.com/thsottiaux/status/2109812216212099456",
++      "seeded": false,
++      "announced_at": "2026-10-13T01:03:25Z",
++      "delivered_at": "2026-10-13T05:06:06Z",
++      "delivered_source_url": "https://x.com/thsottiaux/status/2109873287853707513",
++      "delivery_reported_delay": false
++    },
++    "check": "announcement and delivery differ; original evidence requires verification"
++  },
++  {
++    "fixture": "captured",
++    "source": "https://codexreset.ai/api/v1/resets.json",
++    "capturedAt": "2026-10-21T17:12:50Z",
++    "projection": {
++      "id": "2107913674593644711",
++      "date": "2026-10-07",
++      "ts": "2026-10-07T19:19:17Z",
++      "kind": "banked",
++      "scope": "paid",
++      "url": "https://x.com/thsottiaux/status/2107913674593644711",
++      "seeded": false,
++      "announced_at": "2026-10-07T19:19:17Z",
++      "delivered_at": "2026-10-08T03:44:55Z",
++      "delivered_source_url": "https://x.com/thsottiaux/status/2108040921044639779",
++      "delivery_reported_delay": false
++    },
++    "check": "banked with delivery still does not prove consumption"
++  },
++  {
++    "fixture": "captured",
++    "source": "https://codexreset.ai/api/v1/resets.json",
++    "capturedAt": "2026-10-21T17:12:50Z",
++    "projection": {
++      "id": "2097752790177370535",
++      "date": "2026-09-09",
++      "ts": "2026-09-09T18:23:34Z",
++      "kind": "banked",
++      "scope": "all",
++      "url": "https://x.com/thsottiaux/status/2097752790177370535",
++      "seeded": true,
++      "announced_at": "2026-09-09T18:23:34Z",
++      "delivered_at": null,
++      "delivered_source_url": null,
++      "delivery_reported_delay": false
++    },
++    "check": "seeded -> preserve archive credit; baseline never sends",
++    "attribution": {
++      "seed_archive": "https://codex-resets.com/"
++    }
++  },
++  {
++    "fixture": "captured",
++    "source": "https://codex-resets.com/api/v1/resets?limit=100",
++    "capturedAt": "2026-10-21T17:14:18Z",
++    "projection": {
++      "id": "2109873287853707513",
++      "reset_type": "regular",
++      "announced_at": "2026-10-13T05:06:06.000Z",
++      "source": {
++        "type": "x_post",
++        "author": "thsottiaux",
++        "url": "https://x.com/thsottiaux/status/2109873287853707513"
++      }
++    },
++    "check": "delivery-post ID here differs from announcement ID in CodexReset; do not add counts"
++  }
++]
++```
++
++## Synthetic vectors — не реальные события
++
++Будущие parser/integration tests создаются только на соответствующем этапе. Эти векторы фиксируют ожидаемые правила, не доказывают работоспособность отсутствующего адаптера. Все URL example.invalid и значения 2099 года — искусственные; не публиковать.
++
++| Fixture | Искусственный вход / контекст | Ожидаемое правило |
++|---|---|---|
++| synthetic S1 | Claude announced, time_precision=date, announced_on=2099-01-02, announced_at=null, utc_day=null; проверен будущий анонс | announced_future; не создавать T00:00:00Z/UTC month |
++| synthetic S2 | Claude retracted, correction.kind=retraction, explicit evidence и связь с прежним ID | withdrawal; история сохраняется |
++| synthetic S3 | Claude revision увеличен, correction.kind=correction с evidence | correction только для существенного изменения; generated_at не повод для push |
++| synthetic S4 | Claude kind=future_unknown или новый JSON field | needs_review/safe rejection; нет confirmed |
++| synthetic S5 | Codex scheduled={certainty:hinted,day:2099-01-02,scheduled_for:null,url:https://example.invalid/hint} | needs_review; нет анонса/прогноза |
++| synthetic S6 | Та же синтетическая date-only форма, certainty=announced; источник/будущий смысл проверены | announced_future; время не выдумывать |
++| synthetic S7 | Codex schema_version=999 или неизвестный kind | отклонить/review, сохранить последний валидный snapshot |
++| synthetic S8 | banked с delivered_at и достаточным подтверждением начисления | banked_offer, confirmed-applied count не растёт |
++| synthetic S9 | Новая страница не содержит известной записи; scheduled стал null | нет withdrawal без evidence |
++| synthetic S10 | HTTP 304, сохранённый snapshot/validator есть, ETag header отсутствует | сохранить snapshot и прежний ETag; отметить проверку, не создавать событие |
++| synthetic S11 | HTTP 429 + Retry-After:120 либо HTTP 503/problem+json | backoff/health, не удалять историю, не затронуть второй provider |
++| synthetic S12 | Последний запрос успешен, editorial review старый, известен более новый внешний event | показать разные freshness/coverage сигналы, не утверждать полноту/новизну из HTTP 200 |
++
++Synthetic correction/retraction не выдаются за наблюдавшиеся HTTP-примеры. Реальный capture таких переходов и Claude 304 остаются ограничениями исследования.
++
++## Acceptance
++
++- [x] Announcement, applied evidence, offer, correction, withdrawal и unknown разделены.
++- [x] Captured-проекции отделены от synthetic и от будущего принятого normalized event.
++- [x] Provider-specific bootstrap и нулевая публикация baseline закреплены.
++- [ ] Владелец принимает source/evidence policy. Автоматическая публикация сейчас не разрешена.

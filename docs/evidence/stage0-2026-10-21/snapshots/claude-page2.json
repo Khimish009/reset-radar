@@ -1,0 +1,90 @@
+{
+  "data": [
+    {
+      "id": "2026-07-16-all-users",
+      "kind": "usage_reset",
+      "event_status": "confirmed",
+      "time_precision": "exact",
+      "announced_at": "2026-07-16T03:58:48Z",
+      "announced_on": null,
+      "utc_day": "2026-07-16",
+      "effective_at": null,
+      "reset_offer": null,
+      "allocation": "subscription_usage",
+      "audience": {
+        "scope": "broad",
+        "statement": "all users",
+        "plans": "all",
+        "exclusions": null
+      },
+      "windows": [
+        "five_hour",
+        "weekly"
+      ],
+      "sources": [
+        {
+          "url": "https://x.com/ClaudeDevs/status/2077603834453770467",
+          "handle": "ClaudeDevs",
+          "role": "original",
+          "kind": "x_post",
+          "posted_at": "2026-07-16T03:58:48Z"
+        }
+      ],
+      "url": "https://clauderesets.com/resets/2026-07-16-all-users",
+      "first_published_at": "2026-09-17T20:00:00Z",
+      "revised_at": "2026-09-17T20:00:00Z",
+      "revision": 1,
+      "correction": null,
+      "related_event_ids": []
+    },
+    {
+      "id": "2026-07-09-all-users",
+      "kind": "usage_reset",
+      "event_status": "confirmed",
+      "time_precision": "exact",
+      "announced_at": "2026-07-09T18:01:18Z",
+      "announced_on": null,
+      "utc_day": "2026-07-09",
+      "effective_at": null,
+      "reset_offer": null,
+      "allocation": "subscription_usage",
+      "audience": {
+        "scope": "broad",
+        "statement": "all users",
+        "plans": "all",
+        "exclusions": null
+      },
+      "windows": [
+        "five_hour",
+        "weekly"
+      ],
+      "sources": [
+        {
+          "url": "https://x.com/ClaudeDevs/status/2075279141352706215",
+          "handle": "ClaudeDevs",
+          "role": "original",
+          "kind": "x_post",
+          "posted_at": "2026-07-09T18:01:18Z"
+        }
+      ],
+      "url": "https://clauderesets.com/resets/2026-07-09-all-users",
+      "first_published_at": "2026-09-17T20:00:00Z",
+      "revised_at": "2026-09-17T20:00:00Z",
+      "revision": 1,
+      "correction": null,
+      "related_event_ids": []
+    }
+  ],
+  "pagination": {
+    "has_more": true,
+    "next_cursor": "eyJkIjoiMjAyNi0wNy0wOSIsImkiOjE3ODM2MjAwNzgwMDAsImlkIjoiMjAyNi0wNy0wOS1hbGwtdXNlcnMiLCJyIjoiMzcxNjQzZGY4MGNjYTBhZSJ9",
+    "revision_changed": false
+  },
+  "meta": {
+    "api_version": "v1",
+    "generated_at": "2026-10-21T17:20:00.342Z",
+    "content_revision": "371643df80cca0ae",
+    "editorial_reviewed_at": "2026-10-17T05:59:18Z",
+    "coverage_start": "2026-04-16"
+  }
+}

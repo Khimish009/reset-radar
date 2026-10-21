@@ -1,0 +1,4 @@
+HTTP/2 200 
+date: Wed, 21 Oct 2026 17:13:28 GMT
+content-type: text/html; charset=UTF-8
+cache-control: public, max-age=300, s-maxage=3600

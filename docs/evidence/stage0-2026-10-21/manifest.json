@@ -1,0 +1,354 @@
+{
+  "capturedDate": "2026-10-21",
+  "timezone": "UTC",
+  "purpose": "Durable Stage 0 handoff; structural captures, not complete parser fixtures",
+  "rawBodiesPreserved": false,
+  "claudeConditionalNote": "HTTP 200 at 17:14:07 UTC with changed ETag; known from agent command output only, no second body/headers file was saved",
+  "entries": [
+    {
+      "path": "snapshots/claude-status.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://clauderesets.com/api/v1/status",
+      "originalSha256": "e7b6a9d58567d496f6be5136b6e703a2d04f25f99d4e08d671e1face0eeb0445",
+      "savedSha256": "0a9be874c8ff330727aebce215f6cf29cef3c6ee9a98835c604e76573025ea78",
+      "omittedFields": [
+        "affiliation_evidence_note",
+        "delivery_note_en",
+        "display_name",
+        "effective_note",
+        "excerpt",
+        "limitations",
+        "note",
+        "relevance",
+        "summary",
+        "text",
+        "title",
+        "verification_method"
+      ]
+    },
+    {
+      "path": "snapshots/claude-resets.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://clauderesets.com/api/v1/resets",
+      "originalSha256": "b0379b28aa7f7b65dd8eb5cc3e404b6ba19a237b6c3411802af1ef751d43825f",
+      "savedSha256": "4ede40f5c155ae0bf99c9bfdff2d61956a57020a09bcf4909bf33f7443581003",
+      "omittedFields": [
+        "affiliation_evidence_note",
+        "delivery_note_en",
+        "display_name",
+        "effective_note",
+        "excerpt",
+        "limitations",
+        "note",
+        "relevance",
+        "summary",
+        "text",
+        "title",
+        "verification_method"
+      ]
+    },
+    {
+      "path": "snapshots/claude-sources.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://clauderesets.com/api/v1/sources",
+      "originalSha256": "913d6e04c6d718b4c67e7f7cf8b656a2ee4fd462656488f95ad4115cc54d6a77",
+      "savedSha256": "3bcb33a3b86a33c2487a10e36fbad1b659e36df97f6e1381843e43731677c63f",
+      "omittedFields": [
+        "affiliation_evidence_note",
+        "delivery_note_en",
+        "display_name",
+        "effective_note",
+        "excerpt",
+        "limitations",
+        "note",
+        "relevance",
+        "summary",
+        "text",
+        "title",
+        "verification_method"
+      ]
+    },
+    {
+      "path": "snapshots/claude-page1.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://clauderesets.com/api/v1/resets?limit=2",
+      "originalSha256": "51fa1ef9cc078691ebbe031fbe4a54b91144b47f00e0e1f0986ddd284117d0b6",
+      "savedSha256": "3276ca75d2fa0f805e6da23375bb44fdd2ebdae74c135dd0c7482ed0ffe7bbe3",
+      "omittedFields": [
+        "affiliation_evidence_note",
+        "delivery_note_en",
+        "display_name",
+        "effective_note",
+        "excerpt",
+        "limitations",
+        "note",
+        "relevance",
+        "summary",
+        "text",
+        "title",
+        "verification_method"
+      ]
+    },
+    {
+      "path": "snapshots/claude-page2.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://clauderesets.com/api/v1/resets?limit=2&cursor=eyJkIjoiMjAyNi0wOS0wMSIsImkiOjE3ODgyODc3MjcwMDAsImlkIjoiMjAyNi0wOS0wMS1hbGwtdXNlcnMiLCJyIjoiMzcxNjQzZGY4MGNjYTBhZSJ9",
+      "originalSha256": "2e1cce213a2e0c75aa64d5771e6d21182a1a2e16d2fdb2c3495c96df028ca696",
+      "savedSha256": "1a987120dad91fa7adebde5cb672757e0a42bd5d6e0385d58f03bf4d9cbb571d",
+      "omittedFields": [
+        "affiliation_evidence_note",
+        "delivery_note_en",
+        "display_name",
+        "effective_note",
+        "excerpt",
+        "limitations",
+        "note",
+        "relevance",
+        "summary",
+        "text",
+        "title",
+        "verification_method"
+      ]
+    },
+    {
+      "path": "snapshots/codex-resets.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://codexreset.ai/api/v1/resets.json",
+      "originalSha256": "3071942d524168e816366fcf60508d629e91b7592ab344edd62acf68bdcb42ed",
+      "savedSha256": "8aef339036ba99e69f004a55cb3a2c94af72c4deb96525f13a1b17ad375e00ee",
+      "omittedFields": [
+        "affiliation_evidence_note",
+        "delivery_note_en",
+        "display_name",
+        "effective_note",
+        "excerpt",
+        "limitations",
+        "note",
+        "relevance",
+        "summary",
+        "text",
+        "title",
+        "verification_method"
+      ]
+    },
+    {
+      "path": "snapshots/archive-status.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://codex-resets.com/api/v1/status",
+      "originalSha256": "83846850e95e8e6dfbc16c4570e493c7b6ce1dcfc06cf38315db20d03c163184",
+      "savedSha256": "b210c5ba613a0429aed61707520b08a1cdc0bfffac5fe2761b6a73c89f568c91",
+      "omittedFields": [
+        "affiliation_evidence_note",
+        "delivery_note_en",
+        "display_name",
+        "effective_note",
+        "excerpt",
+        "limitations",
+        "note",
+        "relevance",
+        "summary",
+        "text",
+        "title",
+        "verification_method"
+      ]
+    },
+    {
+      "path": "snapshots/archive-resets.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://codex-resets.com/api/v1/resets?limit=100",
+      "originalSha256": "d621edc68612c4d664854eedd7968f343dd4cbb12b394946cc634c2758b52a53",
+      "savedSha256": "300b8496aec0c326710df773adcb777e207cbceb825534354ed4afff088844c6",
+      "omittedFields": [
+        "affiliation_evidence_note",
+        "delivery_note_en",
+        "display_name",
+        "effective_note",
+        "excerpt",
+        "limitations",
+        "note",
+        "relevance",
+        "summary",
+        "text",
+        "title",
+        "verification_method"
+      ]
+    },
+    {
+      "path": "snapshots/claude-openapi.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://clauderesets.com/api/openapi.json",
+      "originalSha256": "fde28345342dd8c548f69c57f9c54fc2193dbcc62ec649e613046ae031a35fc6",
+      "savedSha256": "21154fb2e6feca6df65fc098900192bf1e9da7d88df422bf18775bca64ad4887",
+      "omittedFields": [
+        "description",
+        "example",
+        "examples",
+        "summary",
+        "title"
+      ]
+    },
+    {
+      "path": "snapshots/archive-openapi.json",
+      "kind": "captured_projection",
+      "sourceUrl": "https://codex-resets.com/api/openapi.json",
+      "originalSha256": "b64bbd2e9f7230b86ea8e18b2158acfb07c399b4b78dda48657563adcdf1c056",
+      "savedSha256": "2439118c34d383866945ffdeb70564339aff077a396f352580d8745c75eee31b",
+      "omittedFields": [
+        "description",
+        "example",
+        "examples",
+        "summary",
+        "title"
+      ]
+    },
+    {
+      "path": "headers/claude-docs.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "f0a0681a7fcf9c18398fed5d363031b6e7e50491e41b0bbcfa220a83369c137b",
+      "savedSha256": "1548f75578e6f44ab49cf6374c693ebe6b3611562678a672885990e5bc4c9b50"
+    },
+    {
+      "path": "headers/claude-openapi.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "f62fb735b5847bf43455001417dd588bb1e7fb80adc7cf95575c3f09fa7b8ac1",
+      "savedSha256": "6b6e42453c052b0e833ad2ab7b05a30f7b7070f2095e9984f12c2e4c266b596f"
+    },
+    {
+      "path": "headers/claude-status.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "1311c1f714fed73255d41fdea6102f5ed7e1aed5c2f20f49ddbc6b0e9cda6106",
+      "savedSha256": "ca0a00254155c29e45daa92b5af9727f80776ef889448fc240c61bc1a3f0dd22"
+    },
+    {
+      "path": "headers/claude-resets.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "19c18246b5560828aee5c6117161725a1346883e02593ab8c992e8112a8e9d50",
+      "savedSha256": "db7a82d1ec110d737757f33ccf2618bf60175029a3f6a0ddc7634d2509560fba"
+    },
+    {
+      "path": "headers/claude-sources.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "ffb9b42222d03151dbf8ab8dd0d2084b80b4a9b79db3eea45ce88bf6a57065ad",
+      "savedSha256": "8ee50a93d65d9e9a11a112765fa4113646c719e7d2b540527ee16d1f219e4151"
+    },
+    {
+      "path": "headers/claude-page1.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "7ce11d3e82f6c00166c73fc64fb01278f422d84cc6a97a394a708399508b50ea",
+      "savedSha256": "4567167daa25245145ebbedfc0fa21af286b2aff8365b4d0f3feaf8ef79774c5"
+    },
+    {
+      "path": "headers/claude-page2.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "5b6624d42f22a150ed0c3961b8a43bf87d27ae9641cc536dad86f6990d8a5e71",
+      "savedSha256": "04e0e4c574a57a71b2eba8114f2cda0f7501df79e8bc18730946e2dd0805407e"
+    },
+    {
+      "path": "headers/claude-robots.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "fb5d7fc41e5a9b89e3f10f1ba665b10cd0c71b12ab1e142ad8d2cc8398978d67",
+      "savedSha256": "899beee732585a7a76c5014d87758cd14cd5dd541c1972925d4caedaf7671dbe"
+    },
+    {
+      "path": "headers/codex-developers.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "52f6465bf1e99064ac740eeb02d104b83e238c221d61ab6b29718858d85d4b9b",
+      "savedSha256": "40a757013e0d0d0ab27bbb278dfe84634fd04e20d5521642af0f19e6e5c9e04b"
+    },
+    {
+      "path": "headers/codex-resets.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "159588a564483178fbf6cd9d7451cbe5ed7ab7a8b6f372c6277e585ed3685510",
+      "savedSha256": "3acc85230268e47790140bb996c3343f9defada9e3baa5a9caec2ea56858be16"
+    },
+    {
+      "path": "headers/codex-conditional.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "bfc346b17789cc558529a05c16609be03d18d42ad95e64ecc7da5da79dfa1bc3",
+      "savedSha256": "aa45c2dbc6441fac6d45e81d717835e56812256856b55cc1dc301b5d99748307"
+    },
+    {
+      "path": "headers/codex-robots.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "f8c52f37a0279638f9cc3746982076ce35b948f10777b8cf6386b03ac87c9bfd",
+      "savedSha256": "f30b4d50f7e3ff0a7c7cab9c3129d78fdea243ce8baf7bcf97ec3854985ef420"
+    },
+    {
+      "path": "headers/archive-home.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "67f5cbad485c54484bde96325afbbd819136cc4bb82a16c5cf4a5a087db427e3",
+      "savedSha256": "9044a8bb7331ea4824abc533b13b5c720bbd1785dff795202f61eeb627be6dad"
+    },
+    {
+      "path": "headers/archive-docs.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "aa6632d6cfbbb5e3eb68266ecaf8be18debb04f3baf4066e725ab1699d7b4cf2",
+      "savedSha256": "f255726a1ccf3dc96a21b526480aad3216a1ba5a359a74753eb0bf1be3d1774e"
+    },
+    {
+      "path": "headers/archive-openapi.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "89722575bb7a9d28b42d35dbf7b4d2dc44d964b5cd0335f1ffae52180bb3b355",
+      "savedSha256": "62321f70f6e766e7cb9baa025cd014bd9eb1a0f5c719f0b5ef109e849b167f06"
+    },
+    {
+      "path": "headers/archive-status.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "9bd97cf40179267037247ca2886a097c3efb3505fdce13623269fd56fb22acd1",
+      "savedSha256": "4466b47b8ba7f80bf4f84242c3c097ccc68cb3040321d6a27e71bb0e8a3378be"
+    },
+    {
+      "path": "headers/archive-resets.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "650e260e47af466359fc7c66f8d6ce4249c32cbb3e245b69904f291541818d05",
+      "savedSha256": "021a3db50daa16b7dcf36c8ebb66d6336be3a4ff096fbd82213a8599ec43d0fa"
+    },
+    {
+      "path": "headers/archive-conditional.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "53c45834def9041f28489f83797008cf167f4a4c4b720c0e1eb36f2c96bc200a",
+      "savedSha256": "9ba87014e4bdb2ed0547d17426cbd7011b40054c0e5fae8fdfcf2fab244eefdc"
+    },
+    {
+      "path": "headers/archive-robots.txt",
+      "kind": "captured_header_projection",
+      "originalSha256": "8381a39680850a36146d74dcb196c4765815078f3848797e1bc05199445b8806",
+      "savedSha256": "a2e4cb8bf1186e3fb2de805939811b1a8492cbc5ec96316c6477df5bbab4b44c"
+    },
+    {
+      "path": "claude-robots.txt",
+      "kind": "captured",
+      "savedSha256": "cdb68344ee99cff5a377af01850d6829ed859e7ca3f8cac0882930374db0b032"
+    },
+    {
+      "path": "codex-robots.txt",
+      "kind": "captured",
+      "savedSha256": "459cc58541443781538fdf2403bab44546654d0f16624d3823fcb475652ee065"
+    },
+    {
+      "path": "archive-robots.txt",
+      "kind": "captured",
+      "savedSha256": "9b45a42354abf318eec1276addce6e3ae85db2c34cbab92bde96898a2cf5eb1d"
+    },
+    {
+      "path": "before/04_EXTERNAL_APIS.md",
+      "kind": "local_baseline",
+      "savedSha256": "3508b634f970f1f2b6e006329584a43491336847b41b9b40a2f9bc16e98860bd"
+    },
+    {
+      "path": "before/09_DECISIONS.md",
+      "kind": "local_baseline",
+      "savedSha256": "6730c0b412cf6cc5c91c813a90815a228071e9c90c2ddf38a5e1e59c8604debd"
+    },
+    {
+      "path": "before/11_SOURCES.md",
+      "kind": "local_baseline",
+      "savedSha256": "26262d3bc85c620f48c97c8b63c6a6068d7dfb5e7c37e3945357ddd57f3c5e18"
+    },
+    {
+      "path": "stage0-review.diff",
+      "kind": "local_review_diff",
+      "savedSha256": "c852841727467b2932d957e4f3b24ba0aceef61858c6aab49a301984189bec04"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "reset-radar-local",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-21",
+  "workers_dev": false,
+  "preview_urls": false,
+  "send_metrics": false,
+  "triggers": { "crons": [] },
+  "vars": { "APP_ENV": "local", "PUBLISH_MODE": "dry_run" },
+  "env": {
+    "staging": {
+      "name": "reset-radar-staging",
+      "workers_dev": false,
+      "preview_urls": false,
+      "triggers": { "crons": [] },
+      "vars": { "APP_ENV": "staging", "PUBLISH_MODE": "dry_run" }
+    },
+    "production": {
+      "name": "reset-radar",
+      "workers_dev": false,
+      "preview_urls": false,
+      "triggers": { "crons": [] },
+      "vars": { "APP_ENV": "production", "PUBLISH_MODE": "dry_run" }
+    }
+  }
+}

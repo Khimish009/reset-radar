@@ -17,7 +17,7 @@ ls -la
 
 ## 2. GitHub (по желанию сначала или после Stage 0)
 
-Создай GitHub репозиторий с именем `reset-radar` и описанием из `manual/OWNER_CHECKLIST.md`; план — `Public`. Не создавай дублирующих README/.gitignore. Лицензия **ещё не утверждена**: MIT была рекомендована, её можно добавить позже после твоего решения. Для самого первого Stage 0 подключать GitHub и пушить необязательно.
+Создай GitHub репозиторий с именем `reset-radar` и описанием из `manual/OWNER_CHECKLIST.md`; план — `Public`. Не создавай дублирующих README/.gitignore. В репозитории **уже есть MIT LICENSE**, copyright 2026 Salman, и `license: MIT` в package.json. Это существующее состояние, не новое решение владельца; LICENSE и copyright сохраняются. Вопрос отдельных условий для бренда и стороннего контента остаётся открытым в `docs/21_LEGAL_AND_LICENSE.md`. Для самого первого Stage 0 подключать GitHub и пушить необязательно.
 
 ## 3. Запустить Codex
 

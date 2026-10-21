@@ -4,7 +4,19 @@
 
 An independent, open-source tracker for **Claude Code** and **OpenAI Codex** public reset announcements, verified applications, extra/banked quota offers and meaningful usage-limit changes. **Telegram delivers alerts; the website displays history, change details and a transparent, source-linked dashboard.**
 
-**Status: design and Codex-ready documentation — not a running service.** This starter contains no working Worker, deployed website or configured private bot. Last documentation update: **2026-10-21**.
+**Status: Stage 1 local Worker foundation — not a running service.** The Worker has no-op scheduled/HTTP handlers, strict TypeScript, tests and CI checks. Adapters, D1, Telegram publishing, public data endpoints and website are not implemented. **Not deployed / not published.** Last documentation update: **2026-10-21**.
+
+Local setup (Node version in `.nvmrc`):
+
+```sh
+npm ci
+npm run typecheck
+npm run lint
+npm test
+python3 docs/evidence/stage0-2026-10-21/verify.py
+```
+
+`typecheck` first generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` defines isolated local/staging/production dry-run targets with no bindings, routes or active Cron triggers. The three reserved API paths return `501 not_implemented`; other read paths return `404`, write methods return `405`. No handler calls upstream, Telegram or D1. CORS and real public endpoints belong to Stage 9. See [Stage 1 report](docs/24_STAGE1_REPORT.md).
 
 | Surface | Role | Planned link |
 |---|---|---|
@@ -49,11 +61,11 @@ Codex reset API ┘                                           │
 
 ## Start with Codex CLI (recommended workflow)
 
-1. Read `AGENTS.md`, `docs/00_PROJECT_BRIEF.md`, `docs/08_DEVELOPMENT_PLAN.md`, `docs/09_DECISIONS.md`, `manual/OWNER_CHECKLIST.md`.
-2. Unpack to the **root of the new Git repository**, with the top-level `AGENTS.md` and `docs/` folder adjacent. Open a terminal in that root, run `codex`.
-3. Give Codex `prompts/START_CODEX.md`. **Authorize only Stage 0**: live API truth-check for both sources, *not* construction/deployment of the whole product.
-4. Codex reports evidence, updates docs, and stops until the owner accepts the stage. See `prompts/STAGE_REVIEW.md`.
-5. Later stages add Worker/D1/Telegram, then public API and website without changing the chosen infrastructure.
+1. Read `AGENTS.md`, this README, the [current handoff](docs/25_STAGE1_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
+2. Run Codex from the repository root and inspect `git status`, including staged and unstaged changes; preserve existing work.
+3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage; [START_STAGE2](prompts/START_STAGE2.md) remains prepared for separate approval.
+4. Report actual changes/checks and stop before the next stage. See `prompts/STAGE_REVIEW.md`.
+5. For a new project beginning with source research, `prompts/START_CODEX.md` describes Stage 0. When resuming this repository, use the current handoff rather than repeating completed stages.
 
 ## Documents
 
@@ -64,7 +76,8 @@ Codex reset API ┘                                           │
 - `docs/18_ANALYTICS_METHODOLOGY.md` — truthful metrics and data-quality rules.
 - `docs/19_WEBSITE_DEPLOYMENT.md` — Vite/GitHub Pages/CORS/deployment.
 - `docs/20_RELEASE_AND_BACKLOG.md` — phased shipping and non-goals.
-- `docs/21_LEGAL_AND_LICENSE.md` — third-party attribution, privacy, open-source licensing decision.
+- `docs/21_LEGAL_AND_LICENSE.md` — existing MIT license, third-party attribution, privacy and open brand/data-rights questions.
+- `docs/24_STAGE1_REPORT.md`, [current handoff](docs/25_STAGE1_HANDOFF.md) — Stage 1 results and context for separately approved work.
 - `manual/OWNER_CHECKLIST.md` — actions that require the owner, **no secrets**.
 - `prompts/START_CODEX.md` — exact Stage 0 assignment; `prompts/STAGE_REVIEW.md` — stage acceptance report.
 - `brand/channel-avatar.png`, `brand/bot-avatar.png` — distinct matching brand assets.
@@ -79,4 +92,4 @@ Codex reset API ┘                                           │
 
 ## Contributing and license
 
-Issues and PRs are welcome after the owner enables them. **License choice is pending owner approval** (MIT was recommended, not automatically granted). The public visibility of a repository does not itself grant permission for unrestricted reuse. Brand artwork may have separate usage terms. See `docs/21_LEGAL_AND_LICENSE.md`.
+Issues and PRs are welcome after the owner enables them. The repository already contains the MIT [LICENSE](LICENSE), copyright 2026 Salman, and `package.json` declares `MIT`. This records the existing state; it is not a new owner licensing decision and changes no license text or copyright. Whether separate brand reuse terms or additional third-party content permissions are needed remains open. See [licensing and data rights](docs/21_LEGAL_AND_LICENSE.md).

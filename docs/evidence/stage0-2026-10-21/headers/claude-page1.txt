@@ -1,0 +1,10 @@
+HTTP/2 200 
+date: Wed, 21 Oct 2026 17:16:28 GMT
+content-type: application/json; charset=utf-8
+content-length: 2664
+access-control-allow-origin: *
+cache-control: public, max-age=60, stale-while-revalidate=120
+etag: W/"468938263dce6233"
+vary: Accept-Encoding
+access-control-allow-headers: If-None-Match, Content-Type
+access-control-allow-methods: GET, OPTIONS

@@ -1,0 +1,28 @@
+{
+  "name": "reset-radar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Independent public AI reset monitoring — local Worker foundation",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.22.2 <23"
+  },
+  "scripts": {
+    "pretypes": "node --input-type=module -e \"import { mkdirSync } from 'node:fs'; mkdirSync('.wrangler/types', { recursive: true });\"",
+    "types": "WRANGLER_LOG_PATH=.wrangler/logs/ WRANGLER_SEND_METRICS=false wrangler types .wrangler/types/worker-configuration.d.ts --include-env=false",
+    "typecheck": "npm run types && tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "lint": "eslint . --max-warnings=0",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.5",
+    "eslint": "10.13.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5",
+    "wrangler": "4.151.3"
+  }
+}
