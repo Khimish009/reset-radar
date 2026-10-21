@@ -94,6 +94,18 @@
 
 [Bot API](https://core.telegram.org/bots/api) относится к будущему publisher (sendMessage/getMe/getChat, message_id, retry_after). Stage 0 **не проверял Telegram**, токены, handles, Cloudflare, D1 или будущий Worker API. /start остаётся отдельным согласованием; публичного HTTP publish-trigger не будет.
 
+## F. Claude adapter — локальное состояние Stage 2, 2026-10-21
+
+В Stage 2 реализован отдельный TypeScript adapter для трёх проверенных read endpoints Claude Resets: `status`, `resets` и `sources`. Сохранённая [проекция OpenAPI](evidence/stage2-claude-2026-10-21/contract.json) содержит структуру схемы без описаний и examples и hash исходного OpenAPI; это **не** полный ответ API и не parser fixture. Stage 0 captures не переписывались.
+
+Парсер требует все поля текущей схемы и отклоняет неизвестные поля и enum. При schema rejection транспорт возвращает внутренний review result с исходным payload, URL запроса и фиксированной причиной; сырые данные не выдаются Worker/API или логгером. `sources.last_reviewed_at` может остаться date-only. Transport использует описательный User-Agent, независимые ETag/cache entries на endpoint и канонический query, cache минимум 60 секунд, ограничение response body 2 MiB, timeout, `Retry-After` и bounded backoff. Состояние transport передаётся через локальный in-memory объект и не переживает перезапуск.
+
+История проходит cursor pages с лимитами страницы и общего обхода до подтверждённого конца. Все страницы должны иметь согласованный `content_revision`; неполный или меняющийся обход сохраняет последний complete snapshot. Ранее известные строки, отсутствующие в новом counted feed, сохраняются отдельно; исчезновение не классифицируется как withdrawal. Endpoint status/sources можно читать отдельно.
+
+Mapper сохраняет raw kind/status, upstream ID/revision, URL и evidence, audience/plans/exclusions/windows и временную точность. Без проверенной assessment привязки к тому же ID/revision и original-source URL confirmed reset, future announcement, correction и withdrawal остаются `needs_review`; correction/withdrawal дополнительно требуют наблюдавшейся предыдущей ревизии. Подтверждённый `credit` с `reset_offer` и источником получает `banked_offer`, что не означает использованный сброс или текущую доступность. `effective_at=null` остаётся unknown, а delivery не создаётся. Caller-supplied assessment — технический вход локального маппера, не утверждение владельцем production truth policy.
+
+Адаптер не включён в Worker `scheduled()`/`fetch()`, не записывает D1, не запускает transitions/publisher и не создаёт Telegram-сообщения. Текущие проверки и ограничения перечислены в [Stage 2 report](26_STAGE2_REPORT.md); итоговое независимое review и принятие владельцем остаются отдельными gates.
+
 ## Checklist Stage 0
 
 - [x] Реальные обязательные endpoints и API-ссылка альтернативы.

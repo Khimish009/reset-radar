@@ -1,0 +1,30 @@
+{
+  "checked_on": "2026-10-21",
+  "kind": "manual_live_validation_metadata_only",
+  "full_bodies_archived": false,
+  "results": {
+    "status": {
+      "source_url": "https://clauderesets.com/api/v1/status",
+      "http_status": 200,
+      "raw_sha256": "9699755fc516b29c3040f5d81f0028da02d952cea986b6802264f0220cc288d9",
+      "parser": "accepted",
+      "content_revision": "371643df80cca0ae"
+    },
+    "resets": {
+      "source_url": "https://clauderesets.com/api/v1/resets?limit=100",
+      "http_status": 200,
+      "raw_sha256": "34ec32bc8ae09c6c1dc8f0e15e06b33538b8f04662963902d169ef269bea6788",
+      "parser": "accepted",
+      "content_revision": "371643df80cca0ae",
+      "count": 12
+    },
+    "sources": {
+      "source_url": "https://clauderesets.com/api/v1/sources",
+      "http_status": 200,
+      "raw_sha256": "4a5b31be45f27d1dbe91bce3eaf2d4e3e006d58eb3334565596a19017b777c05",
+      "parser": "accepted",
+      "content_revision": "371643df80cca0ae",
+      "count": 7
+    }
+  }
+}

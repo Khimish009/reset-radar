@@ -1,0 +1,5 @@
+simulation: claude-stage2-local
+routing: path
+mocks:
+  - routeKey: claude
+    path: ../mocks/claude/default.js

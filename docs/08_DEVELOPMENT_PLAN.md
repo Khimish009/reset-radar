@@ -25,7 +25,9 @@ Initialize TypeScript strict Worker `scheduled` and no-op `fetch` routing skelet
 
 HTTP conditional GET + runtime parsing/ETag/304/429/retry, history paging as Stage 0 allows, observed statuses/offers/revisions mapped to safe normalized events. Unknown -> review. Fixtures and regression tests.
 
-**Acceptance:** source truth table in tests, failure isolation.
+**Implementation status, 2026-10-21:** локальный Claude adapter реализован в границах отдельного разрешения владельца. Он читает только status/resets/sources Claude Resets, строго проверяет контракт, сохраняет последний валидный снимок в переданном in-memory state и не подключён к Worker handlers, D1 или Telegram. Реальные проверки, ограничения и ожидающее независимое review записаны в [отчёте Stage 2](26_STAGE2_REPORT.md). Это не принятие владельцем результата и не утверждение production truth policy.
+
+**Acceptance:** source truth table in tests, failure isolation. Итог acceptance владельцем ожидает review и отдельного решения. Stage 3 требует нового явного задания владельца.
 
 ## Stage 3 — Codex adapter
 

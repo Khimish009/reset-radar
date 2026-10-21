@@ -4,7 +4,7 @@
 
 An independent, open-source tracker for **Claude Code** and **OpenAI Codex** public reset announcements, verified applications, extra/banked quota offers and meaningful usage-limit changes. **Telegram delivers alerts; the website displays history, change details and a transparent, source-linked dashboard.**
 
-**Status: Stage 1 local Worker foundation — not a running service.** The Worker has no-op scheduled/HTTP handlers, strict TypeScript, tests and CI checks. Adapters, D1, Telegram publishing, public data endpoints and website are not implemented. **Not deployed / not published.** Last documentation update: **2026-10-21**.
+**Status: Stage 2 local Claude adapter — not a running service.** A source-specific Claude Resets adapter and local tests now sit beside the Stage 1 Worker foundation. The adapter is not wired into `scheduled()` or `fetch()`; Codex, D1, Telegram publishing, public data endpoints and website are not implemented. **Not deployed / not published.** Last documentation update: **2026-10-21**.
 
 Local setup (Node version in `.nvmrc`):
 
@@ -16,7 +16,7 @@ npm test
 python3 docs/evidence/stage0-2026-10-21/verify.py
 ```
 
-`typecheck` first generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` defines isolated local/staging/production dry-run targets with no bindings, routes or active Cron triggers. The three reserved API paths return `501 not_implemented`; other read paths return `404`, write methods return `405`. No handler calls upstream, Telegram or D1. CORS and real public endpoints belong to Stage 9. See [Stage 1 report](docs/24_STAGE1_REPORT.md).
+`typecheck` first generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` defines isolated local/staging/production dry-run targets with no bindings, routes or active Cron triggers. The Worker handlers remain inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. The separate Claude adapter can read the public Claude Resets API when explicitly called by local code/tests; it has no D1 or Telegram integration. CORS and real public endpoints belong to Stage 9. See the [Stage 2 report](docs/26_STAGE2_REPORT.md) and [current handoff](docs/27_STAGE2_HANDOFF.md).
 
 | Surface | Role | Planned link |
 |---|---|---|
@@ -61,9 +61,9 @@ Codex reset API ┘                                           │
 
 ## Start with Codex CLI (recommended workflow)
 
-1. Read `AGENTS.md`, this README, the [current handoff](docs/25_STAGE1_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
+1. Read `AGENTS.md`, this README, the [current handoff](docs/27_STAGE2_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
 2. Run Codex from the repository root and inspect `git status`, including staged and unstaged changes; preserve existing work.
-3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage; [START_STAGE2](prompts/START_STAGE2.md) remains prepared for separate approval.
+3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage. Stage 2 was separately authorized and locally implemented; Stage 3 still needs a new explicit owner assignment.
 4. Report actual changes/checks and stop before the next stage. See `prompts/STAGE_REVIEW.md`.
 5. For a new project beginning with source research, `prompts/START_CODEX.md` describes Stage 0. When resuming this repository, use the current handoff rather than repeating completed stages.
 
@@ -77,7 +77,8 @@ Codex reset API ┘                                           │
 - `docs/19_WEBSITE_DEPLOYMENT.md` — Vite/GitHub Pages/CORS/deployment.
 - `docs/20_RELEASE_AND_BACKLOG.md` — phased shipping and non-goals.
 - `docs/21_LEGAL_AND_LICENSE.md` — existing MIT license, third-party attribution, privacy and open brand/data-rights questions.
-- `docs/24_STAGE1_REPORT.md`, [current handoff](docs/25_STAGE1_HANDOFF.md) — Stage 1 results and context for separately approved work.
+- `docs/24_STAGE1_REPORT.md`, `docs/25_STAGE1_HANDOFF.md` — historical Stage 1 result and handoff.
+- `docs/26_STAGE2_REPORT.md`, [current handoff](docs/27_STAGE2_HANDOFF.md) — Stage 2 result and context for separately approved work.
 - `manual/OWNER_CHECKLIST.md` — actions that require the owner, **no secrets**.
 - `prompts/START_CODEX.md` — exact Stage 0 assignment; `prompts/STAGE_REVIEW.md` — stage acceptance report.
 - `brand/channel-avatar.png`, `brand/bot-avatar.png` — distinct matching brand assets.
