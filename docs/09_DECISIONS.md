@@ -18,7 +18,7 @@
 | ADR-012 | Staging+dry-run+per-provider bootstrap and separate owner production approval | agreed | Protect against historical spam and false claims |
 | ADR-013 | Dark navy/cyan/amber identity; paired but different channel/bot icons | agreed | Independent brand recognition |
 | ADR-014 | Existing tracked `LICENSE` is MIT, copyright 2026 Salman; `package.json` declares MIT | **existing repository state; documentation reconciled in PR #1** | No new owner licensing decision or change to license/copyright; separate brand reuse and third-party content permissions remain open |
-| ADR-015 | Claude Resets feasible with limits; CodexReset recommended primary, codex-resets remains separately researched alternative | **Stage 0 research done; pending owner acceptance** | Live JSON/headers checked; delivery evidence, history and source equivalence have material limits; see below |
+| ADR-015 | Claude Resets feasible with limits; owner selected codexreset.ai for local Stage 3; codex-resets.com remains separately researched alternative | **Local Codex source choice accepted 2026-10-21; production/data policy remains pending** | Local selection does not approve publication, a full content mirror, or source equivalence |
 | ADR-016 | Website URL/GitHub username and Telegram handles | **pending verification** | Never invent live URLs from placeholders |
 | ADR-017 | `stale` threshold 30 min, public caching 60–300s | **initial proposal; validate** | Balance recency, costs and transparent freshness |
 | ADR-018 | No external visitor analytics/ads in initial version | agreed initial restraint | Privacy and simplicity; can revisit |
@@ -56,6 +56,21 @@
 На завершение Stage 0 typecheck/lint/Vitest/build отсутствовали: реализации ещё не было. Это исторический результат; проверки каркаса Stage 1 записаны отдельно в [отчёте](24_STAGE1_REPORT.md). **Не развёрнуто / не опубликовано.**
 
 ## Changes require an ADR
+
+### Local Stage 3 owner decisions, 2026-10-21
+
+The owner explicitly selected **codexreset.ai**, prohibited fallback/history union,
+and prioritized reliable future announcements before delivery, including an
+announcement whose expected time is unknown. The local adapter represents the
+latter as `announced_future` with source-specific `expectedTime.precision=unknown`;
+it adds no shared action enum. Primary-evidence review is required, and null
+delivery never becomes `confirmed_applied`. See the [report](28_STAGE3_REPORT.md).
+
+This resolves the local source choice only. ADR-015/019/020 are not signed off as
+a complete production policy. Evidence review workflow, durable detection and
+announcement-to-delivery correlation, publication eligibility/deduplication,
+source migration, and baseline approval remain future owner decisions. No
+publisher or Stage 4 is authorized.
 
 Before altering stack/site hosting, claiming delivery without evidence, implementing new providers, making bot personal, adding visitor tracking, enabling auto-prod-deploy or changing copyright/license, document decision + alternatives + risk and wait for owner approval.
 

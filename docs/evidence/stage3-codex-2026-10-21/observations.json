@@ -1,0 +1,32 @@
+{
+  "checked_at": "2026-10-21T20:22:00.556Z",
+  "feed_url": "https://codexreset.ai/api/v1/resets.json",
+  "feed_headers": [
+    "HTTP/2 200 ",
+    "date: Wed, 21 Oct 2026 20:17:09 GMT",
+    "content-type: application/json; charset=utf-8",
+    "cache-control: public, max-age=300",
+    "etag: \"811a700fd9a6acc18e737b6e3cec7b81\""
+  ],
+  "feed_body_sha256": "3071942d524168e816366fcf60508d629e91b7592ab344edd62acf68bdcb42ed",
+  "docs_url": "https://codexreset.ai/developers/",
+  "docs_headers": [
+    "HTTP/2 200 ",
+    "date: Wed, 21 Oct 2026 20:17:09 GMT",
+    "content-type: text/html; charset=utf-8",
+    "cache-control: public, max-age=0, must-revalidate"
+  ],
+  "docs_body_sha256": "a5851524683b2e50b9423729b176291be0fd161b9982157ade078e372f6f53e5",
+  "generated_at": "2026-10-21T16:03:45Z",
+  "counts": {
+    "events": 62,
+    "seeded": 53,
+    "null_delivery": 56,
+    "regular": 54,
+    "banked": 8
+  },
+  "parser_accepted": true,
+  "delivery_evidence_independently_verified": false,
+  "live_304_429_503_tested": false,
+  "note": "One targeted GET each for docs and feed. No alternative API was requested. No original post text was verified. Full bodies are not retained here."
+}

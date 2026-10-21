@@ -26,6 +26,19 @@
 - **FR-13:** Private chat `/start` optional separate approved phase. Until then, bot is technical publisher only.
 - **FR-14:** If source stale, no notification suggesting current state; reports in system logs and status API.
 
+### Codex early-announcement priority (owner confirmed, 2026-10-21)
+
+For the selected Codex source, the product priority is to surface a trustworthy announcement of an extra future reset as soon as it is detected and its evidence is reviewed. An announcement is useful before limits are provided: `announced_future` remains distinct from `confirmed_applied`, and `delivered_at=null` never proves delivery. A future announcement may have an exact instant, a calendar date, or no stated target time. Preserve the primary-source URL, detection time, `announced_at`, source-backed audience, and expected-time precision. `hinted`, forecast, rumor, stale, or otherwise unverified claims stay in review.
+
+This is a product priority, not a claim of instant live notification. The Stage 3 adapter is local and is not connected to a scheduler, persistent event journal, or publisher. Polling cadence, evidence review, baseline handling, eligibility, deduplication, and production publication remain gated decisions.
+
+### Proposed future announcement publication policy (pending owner decision)
+
+- After a separate publication-stage approval and provider baseline, consider a first notice eligible when a newly detected future announcement has passed primary-source review, even while delivery is unverified. Do not wait for `confirmed_applied` to inform users of the announcement.
+- If the source makes no date or time known, use explicit unknown-time wording; do not invent a date, countdown, or delivery claim. Date-only targets remain date-only.
+- Treat a later, independently evidenced `confirmed_applied` transition as a separate candidate notice only after the future publication stage defines material-change, deduplication, and correction rules. This proposal promises neither exactly-once delivery nor a live response-time target.
+- Seeded history and the initial provider baseline remain ineligible for publication. `codex-resets.com` is an investigated alternative and archive attribution only; do not merge its history or use it as fallback for the selected `codexreset.ai` feed.
+
 ## Public API requirements (FR-15—FR-22)
 
 - **FR-15:** Worker `fetch()` exposes only GET/HEAD/OPTIONS of `/api/v1/status`, `/api/v1/events`, `/api/v1/stats` and non-sensitive health if approved.

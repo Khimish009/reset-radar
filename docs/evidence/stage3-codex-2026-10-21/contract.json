@@ -1,0 +1,85 @@
+{
+  "kind": "structural contract projection; not a parser fixture or full response",
+  "source_url": "https://codexreset.ai/api/v1/resets.json",
+  "docs_url": "https://codexreset.ai/developers/",
+  "schema_version": 1,
+  "top_level_keys": [
+    "schema_version",
+    "generated_at",
+    "source",
+    "attribution",
+    "events",
+    "scheduled"
+  ],
+  "attribution_keys": [
+    "seed_archive",
+    "note"
+  ],
+  "observed_event_field_types": {
+    "id": [
+      "string"
+    ],
+    "date": [
+      "string"
+    ],
+    "ts": [
+      "string"
+    ],
+    "kind": [
+      "string"
+    ],
+    "scope": [
+      "string"
+    ],
+    "summary": [
+      "string"
+    ],
+    "summary_unavailable": [
+      "boolean"
+    ],
+    "url": [
+      "string"
+    ],
+    "seeded": [
+      "boolean"
+    ],
+    "announced_at": [
+      "string"
+    ],
+    "delivered_at": [
+      "null",
+      "string"
+    ],
+    "delivered_source_url": [
+      "null",
+      "string"
+    ],
+    "delivery_reported_delay": [
+      "boolean"
+    ],
+    "delivery_note_en": [
+      "null",
+      "string"
+    ]
+  },
+  "documented_nullable_fields": [
+    "ts",
+    "announced_at",
+    "delivered_at",
+    "delivered_source_url",
+    "delivery_note_en"
+  ],
+  "documented_scheduled": {
+    "certainty": [
+      "announced",
+      "hinted"
+    ],
+    "day": "YYYY-MM-DD",
+    "scheduled_for": "UTC instant or null",
+    "when_text": "derived display text",
+    "url": "announcement URL",
+    "source": "posting account",
+    "announced_at": "announcement UTC instant"
+  },
+  "scheduled_non_null_observed": false
+}

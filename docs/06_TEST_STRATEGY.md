@@ -17,7 +17,18 @@ Stage 2 checks exercise the standalone Claude adapter only. The `Worker schedule
 - [x] Bounded cursor paging accepts only a complete, revision-consistent walk. Failed/partial walks keep the previous complete history; missing rows are retained without inferring withdrawal.
 - [x] Deterministic transport/adapter tests cover cache/backoff, `304` with and without a snapshot, timeout, invalid responses, `429`/`Retry-After`, `503`, and pagination failures.
 - [x] An opt-in Postman local simulation test calls a loopback mock; it does not call the real upstream. Live HTTP reads were separate targeted manual checks and are not automated tests.
-- [ ] Independent Stage 2 review and owner acceptance; see [Stage 2 report](26_STAGE2_REPORT.md).
+- [x] Independent Stage 2 review completed; owner accepted local result with fixes by separately assigning Stage 3; see [Stage 2 handoff](27_STAGE2_HANDOFF.md).
+
+### Stage 3 — Codex adapter (local, codexreset.ai only)
+
+- [x] Full synthetic schema fixtures reject drift/unknown fields, kinds, certainty, missing fields, bad precision, duplicate IDs and bounded payload violations. Actual live feed separately accepted by parser; no historical projection is treated as a complete fixture.
+- [x] Announcement, detection and upstream-reported delivery clocks remain separate; `ts`/`date` never fill `effective`. Null delivery and weak/stale evidence never confirm application; banked requires an explicit content-bound `banked_offer` assessment and never implies consumption.
+- [x] Future announcements with exact/date/unknown expected time require explicit content-bound primary-evidence assessment. Hinted, past/invalid targets and unreviewed rows stay review. Date-only compares strictly with the current UTC calendar date.
+- [x] A provided scheduled `futureTarget` must match raw precision and value; conflicting, malformed and cross-precision targets stay review without retaining rejected assessment URLs/audience. Omission preserves the existing raw-target path; date-only never becomes an exact time.
+- [x] Preserve scope/unknown audience and seeded/archive attribution. Detection of new/changed contents is retained in memory separately from HTTP check time; missing rows/scheduled retain provenance without inferred withdrawal.
+- [x] Conditional GET/304/cache, 60s floor/current 300s default, Retry-After/429/503, body limits, cancellation/lock/listener cleanup, late responses and independent Claude/Codex state covered offline.
+- [x] Opt-in real HTTP against our local synthetic Postman simulation exercises both providers and failure isolation. It does not verify live primary evidence or production behavior.
+- [ ] Owner acceptance of Stage 3 and separate production truth/publication policy; see [Stage 3 report](28_STAGE3_REPORT.md).
 
 - [ ] Claude: confirmed reset, future announcement, active/redeemable banked offer, expired offer, revision and explicit withdrawal, unexpected enum.
 - [ ] Codex: announcement with `delivered_at=null` **never** labeled complete; delivered later creates correct state change; `scheduled.certainty=hinted` not auto-published.

@@ -44,7 +44,9 @@ Use only Claude confirmed, applied `usage_reset` with evidence. Don't overstate 
 Данные: https://codexreset.ai/
 ```
 
-For Codex only `scheduled.certainty=announced` and reliable source evidence. `hinted` is NO public event.
+For Codex, require a current, explicit announcement and reviewed source evidence. `scheduled.certainty=hinted` is never a confirmed announcement. If the source gives no target time, render `Когда: дата и время источником не указаны.`; if it gives only a date, show only that date. The current `scheduled` contract requires a day, so an unknown-time announcement can only be represented from a separately reviewed `regular` row with `delivered_at=null`; do not invent a nullable scheduled day.
+
+The template expresses the owner's accepted product priority to notify on a reliable announcement before delivery. Whether and when Telegram sends such a notice remains a future publication-policy decision; Stage 3 has no scheduler or publisher. A possible policy is to make the first reviewed future announcement eligible after separate baseline and production gates. Deduplication and any later `confirmed_applied` notice need a separate Stage 4+ decision.
 
 ## C — Banked / redeemable credit
 
@@ -78,7 +80,9 @@ No correction on mere disappearance of source from ordinary feed. Owner review i
 ## Editorial rules
 
 - `announced_at` is time of announcement, not delivery; `delivered_at=null` means unknown.
+- Keep detection time, announcement time, and delivery time separate. `announced_future` never says limits have already arrived; `confirmed_applied` requires reviewed delivery evidence.
 - `time_precision=date` => date only, do not invent hour. Banked `expires_on` date does not imply time zone.
+- Unknown target time gets explicit unknown-time wording; never add a guessed date, timezone, countdown, or delivery statement.
 - `scope=all` requires source backing; if scope unknown say so or do not auto publish.
 - Provide both primary announcement and aggregator/source credit in channel posts, plus disclaimer in bio.
 - Don't use LLM to rewrite factual notices during MVP. No blind automatic posts on third-party social rumors.

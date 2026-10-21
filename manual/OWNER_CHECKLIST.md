@@ -24,7 +24,8 @@
 
 - [ ] Unzip to `reset-radar/` root, run `codex` from that directory, provide `prompts/START_CODEX.md`.
 - [ ] Require actual API proof for both trackers, not just docs, and report restrictions and schema uncertainty.
-- [ ] Owner chooses approved Codex source before its adapter and accepts production truth policy before publication. The explicit Stage 1 prompt permits the neutral foundation while these remain pending.
+- [x] Owner chose `codexreset.ai` for the local Stage 3 adapter on 2026-10-21; no alternative fallback or history union.
+- [ ] Accept production truth/publication policy before publication. The local source choice does not approve it.
 
 ## Stage 1 — local foundation only
 
@@ -38,9 +39,20 @@
 
 - [x] Claude status/resets/sources adapter, strict contract validation, conservative mapping and deterministic tests implemented locally.
 - [x] Evidence contract projection is saved separately in `docs/evidence/stage2-claude-2026-10-21/`; raw upstream response bodies are not committed.
-- [ ] Review the independent review result and the factual [Stage 2 report](../docs/26_STAGE2_REPORT.md), then accept or request changes.
-- [ ] Keep Codex source choice, provider baseline and production publication truth policy pending. None is approved by Stage 2.
-- [ ] Give a separate explicit Stage 3 assignment before Codex adapter work. Do not infer authorization from this checklist or the prepared prompt.
+- [x] Owner accepted local Stage 2 with PR #2 fixes by explicitly assigning START_STAGE3.md; merged base verified.
+- [ ] Provider baseline and production publication truth policy remain pending. None is approved by Stage 2 or Stage 3.
+- [x] Owner separately authorized only local Stage 3 and explicitly selected the feed; original commit/push permission is not reused.
+
+## Stage 3 — local Codex adapter only
+
+- [x] Parse only `codexreset.ai` with strict validation, source-specific semantics and independent HTTP/cache/backoff; preserve seeded/archive credit.
+- [x] Test future announcements with known and unknown expected time separately from delivery; preserve primary URL, scope and detection/announcement clocks. Hinted/rumors remain review.
+- [x] Record targeted live contract observations separately from synthetic tests; keep the Stage 0 archive unchanged.
+- [x] Typecheck/lint/offline tests/local HTTP simulation passed; independent review completed with no remaining critical/high/medium findings.
+- [ ] Owner reviews [Stage 3 report](../docs/28_STAGE3_REPORT.md) and independent review, then accepts or requests changes.
+- [x] Owner separately authorized a local Stage 3 commit after the report.
+- [x] Owner separately authorized two P2 fixes, independent review and commit/push to the existing PR #3 branch only.
+- [ ] Separately authorize merge/new PR operations and a new Stage 4 assignment. No D1, deployment or Telegram send is authorized.
 
 ## Worker/D1 staging (later)
 
