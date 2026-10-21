@@ -69,8 +69,33 @@ delivery never becomes `confirmed_applied`. See the [report](28_STAGE3_REPORT.md
 This resolves the local source choice only. ADR-015/019/020 are not signed off as
 a complete production policy. Evidence review workflow, durable detection and
 announcement-to-delivery correlation, publication eligibility/deduplication,
-source migration, and baseline approval remain future owner decisions. No
-publisher or Stage 4 is authorized.
+source migration, and baseline approval remain future owner decisions. Отдельное
+разрешение владельца позднее открыло только локальный Stage 4; оно не меняет
+production policy и не разрешает publisher.
+
+### Локальные решения Stage 4 — 2026-10-22
+
+Эти решения описывают реализованную техническую модель и консервативные локальные
+допущения. Они не закрывают pending production ADR:
+
+| ID | Локальное решение | Статус и основание |
+|---|---|---|
+| ADR-022 | D1 хранит текущее событие отдельно от immutable observations и material versions; namespaced identity уникальна по provider/upstream/external ID. | Реализовано локально. Hash строится по канонической material-проекции; upstream revision и assessment key имеют отдельные поля. A→B→A получает новый sequence. Это модель аудита, не публичный контракт. |
+| ADR-023 | Полный commit snapshot выполняется одним `D1.batch()` с generation CAS; D1 prepared statements используют bound values. | Реализовано локально. Cloudflare документирует последовательное транзакционное исполнение batch и rollback при ошибке ([D1 Database](https://developers.cloudflare.com/d1/worker-api/d1-database/)); parameter binding подготовленных statements рекомендован для безопасной передачи значений ([Prepared statements](https://developers.cloudflare.com/d1/worker-api/prepared-statements/)). Локальный тест использует pinned Miniflare 5, `convertV4MiniflareOptions` и Wrangler `unstable_splitSqlQuery`; финальные проверки пройдены и записаны в [Stage 4 report](30_STAGE4_REPORT.md), включая независимое review. |
+| ADR-024 | Полный baseline Claude локально требует полной counted history и status с совпадающим content revision, audience/window без фильтрации, совпадающим total count и согласованным пересечением ID; status union включает latest, ambiguous, announcement и offers. | Критерий реализации; он выявляет локально наблюдаемую неполноту/несогласованность, но не доказывает полноту upstream. Production completeness claim остаётся pending. |
+| ADR-025 | Непагинируемый Codex feed считается полным после проверки контракта и schema parse. | Явное локальное допущение о форме выбранного feed, не гарантия полноты upstream. Никакой fallback/union с `codex-resets.com` нет; production source/correlation policy остаётся pending. |
+| ADR-026 | HTTP cache сохраняет versioned representation с digest и provider/endpoint/query scope, максимум 128 endpoint на provider и 24h retention. | Локальная bounded-cache policy, чтобы `304` можно было восстановить и заново проверить; истёкший/повреждённый snapshot не даёт использовать validator. Это не разрешение долговременно зеркалить upstream editorial content. |
+| ADR-027 | Первый полный baseline каждого provider фиксируется атомарно и создаёт ноль publication candidates; `publish_approved_at` по умолчанию NULL. | Реализовано для локального bootstrap. Исторические/недавно датированные строки не создают baseline intent. Production approval требует отдельного решения. |
+| ADR-028 | Delivery journal принимает только synthetic destination; ambiguous outcome переходит в `uncertain_manual_review` без автоматического retry или lease recovery. | Локальная state machine без Telegram client/send. Это не exactly-once гарантия и не approval на реальные отправки. |
+| ADR-029 | Claude correction требует ссылку на ранее сохранённую версию того же upstream ID; Codex correction/announcement correlation остаётся нерешённой, эвристическое объединение запрещено. | Claude связывает reviewed transition с prior version. Codex ambiguous linkage остаётся pending и не сливается автоматически. |
+| ADR-030 | Codex storage identity включает surface (`event`/`scheduled`) и точный raw key как JSON tuple; provenance сохраняет raw ID/URL. | Локальная техническая идентичность: arbitrary event ID может совпасть с scheduled URL. Строки остаются независимыми при baseline и replay. |
+| ADR-031 | Наступивший exact/date target без delivery evidence переводит текущий future announcement в review, сохраняя прежнюю immutable версию/evidence. | Консервативное локальное time-derived состояние, candidate не создаётся. Никакого вывода о delivery/withdrawal; production staleness/eligibility остаются pending. Unknown target не получает выдуманный expiry. |
+
+Реализацию и границы Stage 4 фиксирует [D1 blueprint](03_DATA_AND_STATE.md).
+Production truth/eligibility, stale threshold, окончательная полнота источников,
+Codex correlation, срок хранения audit данных, publication activation и delivery
+остаются открытыми. Stage 4 не меняет Worker runtime wiring, public API, website
+или Stage 5.
 
 Before altering stack/site hosting, claiming delivery without evidence, implementing new providers, making bot personal, adding visitor tracking, enabling auto-prod-deploy or changing copyright/license, document decision + alternatives + risk and wait for owner approval.
 

@@ -1,17 +1,51 @@
 # 29 — Передача контекста после локального Stage 3
 
-Сохранено **2026-10-21**. Проект: `/Users/salman/pet_projects/reset-radar`.
-Актуальная ветка при реализации: `feat/stage3-codex-adapter`, от main
-`0268056c98ec73b19c15202ddfb56666f8c6edd7` (merged PR #2 с fixes `ae89017`).
-Перед новой работой проверь staged/unstaged/untracked и последние указания
-владельца. Исходный Stage 3 сохранён как `dbf5e3c`; [PR #3](https://github.com/Khimish009/reset-radar/pull/3)
-открыт из `feat/stage3-codex-adapter`. Владелец отдельно разрешил только два P2
-исправления с commit/push в эту ветку. Новый PR и merge не разрешены.
-**Stage 4 не разрешён.**
+Сохранено **2026-10-22, Europe/Moscow**; GitHub timestamps ниже — UTC.
+Проект: `/Users/salman/pet_projects/reset-radar`.
+Текущая локальная ветка при подготовке handoff: `feat/stage3-codex-adapter` на
+`06a90a97629704fce04a1e272ff9e75a89acb446`; рабочая копия была чистой. Перед
+новой работой перепроверь staged/unstaged/untracked, Git history, состояние PR
+и базу. См. также [подготовленный prompt Stage 4](../prompts/START_STAGE4.md):
+сам файл — только handoff и не разрешение начинать реализацию.
+
+## Последнее проверенное состояние PR #3 и границы следующей сессии
+
+GitHub connector подтвердил, что [PR #3](https://github.com/Khimish009/reset-radar/pull/3)
+закрыт и merged **2026-10-21 20:56:29 UTC**. Merge SHA и подтверждённый remote
+`main`: `2190622c0ace8f539b3eed788e33a9d68bbcdd91`. CI run #9 для P2 исправлений
+успешен: [GitHub Actions](https://github.com/Khimish009/reset-radar/actions/runs/39674152811).
+Merge выполнил владелец/внешний процесс; агент merge не выполнял.
+
+Локальная проверка refs показала, что и локальный
+`main`, и локальный `origin/main` всё ещё на `0268056c98ec73b19c15202ddfb56666f8c6edd7`,
+то есть отстают от подтверждённого remote merge SHA. Fetch не выполнялся:
+не смешивай последнее подтверждённое состояние GitHub с устаревшими локальными
+refs. Подготовительные изменения handoff/prompt/README/roadmap без commit не
+появятся в новом клоне; для продолжения используй эту же папку и сохрани эти
+изменения.
+
+Текущая просьба подготовить контекст не авторизует Stage 4. Предыдущее разрешение
+на commit/push относилось только к двум P2 исправлениям PR #3 и исчерпано.
+После нового явного assignment для Stage 4 сначала проверь рабочую копию,
+историю, актуальное состояние PR и базу. Только если assignment это прямо
+разрешает, выполни `git fetch` и безопасный fast-forward локального `main`;
+создай новую `feat/stage4-d1-policy` от обновлённого `main`, содержащего оба P2
+исправления. Если после проверки выяснится, что PR #3 gate не завершён или нужных
+исправлений нет в базе, остановись и сообщи владельцу; самостоятельно не сливай.
+Не продолжай на неподтверждённой или неожиданной базе.
+
+Только после отдельного assignment разрешена локальная работа Stage 4, включая
+локальную схему D1 и локальные миграции в его принятом scope. Не подключай Cron
+или runtime handlers, Telegram publisher Stage 5, public API Stage 9,
+production/remote D1 и deployment. Production publication policy и связанные
+ADR остаются pending. После явного Stage 4 assignment допустимы документированные
+консервативные локальные policy/transition/claim решения в scope промпта;
+они не утверждают production eligibility, publish activation или реальные sends.
+Не выполняй Stage 4 в сессии, где просят только подготовить prompt/handoff.
 
 ## Разрешение и результат
 
-Владелец явно разрешил только START_STAGE3.md и затем выбрал **codexreset.ai**.
+Владелец ранее явно разрешил только START_STAGE3.md и затем выбрал **codexreset.ai**.
 `codex-resets.com` остаётся исследованной альтернативой и archive credit;
 автоматического fallback, дополнительных API-вызовов или слияния историй нет.
 Дополнительное требование владельца — приоритет достоверного будущего анонса
@@ -22,11 +56,15 @@ transport и unpaginated reader. Handler’ы Worker не создают ада�
 scheduled/fetch инертны, Cron выключен, environments dry_run. Нет D1,
 Telegram publisher, публичных endpoints или website implementation.
 
-На завершении реализации новые код/тесты/evidence были untracked.
+Исходный Stage 3 сохранён в `dbf5e3cce1047a3188d710b37456136f3d6313db`; затем
+P2-фиксы сохранены в `06a90a97629704fce04a1e272ff9e75a89acb446` и отправлены
+в существующую ветку PR #3. На завершении первоначальной реализации новые
+код/тесты/evidence были untracked.
 Существовавшие до Stage 3 README, docs 08/27 и START_STAGE3 сохранены и входят
 в отдельно разрешённый локальный commit вместе с результатом Stage 3.
-При старте доработки PR #3 remote/local совпадали на `dbf5e3c`, CI этого SHA
-был successful. SHA исправлений сверять по Git history и фактическому head PR.
+При старте P2 доработки PR #3 remote/local совпадали на `dbf5e3c`, CI этого SHA
+был successful. P2 SHA и CI/merge факты указаны выше; локальные `main` refs
+не обновлялись и не отражают merge.
 
 ## Семантика и interfaces
 
@@ -76,11 +114,13 @@ Telegram publisher, публичных endpoints или website implementation.
 
 ## Проверки и продолжение
 
-Последние результаты доработки PR #3: typecheck/lint PASS, полный offline Vitest
-186 passed / 2 opt-in skipped, Stage 0 verify139 PASS, diff whitespace PASS.
-Независимое review двух P2 `pr3_p2_review` (reviewer, gpt-6.1-sol, reasoning high)
-завершено без оставшихся critical/high/medium findings; reviewer независимо
-выполнил те же пять обязательных проверок, включая полный набор 186 PASS / 2 skipped.
+Последние локальные результаты P2 доработки PR #3: typecheck/lint PASS, полный
+offline Vitest 186 passed / 2 opt-in skipped, Stage 0 verify139 PASS, diff
+whitespace PASS. Независимое review двух P2 `pr3_p2_review` (reviewer,
+gpt-6.1-sol, reasoning high) завершено без оставшихся critical/high/medium
+findings; reviewer независимо выполнил те же пять обязательных проверок,
+включая полный набор 186 PASS / 2 skipped. Эти результаты относятся к локальному
+P2 SHA `06a90a9`.
 Первоначальная HTTP simulation1 PASS относится к `dbf5e3c`; после чистых
 mapping исправлений simulation не повторялась. Mock остановлен, exit0/SIGINT.
 Первоначальное review `stage3_review` (reviewer, gpt-6.1-sol, reasoning high)

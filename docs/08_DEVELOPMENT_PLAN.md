@@ -42,11 +42,30 @@ Implement approved Codex feed and semantics (`announced_at != delivered_at`, fut
 требует отдельного проверенного offer evidence; явный scheduled futureTarget
 должен совпадать с raw по точности/значению. Merge, deployment и Stage 4 не разрешены.
 
+**Verified handoff update, 2026-10-22 Europe/Moscow:** оба P2 исправлены в
+`06a90a97629704fce04a1e272ff9e75a89acb446` и отправлены в ветку PR #3.
+Локальные проверки и независимое review успешны: 186 tests passed, 2 opt-in
+skipped, Stage 0 verify139 PASS; CI run #9 completed/success. GitHub подтвердил
+PR #3 merged `2026-10-21T20:56:29Z` в `2190622c0ace8f539b3eed788e33a9d68bbcdd91`,
+remote main тот же. Агент merge не выполнял. Текущий handoff сохраняет отличие
+от устаревших local main/origin/main refs; новая сессия обязана проверить базу.
+
 ## Stage 4 — D1 schema and shared normalization/policy
 
 D1 migrations, indexes, per-provider baseline, immutable revisions, source health, idempotent event policy and atomic Telegram delivery journal. Stale threshold/freshness contract needed for future API. Simulated overlapping Cron.
 
 **Acceptance:** local D1 tests and complete baseline without sending old events.
+
+**Локальная реализация, 2026-10-22:** владелец принял Stage 3 с исправлениями
+PR #3 и явно назначил [START_STAGE4.md](../prompts/START_STAGE4.md). Реализованы
+локальная migration, canonical D1 repository, immutable observations/material
+versions, независимые baseline и HTTP snapshot restore, typed normalization,
+прямой ingestion service и synthetic journal. Worker handlers и Cron инертны;
+publish approvals отсутствуют. Фактические проверки и ограничения:
+[Stage 4 report](30_STAGE4_REPORT.md), [current handoff](31_STAGE4_HANDOFF.md).
+Приёмка Stage 4 владельцем остаётся отдельным решением. Stage 5, runtime wiring,
+remote migrations, публикация, deployment и push/PR не разрешены. После проверок
+и консолидации владелец отдельно разрешил только локальный commit Stage 4.
 
 ## Stage 5 — Telegram publisher
 

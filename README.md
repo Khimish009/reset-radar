@@ -4,7 +4,7 @@
 
 An independent, open-source tracker for **Claude Code** and **OpenAI Codex** public reset announcements, verified applications, extra/banked quota offers and meaningful usage-limit changes. **Telegram delivers alerts; the website displays history, change details and a transparent, source-linked dashboard.**
 
-**Status: Stage 3 local Claude + Codex adapters — not a running service.** The owner selected **codexreset.ai** for Codex. Both adapters have source-specific parsing, conservative mapping and isolated HTTP/cache state; neither is wired into `scheduled()` or `fetch()`. D1, Telegram publishing, public data endpoints and website are not implemented. **Not deployed / not published.** Last documentation update: **2026-10-21**.
+**Status: Stage 4 local D1 and normalization — not a running service.** Claude Resets and the owner-selected **codexreset.ai** adapters now have a locally callable ingestion service, durable facts/versions, independent provider baselines, scoped HTTP cache and a synthetic delivery journal. Worker `scheduled()`/`fetch()` remain inert. Telegram publishing, public data endpoints and website are not implemented. **Not deployed / not published.** Last documentation update: **2026-10-22**.
 
 Local setup (Node version in `.nvmrc`):
 
@@ -16,7 +16,16 @@ npm test
 python3 docs/evidence/stage0-2026-10-21/verify.py
 ```
 
-`typecheck` first generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` defines isolated local/staging/production dry-run targets with no bindings, routes or active Cron triggers. The Worker handlers remain inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. The standalone adapters read only their selected public feeds when explicitly invoked. Codex future announcements require separate primary-evidence assessment; expected time can remain unknown, and announcement/delivery/detection clocks stay separate. `codex-resets.com` is archive credit and an investigated alternative only, without fallback or history union. CORS and real public endpoints belong to Stage 9. See the [Stage 3 report](docs/28_STAGE3_REPORT.md) and [current handoff](docs/29_STAGE3_HANDOFF.md).
+`typecheck` generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` retains isolated dry-run targets with no bindings, routes or active Cron triggers. The Worker handlers remain inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. The separate local ingestion service uses injected clock/fetch and D1; tests use synthetic source data. Codex uses only `codexreset.ai`, with no fallback or union with `codex-resets.com`. CORS and real public endpoints belong to Stage 9. See the [Stage 4 report](docs/30_STAGE4_REPORT.md) and [current handoff](docs/31_STAGE4_HANDOFF.md).
+
+Stage 4 local D1 checks (Miniflare/workerd needs loopback access):
+
+```sh
+npm run d1:migrate:local
+npm run test:d1
+```
+
+The migration command uses the separate `wrangler.d1.local.json` with a local-only database ID and explicit `--local`; state stays under ignored `.wrangler/stage4-d1/`. It does not configure staging or production resources. Publication approval remains absent for both providers.
 
 | Surface | Role | Planned link |
 |---|---|---|
@@ -61,12 +70,13 @@ Codex reset API ┘                                           │
 
 ## Start with Codex CLI (recommended workflow)
 
-1. Read `AGENTS.md`, this README, the [current handoff](docs/29_STAGE3_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
+1. Read `AGENTS.md`, this README, the [current handoff](docs/31_STAGE4_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
 2. Run Codex from the repository root and inspect `git status`, including staged and unstaged changes; preserve existing work.
-3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage. Stage 3 was explicitly authorized for local implementation only. Stage 4 requires a separate assignment.
+3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage. The owner accepted Stage 3 and explicitly assigned only local Stage 4. Stage 5 requires a new assignment.
 4. Report actual changes/checks and stop before the next stage. See `prompts/STAGE_REVIEW.md`.
 5. For a new project beginning with source research, `prompts/START_CODEX.md` describes Stage 0. When resuming this repository, use the current handoff rather than repeating completed stages.
-6. [START_STAGE3](prompts/START_STAGE3.md) records the local assignment and its original source/base gates. The owner subsequently chose `codexreset.ai`; Stage 3 uses `main` containing the merged Stage 2 fixes. The owner now authorizes only the two P2 fixes, commit and push to the existing [PR #3](https://github.com/Khimish009/reset-radar/pull/3). Merge, deployment and Stage 4 remain unauthorized.
+6. [PR #3](https://github.com/Khimish009/reset-radar/pull/3), including both P2 fixes in `06a90a9`, was verified merged as `2190622`; CI run #9 passed. Stage 4 was implemented in an isolated worktree, then consolidated into the main project directory on `feat/stage4-d1-policy` after separate owner approval. Local `main` is now fast-forwarded to `2190622`. The owner subsequently authorized a local Stage 4 commit; obtain its SHA from Git history. The stash, temporary worktree and verified recovery backup are preserved; see the current handoff.
+7. [START_STAGE4](prompts/START_STAGE4.md) records the local implementation assignment. Only the subsequent local commit was separately authorized. Push/PR, merging Stage 4 into `main`, remote migrations, deployment, Telegram sends and Stage 5 remain unauthorized.
 
 ## Documents
 
@@ -80,8 +90,10 @@ Codex reset API ┘                                           │
 - `docs/21_LEGAL_AND_LICENSE.md` — existing MIT license, third-party attribution, privacy and open brand/data-rights questions.
 - `docs/24_STAGE1_REPORT.md`, `docs/25_STAGE1_HANDOFF.md` — historical Stage 1 result and handoff.
 - `docs/26_STAGE2_REPORT.md`, `docs/27_STAGE2_HANDOFF.md` — historical Stage 2 result and handoff.
-- [Stage 3 report](docs/28_STAGE3_REPORT.md), [current handoff](docs/29_STAGE3_HANDOFF.md) — local Codex adapter, checks, limitations and pending owner decisions.
+- [Stage 3 report](docs/28_STAGE3_REPORT.md), [historical handoff](docs/29_STAGE3_HANDOFF.md) — accepted local Codex adapter and PR #3 fixes.
+- [Stage 4 report](docs/30_STAGE4_REPORT.md), [current handoff](docs/31_STAGE4_HANDOFF.md) — local D1, normalization, ingestion, checks and pending production decisions.
 - `prompts/START_STAGE3.md` — local Codex adapter assignment with explicit source/base gates.
+- `prompts/START_STAGE4.md` — explicitly assigned local D1/policy scope; reading or preparing the prompt alone grants no permission.
 - `manual/OWNER_CHECKLIST.md` — actions that require the owner, **no secrets**.
 - `prompts/START_CODEX.md` — exact Stage 0 assignment; `prompts/STAGE_REVIEW.md` — stage acceptance report.
 - `brand/channel-avatar.png`, `brand/bot-avatar.png` — distinct matching brand assets.

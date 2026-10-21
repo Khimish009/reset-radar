@@ -49,12 +49,22 @@
 - [x] Test future announcements with known and unknown expected time separately from delivery; preserve primary URL, scope and detection/announcement clocks. Hinted/rumors remain review.
 - [x] Record targeted live contract observations separately from synthetic tests; keep the Stage 0 archive unchanged.
 - [x] Typecheck/lint/offline tests/local HTTP simulation passed; independent review completed with no remaining critical/high/medium findings.
-- [ ] Owner reviews [Stage 3 report](../docs/28_STAGE3_REPORT.md) and independent review, then accepts or requests changes.
+- [x] Owner accepted local Stage 3 with PR #3 fixes when assigning the local Stage 4 task.
 - [x] Owner separately authorized a local Stage 3 commit after the report.
 - [x] Owner separately authorized two P2 fixes, independent review and commit/push to the existing PR #3 branch only.
-- [ ] Separately authorize merge/new PR operations and a new Stage 4 assignment. No D1, deployment or Telegram send is authorized.
+- [x] Owner separately authorized only local Stage 4. This does not authorize commit/push/PR/merge, remote D1, deployment, Telegram sends or Stage 5.
 
-## Worker/D1 staging (later)
+## Stage 4 — local D1, normalization and ingestion
+
+- [ ] Review the final local Stage 4 report and independent review before accepting the stage.
+- [ ] Confirm D1 schema/constraints, immutable observations and material versions, CAS + batch rollback, per-provider baseline, recoverable scoped HTTP cache, and synthetic journal outcomes against actual test results.
+- [ ] Confirm assumptions remain labeled: Codex's unpaginated feed is treated as complete locally; Claude's count/revision/status-union check establishes client consistency, not official upstream completeness.
+- [ ] Keep production truth/eligibility, staleness threshold, Codex correction correlation, retention beyond the bounded HTTP cache, and provider activation policy pending until separately decided.
+- [ ] Check actual outputs for `npm run typecheck`, `npm run lint`, `npm test`, local-only D1 migration/integration, Stage 0 evidence verification, and `git diff --check`; do not treat this checklist as evidence that a command passed.
+- [x] Owner separately authorized a local Stage 4 commit, including the preserved preparation and workspace consolidation documentation.
+- [ ] Separately authorize push, PR, merging Stage 4, remote migration, deployment, Telegram send or Stage 5. The local commit does not grant these permissions.
+
+## Worker/D1 staging (later; separate authorization)
 
 - [ ] Create Cloudflare account and login via Wrangler *interactively* when authorized.
 - [ ] Approve staging D1, test channel configuration and staging Worker deploy (never production accidentally).
