@@ -174,12 +174,17 @@ Worker/Cron/D1/Telegram/API, конфигурация и зависимости 
 `npm test` **186 passed / 2 skipped**, Stage 0 `verify.py` **139 PASS**,
 `git diff --check` PASS. Два skipped — opt-in HTTP simulations. Новый live GET
 или simulation не запускались: изменён чистый mapping, HTTP contract не менялся.
-Исходный CI SHA `dbf5e3c` — successful run #8; CI новых исправлений не считается
-пройденным заранее. Независимое review `pr3_p2_review` (reviewer,
+Исходный CI SHA `dbf5e3c` — successful run #8. После разрешённого push исправлений
+`06a90a97629704fce04a1e272ff9e75a89acb446` [CI run #9](https://github.com/Khimish009/reset-radar/actions/runs/39674152811)
+завершился completed/success. Независимое review `pr3_p2_review` (reviewer,
 gpt-6.1-sol, reasoning high) завершено: оставшихся critical/high/medium findings
 нет. Reviewer независимо выполнил typecheck, lint, полный Vitest
 186 PASS / 2 skipped, Stage 0 verify139 PASS и diff check PASS.
 
-После успешных проверок и review разрешён commit/push в существующую ветку.
-Фактический SHA/результат push фиксируются в Git/итоговом сообщении; merge не
-выполняется. **Не развёрнуто / не опубликовано. Stage 4 не начат.**
+После успешных проверок и review выполнены разрешённые commit/push в существующую
+ветку; фактический SHA — `06a90a97629704fce04a1e272ff9e75a89acb446`.
+При подготовке следующего handoff GitHub подтвердил PR #3 merged
+`2026-10-21T20:56:29Z`, merge/main SHA `2190622c0ace8f539b3eed788e33a9d68bbcdd91`.
+Агент merge не выполнял. Подготовка START_STAGE4 не переносит разрешение
+commit/push и не начинает следующий этап.
+**Не развёрнуто / не опубликовано. Stage 4 не начат.**

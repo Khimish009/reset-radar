@@ -28,7 +28,58 @@ Stage 2 checks exercise the standalone Claude adapter only. The `Worker schedule
 - [x] Preserve scope/unknown audience and seeded/archive attribution. Detection of new/changed contents is retained in memory separately from HTTP check time; missing rows/scheduled retain provenance without inferred withdrawal.
 - [x] Conditional GET/304/cache, 60s floor/current 300s default, Retry-After/429/503, body limits, cancellation/lock/listener cleanup, late responses and independent Claude/Codex state covered offline.
 - [x] Opt-in real HTTP against our local synthetic Postman simulation exercises both providers and failure isolation. It does not verify live primary evidence or production behavior.
-- [ ] Owner acceptance of Stage 3 and separate production truth/publication policy; see [Stage 3 report](28_STAGE3_REPORT.md).
+- [x] Owner accepted local Stage 3 with PR #3 fixes when assigning Stage 4.
+- [ ] Separate production truth/publication policy approval; see [Stage 3 report](28_STAGE3_REPORT.md).
+
+### Stage 4 — локальная D1, normalization и ingestion
+
+Stage 4 tests должны использовать локальный workerd D1, а не SQL mock. Harness
+создаёт binding через pinned `miniflare@5.20261019.1-beta` и
+`convertV4MiniflareOptions`, затем применяет SQL, разбитый
+`unstable_splitSqlQuery` из установленного Wrangler. Это проверяет локальную
+совместимость D1 API и миграции; remote D1 поведение и production runtime этим не
+подтверждаются.
+
+- [x] Миграция создаёт таблицы, constraints, foreign keys, индексы и immutable triggers.
+- [x] Ошибка одного statement в snapshot `D1.batch()` откатывает всю операцию; конкурирующий provider generation проигрывает CAS без частичного commit.
+- [x] Version/observation неизменяемы; шум ключей JSON, ETag, check time и revision-only изменения не создают material transition; A→B→A создаёт три последовательные версии.
+- [x] Baseline каждого provider независим, идемпотентен и создаёт ноль publication candidates, даже для свежих строк; approval остаётся `NULL`.
+- [x] Повторное чтение/restart с тем же D1 сохраняет `detectedAt` и `first_detected_at`; новые material observations не переписывают первое обнаружение.
+- [x] `304` восстанавливает schema-valid snapshot только для того же provider/endpoint/query; повреждённый, истёкший или неверной версии cache не использует validator. Проверяются лимит 128 endpoints и retention 24 часа.
+- [x] Claude baseline требует counted history + status union, matching content revision, total и пересечение ID; partial/outage не завершает baseline. Codex unpaginated completeness явно тестируется как локальное допущение.
+- [x] Ошибка одного provider не блокирует другой; сбои сохраняют последний valid snapshot и события; missing records не превращаются в withdrawal.
+- [x] Assessment привязан к digest raw content; stale/rejected evidence не переносит ссылки/audience. Claude correction указывает на сохранённую earlier version; Codex ambiguous correlation не объединяется эвристически.
+- [x] Future announcement, позднее подтверждённая доставка и неизвестное expected time остаются отдельными truth cases; `delivered_at=null` не становится confirmation, banked offer не считается использованным.
+- [x] Параллельный synthetic claim даёт только один committed initial claim для уникального destination; retry разрешён лишь после явного `retryable`; ambiguous outcome остаётся `uncertain_manual_review` после restart без lease recovery.
+- [x] Ни один тест не вызывает live upstream API, Telegram или production endpoint; Worker handlers остаются инертными.
+
+**Финальные команды Stage 4 и результаты: [Stage 4 report](30_STAGE4_REPORT.md).**
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run d1:migrate:local
+npm run test:d1
+python3 docs/evidence/stage0-2026-10-21/verify.py
+git diff --check
+```
+
+Финальный результат: typecheck/lint PASS; полный Vitest **226 passed / 3 opt-in
+skipped**; `test:d1` **24 PASS**; normalization **16 PASS**; migration **23 commands
+PASS**, повтор без новых migrations; Stage 0 verify **139 PASS**. Opt-in Stage 4
+HTTP+D1 simulation — **1 PASS**, финальные 18 HTTP requests (36 за два успешных
+прогона), runtime restart/304/errors. Simulation остановлена SIGINT, exit 0.
+Независимый reviewer повторил полный Vitest 226/3, typecheck/lint/verify/diff-check.
+Оба medium finding исправлены: explicit Claude correction/retraction не обходит
+truth gate через unknown future, Codex event/scheduled identities не коллидируют.
+Website build к Stage 4 не относится.
+
+Revision-only metadata не меняет hash при неизменном принятом evidence. Если
+полная raw запись изменилась, assessment становится stale; потеря принятого
+assertion сама является значимым изменением и ведёт в review. Наступивший
+future target без delivery evidence также консервативно переводится в review,
+с сохранением прежней immutable версии (ADR-031).
 
 - [ ] Claude: confirmed reset, future announcement, active/redeemable banked offer, expired offer, revision and explicit withdrawal, unexpected enum.
 - [ ] Codex: announcement with `delivered_at=null` **never** labeled complete; delivered later creates correct state change; `scheduled.certainty=hinted` not auto-published.

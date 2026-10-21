@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "reset-radar-d1-local-test",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-21",
+  "workers_dev": false,
+  "preview_urls": false,
+  "send_metrics": false,
+  "triggers": { "crons": [] },
+  "vars": { "APP_ENV": "local", "PUBLISH_MODE": "dry_run" },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "reset-radar-stage4-test",
+    "database_id": "stage4-local-only",
+    "migrations_dir": "migrations"
+  }]
+}
