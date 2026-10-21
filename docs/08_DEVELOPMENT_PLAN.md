@@ -25,15 +25,17 @@ Initialize TypeScript strict Worker `scheduled` and no-op `fetch` routing skelet
 
 HTTP conditional GET + runtime parsing/ETag/304/429/retry, history paging as Stage 0 allows, observed statuses/offers/revisions mapped to safe normalized events. Unknown -> review. Fixtures and regression tests.
 
-**Implementation status, 2026-10-21:** локальный Claude adapter реализован в границах отдельного разрешения владельца. Он читает только status/resets/sources Claude Resets, строго проверяет контракт, сохраняет последний валидный снимок в переданном in-memory state и не подключён к Worker handlers, D1 или Telegram. Реальные проверки, ограничения и ожидающее независимое review записаны в [отчёте Stage 2](26_STAGE2_REPORT.md). Это не принятие владельцем результата и не утверждение production truth policy.
+**Implementation status, 2026-10-21:** локальный Claude adapter реализован в границах отдельного разрешения владельца. Он читает только status/resets/sources Claude Resets, строго проверяет контракт, сохраняет последний валидный снимок в переданном in-memory state и не подключён к Worker handlers, D1 или Telegram. Владелец принял архитектуру и основную реализацию и разрешил три исправления PR #2. Исправления находятся в `ae89017`, независимое review завершено без существенных оставшихся findings; локальные проверки и CI этого SHA успешны. Подробности: [отчёт Stage 2](26_STAGE2_REPORT.md), [актуальный handoff](27_STAGE2_HANDOFF.md). Production truth policy не утверждена.
 
-**Acceptance:** source truth table in tests, failure isolation. Итог acceptance владельцем ожидает review и отдельного решения. Stage 3 требует нового явного задания владельца.
+**Acceptance:** source truth table in tests, failure isolation. Архитектура/основная реализация приняты; исправления внешнего review выполнены и проверены. PR #2 merged в `main` как `0268056`; в рамках подготовки следующего промпта агент merge не выполнял. Stage 3 требует нового явного задания владельца и выбора Codex feed.
 
 ## Stage 3 — Codex adapter
 
 Implement approved Codex feed and semantics (`announced_at != delivered_at`, future scheduled hint vs announced, seeded attribution, banked), stable IDs and safe fallback. Fixtures.
 
 **Acceptance:** verified delivery never inferred from timing; tests green.
+
+**Local implementation, 2026-10-21:** владелец отдельно разрешил [START_STAGE3.md](../prompts/START_STAGE3.md) и выбрал `codexreset.ai`. Реализованы строгая схема, source-specific mapping и независимый HTTP/cache reader. Достоверный будущий анонс может иметь exact/date/unknown ожидаемое время; доставка требует отдельного достаточного evidence и непустого `delivered_at`. Scope, detection/announcement/delivery clocks и seeded attribution сохранены. Worker остаётся инертным, D1/publisher не добавлены. Проверки и review: [28_STAGE3_REPORT.md](28_STAGE3_REPORT.md); текущий контекст: [29_STAGE3_HANDOFF.md](29_STAGE3_HANDOFF.md). Production truth/publication policy остаётся pending. После отчёта владелец отдельно разрешил локальный commit; push/PR, deployment и Stage 4 не разрешены.
 
 ## Stage 4 — D1 schema and shared normalization/policy
 

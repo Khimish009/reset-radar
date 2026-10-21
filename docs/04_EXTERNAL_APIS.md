@@ -64,7 +64,7 @@
 
 [Fair use](https://codexreset.ai/developers/) разрешает API use без ключа, просит обратную ссылку, кэширование и частоту ниже примерно 1 запроса/минуту. Наш 5-минутный Cron укладывается в ориентир. Для seeded истории до 2026-09-10 сохранять seeded, attribution.seed_archive и ссылку на [codex-resets.com](https://codex-resets.com/), даже если публичная модель использует historicalSeed.
 
-**Предлагаемый основной источник — CodexReset:** отдельные announcement/delivery поля и явная архивная provenance. **Владелец ещё не выбрал источник.** Оговорка: альтернатива содержит запись 20 октября, которой здесь нет. Свежий generated_at не доказывает актуальный охват.
+**Предложенный Stage 0 основной источник — CodexReset:** отдельные announcement/delivery поля и явная архивная provenance. Владелец впоследствии **выбрал `codexreset.ai` только для локального Stage 3**; это не production signoff. Оговорка исторического снимка: альтернатива содержит запись 20 октября, которой здесь нет. Свежий generated_at не доказывает актуальный охват.
 
 **Условный GO:** чтение и история с точными evidence/seeded метками. **NO-GO:** автоматическое подтверждение по kind=regular, истечению времени, scope=all или слабому delivery URL; hinted-прогнозы; полная официальная статистика; публикация baseline в Telegram.
 
@@ -106,7 +106,30 @@ Mapper сохраняет raw kind/status, upstream ID/revision, URL и evidence
 
 Адаптер не включён в Worker `scheduled()`/`fetch()`, не записывает D1, не запускает transitions/publisher и не создаёт Telegram-сообщения. Текущие проверки и ограничения перечислены в [Stage 2 report](26_STAGE2_REPORT.md); итоговое независимое review и принятие владельцем остаются отдельными gates.
 
-## Checklist Stage 0
+## G. Codex adapter — локальное состояние Stage 3, 2026-10-21
+
+После явного выбора владельцем `codexreset.ai` реализован standalone adapter
+только для `GET /api/v1/resets.json`. Targeted live GET принят строгим parser:
+schema v1, 62 строки, 53 seeded, 56 null delivery; scheduled=null. Отдельные
+[contract/HTTP metadata](evidence/stage3-codex-2026-10-21/README.md) не являются
+полными fixtures. Первичные delivery posts независимо не подтверждались.
+
+Source-specific result сохраняет `detectedAt`, raw timestamps/scope,
+`expectedTime` (exact/date/unknown), attribution и valid reviewed primary
+evidence. Достоверный future announcement может быть представлен до доставки,
+включая regular announcement без известной даты; это требует отдельного
+content-bound semantic assessment с явным `primarySourceUrl`. Ненулевой
+scheduled по документированному контракту требует day; неизвестная форма не
+принимается как будто это nullable day. Hinted остаётся review. `effective`
+не заполняется из ts/date; delivered timestamp сам по себе не confirmation.
+
+HTTP/cache/backoff изолированы от Claude; 300s default TTL, минимум 60s и
+valid max-age/Age, bounded response/timeout/cleanup. Нет альтернативного feed,
+pagination, persistence или публикации. In-memory reader сохраняет пропавшие
+строки и scheduled с provenance без inferred withdrawal. [Stage 3 report](28_STAGE3_REPORT.md)
+содержит тесты, независимое review и незакрытые production gates.
+
+## Checklist Stage 0 (исторический результат)
 
 - [x] Реальные обязательные endpoints и API-ссылка альтернативы.
 - [x] Headers, conditional GET, JSON/IDs/offers/revisions, проверка границ пагинации; пробелы отмечены.

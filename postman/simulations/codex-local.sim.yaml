@@ -1,0 +1,7 @@
+simulation: codex-stage3-local
+routing: path
+mocks:
+  - routeKey: codex
+    path: ../mocks/codex/codex.js
+  - routeKey: claude
+    path: ../mocks/claude/default.js
