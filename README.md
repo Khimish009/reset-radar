@@ -4,7 +4,19 @@
 
 An independent, open-source tracker for **Claude Code** and **OpenAI Codex** public reset announcements, verified applications, extra/banked quota offers and meaningful usage-limit changes. **Telegram delivers alerts; the website displays history, change details and a transparent, source-linked dashboard.**
 
-**Status: design and Codex-ready documentation — not a running service.** This starter contains no working Worker, deployed website or configured private bot. Last documentation update: **2026-10-21**.
+**Status: Stage 1 local Worker foundation — not a running service.** The Worker has no-op scheduled/HTTP handlers, strict TypeScript, tests and CI checks. Adapters, D1, Telegram publishing, public data endpoints and website are not implemented. **Not deployed / not published.** Last documentation update: **2026-10-21**.
+
+Local setup (Node version in `.nvmrc`):
+
+```sh
+npm ci
+npm run typecheck
+npm run lint
+npm test
+python3 docs/evidence/stage0-2026-10-21/verify.py
+```
+
+`typecheck` first generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` defines isolated local/staging/production dry-run targets with no bindings, routes or active Cron triggers. The three reserved API paths return `501 not_implemented`; other read paths return `404`, write methods return `405`. No handler calls upstream, Telegram or D1. CORS and real public endpoints belong to Stage 9. See [Stage 1 report](docs/24_STAGE1_REPORT.md).
 
 | Surface | Role | Planned link |
 |---|---|---|
@@ -79,4 +91,4 @@ Codex reset API ┘                                           │
 
 ## Contributing and license
 
-Issues and PRs are welcome after the owner enables them. **License choice is pending owner approval** (MIT was recommended, not automatically granted). The public visibility of a repository does not itself grant permission for unrestricted reuse. Brand artwork may have separate usage terms. See `docs/21_LEGAL_AND_LICENSE.md`.
+Issues and PRs are welcome after the owner enables them. The existing tracked [LICENSE](LICENSE) contains MIT, copyright 2026 Salman, and is preserved unchanged. Some starter documents still say licensing is pending; that known discrepancy is recorded in `docs/09_DECISIONS.md`. Stage 1 makes no new owner licensing decision. Brand artwork may have separate usage terms. See `docs/21_LEGAL_AND_LICENSE.md`.

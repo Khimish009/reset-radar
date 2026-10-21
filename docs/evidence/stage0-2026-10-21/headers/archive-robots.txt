@@ -1,0 +1,6 @@
+HTTP/2 200 
+date: Wed, 21 Oct 2026 17:14:00 GMT
+content-type: text/plain
+content-length: 70
+cache-control: public, max-age=0, must-revalidate
+etag: "1c0024b01ca6b167ee48aab922e20353"

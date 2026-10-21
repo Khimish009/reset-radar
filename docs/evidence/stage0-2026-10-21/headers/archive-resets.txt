@@ -1,0 +1,7 @@
+HTTP/2 200 
+date: Wed, 21 Oct 2026 17:14:18 GMT
+content-type: application/json
+content-length: 29653
+access-control-allow-origin: *
+cache-control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
+etag: "d621edc68612c4d664854eedd7968f343dd4cbb12b394946cc634c2758b52a53"

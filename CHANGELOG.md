@@ -1,5 +1,11 @@
 # Changelog
 
+## Stage 1 foundation — 2026-10-21
+
+- Added local strict TypeScript Worker no-op scheduled/HTTP entry points, event/provider vocabulary, isolated dry-run targets and safe logging/runtime dependencies.
+- Added reproducible npm tooling, Vitest checks and CI without deployment; made existing docs/manual/prompts visible to Git.
+- No adapters, database, publisher, website, deployment or publication. Source/truth-policy decisions remain pending. Existing MIT LICENSE unchanged.
+
 ## v3 — 2026-10-21
 
 - Product now includes Telegram notifications **and a public, read-only analytics website** with a consistent normalized event history for Claude Code + Codex.

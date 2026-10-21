@@ -1,0 +1,6 @@
+HTTP/2 304 
+date: Wed, 21 Oct 2026 17:14:18 GMT
+content-type: application/json; charset=utf-8
+access-control-allow-origin: *
+cache-control: public, max-age=300
+x-robots-tag: noindex

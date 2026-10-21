@@ -1,0 +1,7 @@
+HTTP 200
+Date: Wed, 21 Oct 2026 17:12:26 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 36368
+Cache-Control: public, max-age=3600, stale-while-revalidate=7200
+ETag: W/"4e3b880cc8668581"
+Vary: Accept-Encoding

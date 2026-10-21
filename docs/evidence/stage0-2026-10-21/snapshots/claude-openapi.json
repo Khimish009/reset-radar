@@ -1,0 +1,2649 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://clauderesets.com"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "ResetSummary": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "usage_reset",
+              "limit_increase",
+              "credit",
+              "policy_change",
+              "incident"
+            ]
+          },
+          "event_status": {
+            "type": "string",
+            "enum": [
+              "announced",
+              "confirmed",
+              "cancelled",
+              "retracted"
+            ]
+          },
+          "time_precision": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "date"
+            ]
+          },
+          "announced_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "announced_on": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "utc_day": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "effective_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "effective_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reset_offer": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "expires_on": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "expires_on"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "allocation": {
+            "type": "string",
+            "enum": [
+              "subscription_usage",
+              "api",
+              "unspecified"
+            ]
+          },
+          "audience": {
+            "type": "object",
+            "properties": {
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "broad",
+                  "limited",
+                  "unspecified"
+                ]
+              },
+              "statement": {
+                "type": "string"
+              },
+              "plans": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "all"
+                  },
+                  {
+                    "type": "string",
+                    "const": "subscribers"
+                  },
+                  {
+                    "type": "string",
+                    "const": "unspecified"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "free",
+                        "pro",
+                        "max",
+                        "team",
+                        "enterprise"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "exclusions": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "scope",
+              "statement",
+              "plans",
+              "exclusions"
+            ],
+            "additionalProperties": false
+          },
+          "windows": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "five_hour",
+                "weekly",
+                "other",
+                "unspecified"
+              ]
+            }
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "handle": {
+                  "type": "string"
+                },
+                "display_name": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "original",
+                    "relay"
+                  ]
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "x_post",
+                    "web_page",
+                    "status_page"
+                  ]
+                },
+                "posted_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "excerpt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "url",
+                "handle",
+                "display_name",
+                "role",
+                "kind",
+                "posted_at",
+                "excerpt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "url": {
+            "type": "string"
+          },
+          "first_published_at": {
+            "type": "string"
+          },
+          "revised_at": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "correction": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "correction",
+                      "retraction"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "reason",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "related_event_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "event_status",
+          "title",
+          "summary",
+          "time_precision",
+          "announced_at",
+          "announced_on",
+          "utc_day",
+          "effective_at",
+          "effective_note",
+          "reset_offer",
+          "allocation",
+          "audience",
+          "windows",
+          "sources",
+          "url",
+          "first_published_at",
+          "revised_at",
+          "revision",
+          "correction",
+          "related_event_ids"
+        ],
+        "additionalProperties": false
+      },
+      "Stats": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "last_reset_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_reset_on": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "days_since_last": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "avg_interval_days": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "longest_gap_days": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "eligible_gaps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "total_gaps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "exact_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "partial_sample": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "total",
+          "last_reset_at",
+          "last_reset_on",
+          "days_since_last",
+          "avg_interval_days",
+          "longest_gap_days",
+          "eligible_gaps",
+          "total_gaps",
+          "exact_count",
+          "partial_sample"
+        ],
+        "additionalProperties": false
+      },
+      "Meta": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "const": "v1"
+          },
+          "generated_at": {
+            "type": "string"
+          },
+          "content_revision": {
+            "type": "string"
+          },
+          "editorial_reviewed_at": {
+            "type": "string"
+          },
+          "coverage_start": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "api_version",
+          "generated_at",
+          "content_revision",
+          "editorial_reviewed_at",
+          "coverage_start"
+        ],
+        "additionalProperties": false
+      },
+      "Filters": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "audience": {
+            "type": "string",
+            "enum": [
+              "all",
+              "broad",
+              "max",
+              "pro",
+              "team"
+            ]
+          },
+          "window": {
+            "type": "string",
+            "enum": [
+              "any",
+              "five_hour",
+              "weekly"
+            ]
+          }
+        },
+        "required": [
+          "audience",
+          "window"
+        ],
+        "additionalProperties": false
+      },
+      "StatusResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "latest_reset": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "usage_reset",
+                          "limit_increase",
+                          "credit",
+                          "policy_change",
+                          "incident"
+                        ]
+                      },
+                      "event_status": {
+                        "type": "string",
+                        "enum": [
+                          "announced",
+                          "confirmed",
+                          "cancelled",
+                          "retracted"
+                        ]
+                      },
+                      "time_precision": {
+                        "type": "string",
+                        "enum": [
+                          "exact",
+                          "date"
+                        ]
+                      },
+                      "announced_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "announced_on": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "utc_day": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "effective_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "effective_note": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "reset_offer": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "expires_on": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "expires_on"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "allocation": {
+                        "type": "string",
+                        "enum": [
+                          "subscription_usage",
+                          "api",
+                          "unspecified"
+                        ]
+                      },
+                      "audience": {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "broad",
+                              "limited",
+                              "unspecified"
+                            ]
+                          },
+                          "statement": {
+                            "type": "string"
+                          },
+                          "plans": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "const": "all"
+                              },
+                              {
+                                "type": "string",
+                                "const": "subscribers"
+                              },
+                              {
+                                "type": "string",
+                                "const": "unspecified"
+                              },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "free",
+                                    "pro",
+                                    "max",
+                                    "team",
+                                    "enterprise"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "exclusions": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "statement",
+                          "plans",
+                          "exclusions"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "windows": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "five_hour",
+                            "weekly",
+                            "other",
+                            "unspecified"
+                          ]
+                        }
+                      },
+                      "sources": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "type": "string"
+                            },
+                            "handle": {
+                              "type": "string"
+                            },
+                            "display_name": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string",
+                              "enum": [
+                                "original",
+                                "relay"
+                              ]
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "x_post",
+                                "web_page",
+                                "status_page"
+                              ]
+                            },
+                            "posted_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "excerpt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "url",
+                            "handle",
+                            "display_name",
+                            "role",
+                            "kind",
+                            "posted_at",
+                            "excerpt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "url": {
+                        "type": "string"
+                      },
+                      "first_published_at": {
+                        "type": "string"
+                      },
+                      "revised_at": {
+                        "type": "string"
+                      },
+                      "revision": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "correction": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "correction",
+                                  "retraction"
+                                ]
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "reason",
+                              "at"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "related_event_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind",
+                      "event_status",
+                      "title",
+                      "summary",
+                      "time_precision",
+                      "announced_at",
+                      "announced_on",
+                      "utc_day",
+                      "effective_at",
+                      "effective_note",
+                      "reset_offer",
+                      "allocation",
+                      "audience",
+                      "windows",
+                      "sources",
+                      "url",
+                      "first_published_at",
+                      "revised_at",
+                      "revision",
+                      "correction",
+                      "related_event_ids"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "latest_ambiguous": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "usage_reset",
+                            "limit_increase",
+                            "credit",
+                            "policy_change",
+                            "incident"
+                          ]
+                        },
+                        "event_status": {
+                          "type": "string",
+                          "enum": [
+                            "announced",
+                            "confirmed",
+                            "cancelled",
+                            "retracted"
+                          ]
+                        },
+                        "time_precision": {
+                          "type": "string",
+                          "enum": [
+                            "exact",
+                            "date"
+                          ]
+                        },
+                        "announced_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "announced_on": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "utc_day": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "effective_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "effective_note": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "reset_offer": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "expires_on": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "expires_on"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "allocation": {
+                          "type": "string",
+                          "enum": [
+                            "subscription_usage",
+                            "api",
+                            "unspecified"
+                          ]
+                        },
+                        "audience": {
+                          "type": "object",
+                          "properties": {
+                            "scope": {
+                              "type": "string",
+                              "enum": [
+                                "broad",
+                                "limited",
+                                "unspecified"
+                              ]
+                            },
+                            "statement": {
+                              "type": "string"
+                            },
+                            "plans": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "const": "all"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "subscribers"
+                                },
+                                {
+                                  "type": "string",
+                                  "const": "unspecified"
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "enum": [
+                                      "free",
+                                      "pro",
+                                      "max",
+                                      "team",
+                                      "enterprise"
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            "exclusions": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "scope",
+                            "statement",
+                            "plans",
+                            "exclusions"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "windows": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "five_hour",
+                              "weekly",
+                              "other",
+                              "unspecified"
+                            ]
+                          }
+                        },
+                        "sources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string"
+                              },
+                              "handle": {
+                                "type": "string"
+                              },
+                              "display_name": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "original",
+                                  "relay"
+                                ]
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "x_post",
+                                  "web_page",
+                                  "status_page"
+                                ]
+                              },
+                              "posted_at": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "excerpt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "url",
+                              "handle",
+                              "display_name",
+                              "role",
+                              "kind",
+                              "posted_at",
+                              "excerpt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "first_published_at": {
+                          "type": "string"
+                        },
+                        "revised_at": {
+                          "type": "string"
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "correction": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "correction",
+                                    "retraction"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "at": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "reason",
+                                "at"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "related_event_ids": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "kind",
+                        "event_status",
+                        "title",
+                        "summary",
+                        "time_precision",
+                        "announced_at",
+                        "announced_on",
+                        "utc_day",
+                        "effective_at",
+                        "effective_note",
+                        "reset_offer",
+                        "allocation",
+                        "audience",
+                        "windows",
+                        "sources",
+                        "url",
+                        "first_published_at",
+                        "revised_at",
+                        "revision",
+                        "correction",
+                        "related_event_ids"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "announced_reset": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "usage_reset",
+                          "limit_increase",
+                          "credit",
+                          "policy_change",
+                          "incident"
+                        ]
+                      },
+                      "event_status": {
+                        "type": "string",
+                        "enum": [
+                          "announced",
+                          "confirmed",
+                          "cancelled",
+                          "retracted"
+                        ]
+                      },
+                      "time_precision": {
+                        "type": "string",
+                        "enum": [
+                          "exact",
+                          "date"
+                        ]
+                      },
+                      "announced_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "announced_on": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "utc_day": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "effective_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "effective_note": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "reset_offer": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "expires_on": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "expires_on"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "allocation": {
+                        "type": "string",
+                        "enum": [
+                          "subscription_usage",
+                          "api",
+                          "unspecified"
+                        ]
+                      },
+                      "audience": {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "broad",
+                              "limited",
+                              "unspecified"
+                            ]
+                          },
+                          "statement": {
+                            "type": "string"
+                          },
+                          "plans": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "const": "all"
+                              },
+                              {
+                                "type": "string",
+                                "const": "subscribers"
+                              },
+                              {
+                                "type": "string",
+                                "const": "unspecified"
+                              },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "free",
+                                    "pro",
+                                    "max",
+                                    "team",
+                                    "enterprise"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "exclusions": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "statement",
+                          "plans",
+                          "exclusions"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "windows": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "five_hour",
+                            "weekly",
+                            "other",
+                            "unspecified"
+                          ]
+                        }
+                      },
+                      "sources": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "type": "string"
+                            },
+                            "handle": {
+                              "type": "string"
+                            },
+                            "display_name": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string",
+                              "enum": [
+                                "original",
+                                "relay"
+                              ]
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "x_post",
+                                "web_page",
+                                "status_page"
+                              ]
+                            },
+                            "posted_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "excerpt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "url",
+                            "handle",
+                            "display_name",
+                            "role",
+                            "kind",
+                            "posted_at",
+                            "excerpt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "url": {
+                        "type": "string"
+                      },
+                      "first_published_at": {
+                        "type": "string"
+                      },
+                      "revised_at": {
+                        "type": "string"
+                      },
+                      "revision": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "correction": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "correction",
+                                  "retraction"
+                                ]
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "reason",
+                              "at"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "related_event_ids": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind",
+                      "event_status",
+                      "title",
+                      "summary",
+                      "time_precision",
+                      "announced_at",
+                      "announced_on",
+                      "utc_day",
+                      "effective_at",
+                      "effective_note",
+                      "reset_offer",
+                      "allocation",
+                      "audience",
+                      "windows",
+                      "sources",
+                      "url",
+                      "first_published_at",
+                      "revised_at",
+                      "revision",
+                      "correction",
+                      "related_event_ids"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "active_watch": {
+                "type": "null"
+              },
+              "reset_offers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "usage_reset",
+                        "limit_increase",
+                        "credit",
+                        "policy_change",
+                        "incident"
+                      ]
+                    },
+                    "event_status": {
+                      "type": "string",
+                      "enum": [
+                        "announced",
+                        "confirmed",
+                        "cancelled",
+                        "retracted"
+                      ]
+                    },
+                    "time_precision": {
+                      "type": "string",
+                      "enum": [
+                        "exact",
+                        "date"
+                      ]
+                    },
+                    "announced_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "announced_on": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "utc_day": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "effective_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "effective_note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reset_offer": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "expires_on": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "expires_on"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "allocation": {
+                      "type": "string",
+                      "enum": [
+                        "subscription_usage",
+                        "api",
+                        "unspecified"
+                      ]
+                    },
+                    "audience": {
+                      "type": "object",
+                      "properties": {
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "broad",
+                            "limited",
+                            "unspecified"
+                          ]
+                        },
+                        "statement": {
+                          "type": "string"
+                        },
+                        "plans": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "const": "all"
+                            },
+                            {
+                              "type": "string",
+                              "const": "subscribers"
+                            },
+                            {
+                              "type": "string",
+                              "const": "unspecified"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "free",
+                                  "pro",
+                                  "max",
+                                  "team",
+                                  "enterprise"
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        "exclusions": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "scope",
+                        "statement",
+                        "plans",
+                        "exclusions"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "windows": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "five_hour",
+                          "weekly",
+                          "other",
+                          "unspecified"
+                        ]
+                      }
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string"
+                          },
+                          "handle": {
+                            "type": "string"
+                          },
+                          "display_name": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "original",
+                              "relay"
+                            ]
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "x_post",
+                              "web_page",
+                              "status_page"
+                            ]
+                          },
+                          "posted_at": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "excerpt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "url",
+                          "handle",
+                          "display_name",
+                          "role",
+                          "kind",
+                          "posted_at",
+                          "excerpt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "first_published_at": {
+                      "type": "string"
+                    },
+                    "revised_at": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "correction": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "correction",
+                                "retraction"
+                              ]
+                            },
+                            "reason": {
+                              "type": "string"
+                            },
+                            "at": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "reason",
+                            "at"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "related_event_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "event_status",
+                    "title",
+                    "summary",
+                    "time_precision",
+                    "announced_at",
+                    "announced_on",
+                    "utc_day",
+                    "effective_at",
+                    "effective_note",
+                    "reset_offer",
+                    "allocation",
+                    "audience",
+                    "windows",
+                    "sources",
+                    "url",
+                    "first_published_at",
+                    "revised_at",
+                    "revision",
+                    "correction",
+                    "related_event_ids"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "stats": {
+                "type": "object",
+                "properties": {
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "last_reset_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "last_reset_on": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "days_since_last": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "avg_interval_days": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "longest_gap_days": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "eligible_gaps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "total_gaps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "exact_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "partial_sample": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "total",
+                  "last_reset_at",
+                  "last_reset_on",
+                  "days_since_last",
+                  "avg_interval_days",
+                  "longest_gap_days",
+                  "eligible_gaps",
+                  "total_gaps",
+                  "exact_count",
+                  "partial_sample"
+                ],
+                "additionalProperties": false
+              },
+              "filters": {
+                "type": "object",
+                "properties": {
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "broad",
+                      "max",
+                      "pro",
+                      "team"
+                    ]
+                  },
+                  "window": {
+                    "type": "string",
+                    "enum": [
+                      "any",
+                      "five_hour",
+                      "weekly"
+                    ]
+                  }
+                },
+                "required": [
+                  "audience",
+                  "window"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "latest_reset",
+              "latest_ambiguous",
+              "announced_reset",
+              "active_watch",
+              "reset_offers",
+              "stats",
+              "filters"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "api_version": {
+                "type": "string",
+                "const": "v1"
+              },
+              "generated_at": {
+                "type": "string"
+              },
+              "content_revision": {
+                "type": "string"
+              },
+              "editorial_reviewed_at": {
+                "type": "string"
+              },
+              "coverage_start": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "api_version",
+              "generated_at",
+              "content_revision",
+              "editorial_reviewed_at",
+              "coverage_start"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "ResetListResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "usage_reset",
+                    "limit_increase",
+                    "credit",
+                    "policy_change",
+                    "incident"
+                  ]
+                },
+                "event_status": {
+                  "type": "string",
+                  "enum": [
+                    "announced",
+                    "confirmed",
+                    "cancelled",
+                    "retracted"
+                  ]
+                },
+                "time_precision": {
+                  "type": "string",
+                  "enum": [
+                    "exact",
+                    "date"
+                  ]
+                },
+                "announced_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "announced_on": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "utc_day": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "effective_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "effective_note": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "reset_offer": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "expires_on": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "expires_on"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "allocation": {
+                  "type": "string",
+                  "enum": [
+                    "subscription_usage",
+                    "api",
+                    "unspecified"
+                  ]
+                },
+                "audience": {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "enum": [
+                        "broad",
+                        "limited",
+                        "unspecified"
+                      ]
+                    },
+                    "statement": {
+                      "type": "string"
+                    },
+                    "plans": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "const": "all"
+                        },
+                        {
+                          "type": "string",
+                          "const": "subscribers"
+                        },
+                        {
+                          "type": "string",
+                          "const": "unspecified"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "free",
+                              "pro",
+                              "max",
+                              "team",
+                              "enterprise"
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "exclusions": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "statement",
+                    "plans",
+                    "exclusions"
+                  ],
+                  "additionalProperties": false
+                },
+                "windows": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "five_hour",
+                      "weekly",
+                      "other",
+                      "unspecified"
+                    ]
+                  }
+                },
+                "sources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "handle": {
+                        "type": "string"
+                      },
+                      "display_name": {
+                        "type": "string"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "original",
+                          "relay"
+                        ]
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "x_post",
+                          "web_page",
+                          "status_page"
+                        ]
+                      },
+                      "posted_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "excerpt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "url",
+                      "handle",
+                      "display_name",
+                      "role",
+                      "kind",
+                      "posted_at",
+                      "excerpt"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "url": {
+                  "type": "string"
+                },
+                "first_published_at": {
+                  "type": "string"
+                },
+                "revised_at": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "correction": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "correction",
+                            "retraction"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "at": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "reason",
+                        "at"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "related_event_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "event_status",
+                "title",
+                "summary",
+                "time_precision",
+                "announced_at",
+                "announced_on",
+                "utc_day",
+                "effective_at",
+                "effective_note",
+                "reset_offer",
+                "allocation",
+                "audience",
+                "windows",
+                "sources",
+                "url",
+                "first_published_at",
+                "revised_at",
+                "revision",
+                "correction",
+                "related_event_ids"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "has_more": {
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "revision_changed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "has_more",
+              "next_cursor",
+              "revision_changed"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "api_version": {
+                "type": "string",
+                "const": "v1"
+              },
+              "generated_at": {
+                "type": "string"
+              },
+              "content_revision": {
+                "type": "string"
+              },
+              "editorial_reviewed_at": {
+                "type": "string"
+              },
+              "coverage_start": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "api_version",
+              "generated_at",
+              "content_revision",
+              "editorial_reviewed_at",
+              "coverage_start"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "data",
+          "pagination",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "Source": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "profile_url": {
+            "type": "string"
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "official",
+              "team_member",
+              "relay"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "additional",
+              "context",
+              "optional"
+            ]
+          },
+          "relevance": {
+            "type": "string"
+          },
+          "affiliation_evidence_url": {
+            "type": "string"
+          },
+          "affiliation_evidence_note": {
+            "type": "string"
+          },
+          "reset_evidence_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verification_method": {
+            "type": "string"
+          },
+          "last_reviewed_at": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "limitations": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "handle",
+          "display_name",
+          "profile_url",
+          "classification",
+          "priority",
+          "relevance",
+          "affiliation_evidence_url",
+          "affiliation_evidence_note",
+          "reset_evidence_urls",
+          "verification_method",
+          "last_reviewed_at",
+          "active",
+          "limitations"
+        ],
+        "additionalProperties": false
+      },
+      "SourcesResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "handle": {
+                  "type": "string"
+                },
+                "display_name": {
+                  "type": "string"
+                },
+                "profile_url": {
+                  "type": "string"
+                },
+                "classification": {
+                  "type": "string",
+                  "enum": [
+                    "official",
+                    "team_member",
+                    "relay"
+                  ]
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "primary",
+                    "additional",
+                    "context",
+                    "optional"
+                  ]
+                },
+                "relevance": {
+                  "type": "string"
+                },
+                "affiliation_evidence_url": {
+                  "type": "string"
+                },
+                "affiliation_evidence_note": {
+                  "type": "string"
+                },
+                "reset_evidence_urls": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "verification_method": {
+                  "type": "string"
+                },
+                "last_reviewed_at": {
+                  "type": "string"
+                },
+                "active": {
+                  "type": "boolean"
+                },
+                "limitations": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "handle",
+                "display_name",
+                "profile_url",
+                "classification",
+                "priority",
+                "relevance",
+                "affiliation_evidence_url",
+                "affiliation_evidence_note",
+                "reset_evidence_urls",
+                "verification_method",
+                "last_reviewed_at",
+                "active",
+                "limitations"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "api_version": {
+                "type": "string",
+                "const": "v1"
+              },
+              "generated_at": {
+                "type": "string"
+              },
+              "content_revision": {
+                "type": "string"
+              },
+              "editorial_reviewed_at": {
+                "type": "string"
+              },
+              "coverage_start": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "api_version",
+              "generated_at",
+              "content_revision",
+              "editorial_reviewed_at",
+              "coverage_start"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "Problem": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "code": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "parameter": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "detail"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/status": {
+      "get": {
+        "operationId": "getResetStatus",
+        "parameters": [
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "broad",
+                "max",
+                "pro",
+                "team"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "any",
+                "five_hour",
+                "weekly"
+              ],
+              "default": "any"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          },
+          "304": {},
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resets": {
+      "get": {
+        "operationId": "listResets",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "maxLength": 1024
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            }
+          },
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "broad",
+                "max",
+                "pro",
+                "team"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "window",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "any",
+                "five_hour",
+                "weekly"
+              ],
+              "default": "any"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetListResponse"
+                }
+              }
+            }
+          },
+          "304": {},
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sources": {
+      "get": {
+        "operationId": "listSources",
+        "responses": {
+          "200": {
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesResponse"
+                }
+              }
+            }
+          },
+          "304": {},
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
