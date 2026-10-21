@@ -1,6 +1,6 @@
 # 08 — Development roadmap for Codex CLI: Stages 0–11
 
-**Method:** one stage at a time; strict owner approval between stages, branch+PR by authorization, tests and documentation updates. Default Stage 0 only. This plan extends v2 to include public API + static website + analytics. Backend and Telegram functionality comes FIRST, but architecture must support the site from Stage 1.
+**Method:** one stage at a time; strict owner approval between stages, branch+PR by authorization, tests and documentation updates. The active scope is the latest explicitly owner-approved task; a prepared prompt does not authorize implementation. This plan extends v2 to include public API + static website + analytics. Backend and Telegram functionality comes FIRST, but architecture must support the site from Stage 1.
 
 ## Stage 0 — API feasibility, provenance, terms (START HERE)
 

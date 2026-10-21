@@ -4,7 +4,9 @@ This is product-planning guidance, not legal advice. Verify applicable terms and
 
 ## Repository visibility vs license
 
-**Public GitHub does not itself permit unrestricted copying/use of the code.** We discussed MIT as a **recommended license**, because independent developers can inspect, reuse and contribute, while maintaining copyright notice. The owner **has not explicitly finalized** license/copyright-holder line for this release. Do not add fictional `LICENSE` with a placeholder person's name or claim MIT is already effective. Ask owner and add actual MIT text after approval.
+The repository already contains the MIT [LICENSE](../LICENSE), copyright **2026 Salman**, and `package.json` declares `license: MIT`. This documents the existing repository state, not a new owner licensing decision. Preserve the actual license text and copyright; do not describe the repository license as missing or awaiting selection. Public repository visibility is separate from its license.
+
+The owner still needs to decide whether separate brand reuse terms or additional permissions for third-party source content are needed before release. This documentation correction introduces no separate asset terms or new content permissions. Historical evidence may retain earlier starter statements about a pending license; those are preserved records, not the current license status.
 
 ## Brand and graphics
 

@@ -2,6 +2,8 @@
 
 Сохранено **2026-10-21** для следующей сессии в `/Users/salman/pet_projects/reset-radar`. Актуальное состояние всегда сначала сверять с `git status --short --branch`.
 
+**Обновление по review PR #1:** владелец разрешил только исправление инструкций, согласование документов с существующим MIT и ограничение CI triggers, с commit/push в `feat/stage1-worker-foundation`. Stage 2 не разрешён. Актуальный scope определяется последним явным заданием владельца; historical snapshots ниже не заменяют разрешение. Промпт START_STAGE2 остаётся подготовленным для отдельного поручения.
+
 ## Статус и разрешения
 
 - Stage 0 исследован; Stage 1 локально реализован и независимо отрецензирован. [Фактический отчёт Stage 1](24_STAGE1_REPORT.md) содержит все изменённые файлы, реальные команды и ограничения. **Не развёрнуто / не опубликовано.**
@@ -46,7 +48,7 @@ python3 docs/evidence/stage0-2026-10-21/verify.py
 - CodexReset — рекомендуемый, не утверждённый кандидат: **62**, **53 seeded**, **56 без delivery**. Отдельная альтернатива — **64**, лишь **52 общих ID**, более свежая последняя запись. Никакого union/fallback; Codex adapter — Stage 3 после выбора владельца.
 - ADR-015/019/020 и production truth policy остаются pending. Подготовленный Stage 2 разрешает только Claude-specific local parsing/mapping; он не утверждает production publication policy и не запускает shared policy engine.
 - [Архив Stage 0](evidence/stage0-2026-10-21/README.md) и [truth table](22_STAGE0_TRUTH_TABLE.md) — исторические данные/предложенные правила. Captured JSON сокращены и не являются полными parser fixtures. Для Stage 2 нужны честно synthetic contract-shaped inputs или отдельно полученные полные captures.
-- Tracked LICENSE уже MIT, copyright 2026 Salman; сохранён. Часть старых текстов говорит pending — известное расхождение, не новое решение владельца. GitHub/Pages URL и Telegram handles не подтверждены.
+- Tracked LICENSE уже MIT, copyright 2026 Salman; package.json содержит MIT. В рамках исправлений PR #1 текущие документы согласованы с этим существующим состоянием, без изменения LICENSE/copyright и без нового лицензионного решения. Отдельные условия для бренда/стороннего контента остаются открытым вопросом; старые evidence-тексты сохраняются. Pages URL и Telegram handles не подтверждены.
 
 ## Следующий результат и Git-названия
 

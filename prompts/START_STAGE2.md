@@ -8,7 +8,7 @@
 
 ## С чего начать
 
-1. Выполни `git status --short --branch`, осмотри staged и unstaged changes. Прочитай `AGENTS.md`, `README.md`, все `docs/*.md`, `manual/OWNER_CHECKLIST.md`. Не перезаписывай чужие изменения и не считай подготовленные staged files уже закоммиченными.
+1. Выполни `git status --short --branch`, осмотри staged и unstaged changes. Прочитай `AGENTS.md`, `README.md`, актуальную передачу и релевантные спецификации, перечисленные ниже. Остальные документы и `manual/OWNER_CHECKLIST.md` читай по необходимости. Не перезаписывай чужие изменения и не считай подготовленные staged files уже закоммиченными.
 2. Актуальная передача — [25_STAGE1_HANDOFF.md](../docs/25_STAGE1_HANDOFF.md), результат и проверки — [24_STAGE1_REPORT.md](../docs/24_STAGE1_REPORT.md). [23_SESSION_HANDOFF.md](../docs/23_SESSION_HANDOFF.md) описывает исторический переход Stage 0 → Stage 1; старые START_CODEX/START_STAGE1 повторно не выполнять.
 3. Сверь [roadmap](../docs/08_DEVELOPMENT_PLAN.md), [ADR](../docs/09_DECISIONS.md), [Claude contract](../docs/04_EXTERNAL_APIS.md), [HTTP journal](../docs/11_SOURCES.md), [truth table](../docs/22_STAGE0_TRUTH_TABLE.md), [test strategy](../docs/06_TEST_STRATEGY.md), [evidence archive](../docs/evidence/stage0-2026-10-21/README.md). Запусти `python3 docs/evidence/stage0-2026-10-21/verify.py`.
 4. Изучи текущие `src/domain/event.ts`, `src/providers/types.ts`, `src/runtime.ts`, `src/utils/logging.ts`, `src/index.ts` и тесты. Переиспользуй clock/fetch/logger seam и установленный npm toolchain с lockfile; не создавай второй каркас.

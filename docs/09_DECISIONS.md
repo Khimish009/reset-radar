@@ -17,7 +17,7 @@
 | ADR-011 | No personal balances/tokens/login, no next reset guarantees | agreed | Feeds are public events only |
 | ADR-012 | Staging+dry-run+per-provider bootstrap and separate owner production approval | agreed | Protect against historical spam and false claims |
 | ADR-013 | Dark navy/cyan/amber identity; paired but different channel/bot icons | agreed | Independent brand recognition |
-| ADR-014 | Starter docs say license pending; existing tracked `LICENSE` already contains MIT, copyright 2026 Salman | **contradiction for owner to reconcile** | Stage 0 preserves the existing license; does not infer a new approval or alter legal terms |
+| ADR-014 | Existing tracked `LICENSE` is MIT, copyright 2026 Salman; `package.json` declares MIT | **existing repository state; documentation reconciled in PR #1** | No new owner licensing decision or change to license/copyright; separate brand reuse and third-party content permissions remain open |
 | ADR-015 | Claude Resets feasible with limits; CodexReset recommended primary, codex-resets remains separately researched alternative | **Stage 0 research done; pending owner acceptance** | Live JSON/headers checked; delivery evidence, history and source equivalence have material limits; see below |
 | ADR-016 | Website URL/GitHub username and Telegram handles | **pending verification** | Never invent live URLs from placeholders |
 | ADR-017 | `stale` threshold 30 min, public caching 60–300s | **initial proposal; validate** | Balance recency, costs and transparent freshness |
@@ -40,7 +40,7 @@
 
 ### Обнаруженные расхождения; существующие файлы не исправлялись за пределами Stage 0
 
-1. `LICENSE` уже содержит MIT, хотя README/START_HERE/docs/21/manual считают её незавершённой. Это существующее состояние, не разрешение агенту выбрать другую лицензию или переписать её. Владельцу согласовать документацию с лицензией отдельной задачей.
+1. На завершение Stage 0 `LICENSE` уже содержал MIT, хотя starter-документы считали выбор незавершённым. В рамках разрешённых исправлений PR #1 README/START_HERE/docs/21/manual согласованы с существующим MIT и `package.json`; LICENSE и copyright не менялись, новое одобрение владельцу не приписывается. Исторические evidence сохраняют исходные формулировки. Вопрос отдельных условий для бренда/стороннего контента остаётся открытым.
 2. `.gitignore` исключает docs/, manual/, prompts/. `git ls-files docs manual prompts` пуст: документы существуют локально, но не отслеживаются. Поэтому `git status --short` и обычный `git diff` не показывают Stage 0 правки. Проверка выполняется относительно временной копии до изменений. Gitignore/index не менялись; для Git review владелец должен отдельно решить, как включить документы в репозиторий.
 3. Проектная модель требует точные applied/delivered instants для интервалов, а Claude отдаёт exact announcement time и null effective_at. Codex-архивы также используют разные времена/ID. Будущие stats должны соблюдать docs/18 и не выдавать интервалы объявлений за интервалы применения. Схему/реализацию Stage 0 не меняет.
 
@@ -62,7 +62,7 @@ Before altering stack/site hosting, claiming delivery without evidence, implemen
 ## Items for owner to confirm later (not blockers for Stage 0)
 
 1. Actual GitHub `owner`/repo URL and verified Telegram handles (`@resetradarai`, `@resetradaraibot` suggested).
-2. Public GitHub + MIT licensing; copyright holder/year text and logo re-use terms.
+2. Whether separate brand/logo reuse terms or additional third-party content permissions are needed. The existing MIT LICENSE and copyright 2026 Salman remain unchanged; repository visibility is a separate owner choice.
 3. Worker public hostname and Pages URL at launch; optionally custom domain in future.
 4. Whether `/start` should be added soon after channel launch, as a **separate stage**.
 5. RU default for Telegram; website RU/EN both available, default locale based on browser vs explicit (choose in website stage).

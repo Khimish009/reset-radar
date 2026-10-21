@@ -16,7 +16,8 @@
 - [ ] Suggested repo Description: `Public Telegram alerts and an open dashboard for Claude Code and Codex limit resets, bonus quotas, and usage updates.`
 - [ ] Add topics: `telegram-bot`, `claude-code`, `openai-codex`, `cloudflare-workers`, `typescript`, `github-pages`, `ai-tools`, `notifications`.
 - [ ] Don't auto-create a second README/gitignore if you unpacked the starter already; don't duplicate scaffolds.
-- [ ] If owner decides MIT license, approve real copyright holder and add actual LICENSE; **not finalized yet**.
+- [x] Record the existing MIT LICENSE, copyright 2026 Salman, and `license: MIT` in package.json. This is existing repository state, not a new owner licensing decision; preserve LICENSE/copyright.
+- [ ] Decide whether separate brand reuse terms or additional third-party content permissions are needed before release; no new terms are introduced by the documentation correction.
 - [ ] Run `gh auth login` when ready; allow Codex pushes/PR creation **only per explicit task**. Prefer branch/PR, no force push.
 
 ## Stage 0 now — no infrastructure required

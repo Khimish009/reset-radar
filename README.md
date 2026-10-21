@@ -61,11 +61,11 @@ Codex reset API ┘                                           │
 
 ## Start with Codex CLI (recommended workflow)
 
-1. Read `AGENTS.md`, `docs/00_PROJECT_BRIEF.md`, `docs/08_DEVELOPMENT_PLAN.md`, `docs/09_DECISIONS.md`, `manual/OWNER_CHECKLIST.md`.
-2. Unpack to the **root of the new Git repository**, with the top-level `AGENTS.md` and `docs/` folder adjacent. Open a terminal in that root, run `codex`.
-3. Give Codex `prompts/START_CODEX.md`. **Authorize only Stage 0**: live API truth-check for both sources, *not* construction/deployment of the whole product.
-4. Codex reports evidence, updates docs, and stops until the owner accepts the stage. See `prompts/STAGE_REVIEW.md`.
-5. Later stages add Worker/D1/Telegram, then public API and website without changing the chosen infrastructure.
+1. Read `AGENTS.md`, this README, the [current handoff](docs/25_STAGE1_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
+2. Run Codex from the repository root and inspect `git status`, including staged and unstaged changes; preserve existing work.
+3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage; [START_STAGE2](prompts/START_STAGE2.md) remains prepared for separate approval.
+4. Report actual changes/checks and stop before the next stage. See `prompts/STAGE_REVIEW.md`.
+5. For a new project beginning with source research, `prompts/START_CODEX.md` describes Stage 0. When resuming this repository, use the current handoff rather than repeating completed stages.
 
 ## Documents
 
@@ -76,7 +76,8 @@ Codex reset API ┘                                           │
 - `docs/18_ANALYTICS_METHODOLOGY.md` — truthful metrics and data-quality rules.
 - `docs/19_WEBSITE_DEPLOYMENT.md` — Vite/GitHub Pages/CORS/deployment.
 - `docs/20_RELEASE_AND_BACKLOG.md` — phased shipping and non-goals.
-- `docs/21_LEGAL_AND_LICENSE.md` — third-party attribution, privacy, open-source licensing decision.
+- `docs/21_LEGAL_AND_LICENSE.md` — existing MIT license, third-party attribution, privacy and open brand/data-rights questions.
+- `docs/24_STAGE1_REPORT.md`, [current handoff](docs/25_STAGE1_HANDOFF.md) — Stage 1 results and context for separately approved work.
 - `manual/OWNER_CHECKLIST.md` — actions that require the owner, **no secrets**.
 - `prompts/START_CODEX.md` — exact Stage 0 assignment; `prompts/STAGE_REVIEW.md` — stage acceptance report.
 - `brand/channel-avatar.png`, `brand/bot-avatar.png` — distinct matching brand assets.
@@ -91,4 +92,4 @@ Codex reset API ┘                                           │
 
 ## Contributing and license
 
-Issues and PRs are welcome after the owner enables them. The existing tracked [LICENSE](LICENSE) contains MIT, copyright 2026 Salman, and is preserved unchanged. Some starter documents still say licensing is pending; that known discrepancy is recorded in `docs/09_DECISIONS.md`. Stage 1 makes no new owner licensing decision. Brand artwork may have separate usage terms. See `docs/21_LEGAL_AND_LICENSE.md`.
+Issues and PRs are welcome after the owner enables them. The repository already contains the MIT [LICENSE](LICENSE), copyright 2026 Salman, and `package.json` declares `MIT`. This records the existing state; it is not a new owner licensing decision and changes no license text or copyright. Whether separate brand reuse terms or additional third-party content permissions are needed remains open. See [licensing and data rights](docs/21_LEGAL_AND_LICENSE.md).
