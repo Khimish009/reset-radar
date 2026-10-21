@@ -6,7 +6,7 @@ import { codexEvent, codexFeed, codexScheduled } from './fixtures/codex';
 const now = new Date('2026-10-21T12:00:00Z');
 const context = codexFeed();
 const assessment = (
-  raw: ReturnType<typeof codexEvent>, evidenceUrls: string[], assertion: 'applied' | 'future_announcement' = 'applied',
+  raw: ReturnType<typeof codexEvent>, evidenceUrls: string[], assertion: 'applied' | 'future_announcement' | 'banked_offer' = 'applied',
   futureTarget?: { precision: 'unknown' } | { precision: 'date'; on: string } | { precision: 'exact'; at: string },
 ) => ({
   recordKey: codexAssessmentKey(raw), assertion, evidenceUrls, primarySourceUrl: evidenceUrls[0] ?? raw.url,
@@ -255,11 +255,63 @@ describe('Codex event mapping', () => {
     expect(result.record.delivered).toEqual({ precision: 'unknown' });
   });
 
-  it('always represents banked items as offers, even with delivery fields', () => {
-    const raw = codexEvent({ kind: 'banked', delivered_at: '2026-10-20T16:00:00Z', delivered_source_url: 'https://example.invalid/posts/banked' });
-    const mapped = mapCodexEvent(raw, context, now, assessment(raw, [raw.delivered_source_url!]));
-    expect(mapped.record.action).toBe('banked_offer');
+  it('requires a separately reviewed banked-offer assertion and retains its evidence', () => {
+    const primary = 'https://example.invalid/posts/banked-offer';
+    for (const delivered_at of [null, '2026-10-20T16:00:00Z']) {
+      const raw = codexEvent({
+        kind: 'banked', seeded: true, delivered_at,
+        delivered_source_url: delivered_at ? 'https://example.invalid/posts/banked-delivery' : null,
+      });
+      const reviewed = {
+        ...assessment(raw, [raw.url, primary], 'banked_offer'), primarySourceUrl: primary,
+      };
+      const mapped = mapCodexEvent(raw, context, now, reviewed);
+      expect(mapped.record.action).toBe('banked_offer');
+      expect(mapped.record.action).not.toBe('confirmed_applied');
+      expect(mapped.record.delivered).toEqual(delivered_at
+        ? { precision: 'exact', at: delivered_at }
+        : { precision: 'unknown' });
+      expect(mapped.reviewedEvidence).toEqual(reviewed);
+      expect(mapped.record.provenance.evidenceUrls).toContain(primary);
+      expect(mapped.record.provenance.historicalSeed).toBe(true);
+      expect(mapped.record.provenance.seedArchiveUrl).toBe(context.attribution.seed_archive);
+    }
+  });
+
+  it.each([
+    ['no assessment', undefined],
+    ['stale key', (raw: ReturnType<typeof codexEvent>) => ({ ...assessment(raw, [raw.url], 'banked_offer'), recordKey: 'stale' })],
+    ['wrong assertion', (raw: ReturnType<typeof codexEvent>) => assessment(raw, [raw.url], 'applied')],
+    ['missing raw URL', (raw: ReturnType<typeof codexEvent>) => assessment(raw, [], 'banked_offer')],
+    ['homepage raw URL', (raw: ReturnType<typeof codexEvent>) => {
+      const primary = 'https://example.invalid/posts/verified-offer';
+      return { ...assessment(raw, [raw.url, primary], 'banked_offer'), primarySourceUrl: primary };
+    }],
+    ['missing primary URL', (raw: ReturnType<typeof codexEvent>) => ({
+      ...assessment(raw, [raw.url], 'banked_offer'), primarySourceUrl: 'https://example.invalid/posts/not-in-evidence',
+    })],
+    ['empty rationale', (raw: ReturnType<typeof codexEvent>) => ({ ...assessment(raw, [raw.url], 'banked_offer'), rationale: '  ' })],
+    ['future assertion', (raw: ReturnType<typeof codexEvent>) => assessment(raw, [raw.url], 'future_announcement')],
+  ] as const)('keeps banked item in review without sufficient evidence: %s', (_label, buildAssessment) => {
+    const raw = codexEvent({
+      kind: 'banked', delivered_at: '2026-10-20T16:00:00Z',
+      delivered_source_url: 'https://example.invalid/posts/banked-delivery',
+      ...(_label === 'homepage raw URL' ? { url: 'https://example.invalid/' } : {}),
+    });
+    const review = typeof buildAssessment === 'function' ? buildAssessment(raw) : buildAssessment;
+    const mapped = mapCodexEvent(raw, context, now, review);
+    expect(mapped.record.action).toBe('needs_review');
+    expect(mapped.reviewReasons).toContain('banked_offer_unverified');
     expect(mapped.record.action).not.toBe('confirmed_applied');
+    expect(mapped.reviewedEvidence).toBeNull();
+  });
+
+  it('does not accept applied delivery evidence as proof that a banked credit was consumed', () => {
+    const raw = codexEvent({ kind: 'banked', delivered_at: '2026-10-20T16:00:00Z', delivered_source_url: 'https://example.invalid/posts/banked-delivery' });
+    const applied = assessment(raw, [raw.delivered_source_url!], 'applied');
+    const mapped = mapCodexEvent(raw, context, now, applied);
+    expect(mapped.record.action).toBe('needs_review');
+    expect(mapped.reviewedEvidence).toBeNull();
   });
 });
 
@@ -289,6 +341,78 @@ describe('Codex scheduled mapping', () => {
     expect(dateResult.verifiedFutureTarget).toEqual({ precision: 'date', on: '2026-10-22' });
     expect(dateResult.expectedTime).toEqual(dateResult.verifiedFutureTarget);
     expect(dateResult.record.effective).toEqual({ precision: 'unknown' });
+  });
+
+  it('accepts a manually reviewed target only when it agrees with the raw scheduled target and precision', () => {
+    const exact = codexScheduled({ scheduled_for: '2026-10-23T09:30:00Z' });
+    const equivalentInstant = mapCodexScheduled(exact, context, now, {
+      ...scheduledAssessment(exact), futureTarget: { precision: 'exact', at: '2026-10-23T09:30:00.000Z' },
+    });
+    expect(equivalentInstant.record.action).toBe('announced_future');
+    expect(equivalentInstant.verifiedFutureTarget).toEqual({ precision: 'exact', at: exact.scheduled_for });
+
+    const dateOnly = codexScheduled({ day: '2026-10-23', scheduled_for: null });
+    const matchingDate = mapCodexScheduled(dateOnly, context, now, {
+      ...scheduledAssessment(dateOnly), futureTarget: { precision: 'date', on: '2026-10-23' },
+    });
+    expect(matchingDate.record.action).toBe('announced_future');
+    expect(matchingDate.verifiedFutureTarget).toEqual({ precision: 'date', on: '2026-10-23' });
+    expect(matchingDate.expectedTime).toEqual({ precision: 'date', on: '2026-10-23' });
+  });
+
+  it.each([
+    ['different exact instant', codexScheduled({ scheduled_for: '2026-10-23T09:30:00Z' }), { precision: 'exact', at: '2026-10-23T10:30:00Z' }, 'scheduled_future_target_conflict'],
+    ['different date', codexScheduled({ day: '2026-10-23', scheduled_for: null }), { precision: 'date', on: '2026-10-24' }, 'scheduled_future_target_conflict'],
+    ['date target against exact raw time', codexScheduled({ scheduled_for: '2026-10-23T09:30:00Z' }), { precision: 'date', on: '2026-10-23' }, 'scheduled_future_target_precision_mismatch'],
+    ['exact target against date-only raw target', codexScheduled({ day: '2026-10-23', scheduled_for: null }), { precision: 'exact', at: '2026-10-23T09:30:00Z' }, 'scheduled_future_target_precision_mismatch'],
+    ['unknown target against known raw date', codexScheduled({ day: '2026-10-23', scheduled_for: null }), { precision: 'unknown' }, 'scheduled_future_target_precision_mismatch'],
+    ['invalid date target', codexScheduled({ day: '2026-10-23', scheduled_for: null }), { precision: 'date', on: '2026-02-30' }, 'scheduled_future_target_invalid'],
+    ['invalid exact instant', codexScheduled({ scheduled_for: '2026-10-23T09:30:00Z' }), { precision: 'exact', at: 'not-a-date' }, 'scheduled_future_target_invalid'],
+    ['unknown precision enum', codexScheduled({ day: '2026-10-23', scheduled_for: null }), { precision: 'future' }, 'scheduled_future_target_invalid'],
+    ['malformed target object', codexScheduled({ day: '2026-10-23', scheduled_for: null }), null, 'scheduled_future_target_invalid'],
+    ['target missing precision', codexScheduled({ day: '2026-10-23', scheduled_for: null }), {}, 'scheduled_future_target_invalid'],
+    ['date target missing date', codexScheduled({ day: '2026-10-23', scheduled_for: null }), { precision: 'date' }, 'scheduled_future_target_invalid'],
+    ['exact target missing instant', codexScheduled({ scheduled_for: '2026-10-23T09:30:00Z' }), { precision: 'exact' }, 'scheduled_future_target_invalid'],
+  ] as const)('rejects incompatible reviewed target: %s', (_label, raw, futureTarget, reason) => {
+    const reviewed = {
+      ...scheduledAssessment(raw),
+      futureTarget: futureTarget as unknown as { precision: 'unknown' } | { precision: 'date'; on: string } | { precision: 'exact'; at: string },
+      audience: 'SYNTHETIC audience that must not survive rejection',
+    };
+    const mapped = mapCodexScheduled(raw, context, now, reviewed);
+    expect(mapped.record.action).toBe('needs_review');
+    expect(mapped.reviewReasons).toContain(reason);
+    expect(mapped.expectedTime).toEqual({ precision: 'unknown' });
+    expect(mapped.verifiedFutureTarget).toBeNull();
+    expect(mapped.reviewedEvidence).toBeNull();
+    expect(mapped.record.audience).toBeNull();
+    expect(mapped.record.provenance.evidenceUrls).toEqual([raw.url]);
+  });
+
+  it('keeps omitted futureTarget on the existing raw-inferred path and never compares raw.day to exact UTC day', () => {
+    const dateOnly = codexScheduled({ day: '2026-10-23', scheduled_for: null });
+    const omitted = mapCodexScheduled(dateOnly, context, now, scheduledAssessment(dateOnly));
+    expect(omitted.record.action).toBe('announced_future');
+    expect(omitted.verifiedFutureTarget).toEqual({ precision: 'date', on: '2026-10-23' });
+
+    const exactWithDifferentRawDay = codexScheduled({ day: '2026-10-22', scheduled_for: '2026-10-23T09:30:00Z' });
+    const reviewed = mapCodexScheduled(exactWithDifferentRawDay, context, now, {
+      ...scheduledAssessment(exactWithDifferentRawDay), futureTarget: { precision: 'exact', at: '2026-10-23T09:30:00.000Z' },
+    });
+    expect(reviewed.record.action).toBe('announced_future');
+    expect(reviewed.verifiedFutureTarget).toEqual({ precision: 'exact', at: exactWithDifferentRawDay.scheduled_for });
+  });
+
+  it('does not let a reviewed future target override an expired raw scheduled target', () => {
+    const raw = codexScheduled({ day: '2026-10-21', scheduled_for: null });
+    const reviewed = mapCodexScheduled(raw, context, now, {
+      ...scheduledAssessment(raw), futureTarget: { precision: 'date', on: '2026-10-24' },
+    });
+    expect(reviewed.record.action).toBe('needs_review');
+    expect(reviewed.reviewReasons).toContain('scheduled_target_not_future');
+    expect(reviewed.expectedTime).toEqual({ precision: 'unknown' });
+    expect(reviewed.verifiedFutureTarget).toBeNull();
+    expect(reviewed.reviewedEvidence).toBeNull();
   });
 
   it('keeps expired, stale, and hinted targets unverified and uses URL as scheduled identity', () => {

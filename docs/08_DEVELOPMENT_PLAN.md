@@ -35,7 +35,12 @@ Implement approved Codex feed and semantics (`announced_at != delivered_at`, fut
 
 **Acceptance:** verified delivery never inferred from timing; tests green.
 
-**Local implementation, 2026-10-21:** владелец отдельно разрешил [START_STAGE3.md](../prompts/START_STAGE3.md) и выбрал `codexreset.ai`. Реализованы строгая схема, source-specific mapping и независимый HTTP/cache reader. Достоверный будущий анонс может иметь exact/date/unknown ожидаемое время; доставка требует отдельного достаточного evidence и непустого `delivered_at`. Scope, detection/announcement/delivery clocks и seeded attribution сохранены. Worker остаётся инертным, D1/publisher не добавлены. Проверки и review: [28_STAGE3_REPORT.md](28_STAGE3_REPORT.md); текущий контекст: [29_STAGE3_HANDOFF.md](29_STAGE3_HANDOFF.md). Production truth/publication policy остаётся pending. После отчёта владелец отдельно разрешил локальный commit; push/PR, deployment и Stage 4 не разрешены.
+**Local implementation, 2026-10-21:** владелец отдельно разрешил [START_STAGE3.md](../prompts/START_STAGE3.md) и выбрал `codexreset.ai`. Реализованы строгая схема, source-specific mapping и независимый HTTP/cache reader. Достоверный будущий анонс может иметь exact/date/unknown ожидаемое время; доставка требует отдельного достаточного evidence и непустого `delivered_at`. Scope, detection/announcement/delivery clocks и seeded attribution сохранены. Worker остаётся инертным, D1/publisher не добавлены. Проверки и review: [28_STAGE3_REPORT.md](28_STAGE3_REPORT.md); текущий контекст: [29_STAGE3_HANDOFF.md](29_STAGE3_HANDOFF.md). Production truth/publication policy остаётся pending. После отчёта владелец отдельно разрешил локальный commit; актуальное разрешение на доработку PR #3 указано ниже. Deployment и Stage 4 не разрешены.
+
+**PR #3 follow-up:** владелец отдельно разрешил только два P2 исправления,
+тесты, независимое review и commit/push в существующую Stage 3 ветку. Banked
+требует отдельного проверенного offer evidence; явный scheduled futureTarget
+должен совпадать с raw по точности/значению. Merge, deployment и Stage 4 не разрешены.
 
 ## Stage 4 — D1 schema and shared normalization/policy
 

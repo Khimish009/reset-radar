@@ -31,8 +31,16 @@ No original delivery post was independently verified in Stage 3. A populated
 local assessment must bind the current record content to reviewed primary
 evidence, an explicit primarySourceUrl, and a rationale. Accepted evidence URLs
 and rationale remain in the internal mapped result for audit. The adapter does not generate that assessment from a
-URL or timestamp. Without it regular events remain `needs_review`; banked
-events remain offers, without a consumption or current-availability claim.
+URL or timestamp. Without it regular and banked events remain `needs_review`.
+Banked requires a separate `banked_offer` assertion with content-bound primary
+evidence; even delivery of a credit never proves consumption or current availability.
+
+PR #3 tightens local mapping, not the captured upstream contract. An explicitly
+provided scheduled `futureTarget` must match raw target precision/value. Exact
+values compare as UTC instants; date values compare as calendar dates. There is
+no cross-precision conversion. Omitting the target keeps the existing raw-derived
+path; a conflicting or malformed target stays in review. No new live capture
+was needed for these pure mapping fixes.
 
 Postman CLI 1.75.0 uses our local synthetic mocks in
 `postman/simulations/codex-local.sim.yaml`. No owning-team mock was imported:

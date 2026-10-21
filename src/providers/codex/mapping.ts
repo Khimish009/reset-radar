@@ -7,12 +7,13 @@ export interface CodexEvidenceAssessment {
   /** Trusted local input after independent semantic review; never constructed automatically from feed data.
    * The key binds the assessment to every current field. */
   recordKey: string;
-  assertion: 'applied' | 'future_announcement';
+  assertion: 'applied' | 'future_announcement' | 'banked_offer';
   evidenceUrls: readonly string[];
   /** Explicitly identified during semantic review, including when raw URLs are relays. */
   primarySourceUrl: string;
   rationale: string;
-  /** Optional manually verified future target; omission/unknown preserves an undated announcement. */
+  /** For regular announcements omission/unknown permits an undated promise.
+   * For scheduled items an explicit target must match the raw precision/value. */
   futureTarget?: EventTime;
   /** For scheduled items only: primary-source audience explicitly read during review. */
   audience?: string;
@@ -107,6 +108,33 @@ function detectionTime(context: CodexFeedContext, now: Date): string {
   return context.detectedAt ?? now.toISOString();
 }
 
+/** No cross-precision conversion: a calendar day has no inferred timezone/instant.
+ * scheduled_for is authoritative when present; day can be a different local day. */
+function scheduledTargetIssue(reviewed: unknown, expected: CodexFutureTarget): string | null {
+  if (reviewed === undefined) return null;
+  if (typeof reviewed !== 'object' || reviewed === null || Array.isArray(reviewed)) {
+    return 'scheduled_future_target_invalid';
+  }
+  const target = reviewed as Record<string, unknown>;
+  try {
+    let value: CodexFutureTarget;
+    if (target.precision === 'exact' && Object.keys(target).length === 2) {
+      value = { precision: 'exact', at: codexInstant(target.at) };
+    } else if (target.precision === 'date' && Object.keys(target).length === 2) {
+      value = { precision: 'date', on: codexDate(target.on) };
+    } else if (target.precision === 'unknown' && Object.keys(target).length === 1) {
+      return 'scheduled_future_target_precision_mismatch';
+    } else {
+      return 'scheduled_future_target_invalid';
+    }
+    if (value.precision !== expected.precision) return 'scheduled_future_target_precision_mismatch';
+    const matches = value.precision === 'exact' && expected.precision === 'exact'
+      ? Date.parse(value.at) === Date.parse(expected.at)
+      : value.precision === 'date' && expected.precision === 'date' && value.on === expected.on;
+    return matches ? null : 'scheduled_future_target_conflict';
+  } catch { return 'scheduled_future_target_invalid'; }
+}
+
 function mapRegularOrBanked(
   raw: CodexEvent, context: CodexFeedContext, now: Date, assessment?: CodexEvidenceAssessment,
 ): CodexMappedEvent {
@@ -124,7 +152,11 @@ function mapRegularOrBanked(
   let reviewReasons: string[] = [];
   let expectedTime: EventTime = { precision: 'unknown' };
   if (raw.kind === 'banked') {
-    action = 'banked_offer';
+    if (announcementUrlHasPath && evidenceMatches(raw, assessment, [raw.url]) && assessment.assertion === 'banked_offer') {
+      action = 'banked_offer';
+    } else {
+      reviewReasons = ['banked_offer_unverified'];
+    }
   } else if (raw.kind === 'regular' && delivery === null && currentAnnouncement && future?.valid) {
     action = 'announced_future';
     expectedTime = future.expectedTime;
@@ -137,7 +169,7 @@ function mapRegularOrBanked(
     reviewReasons = [delivery === null ? 'delivery_unverified_or_announcement_unverified' : 'insufficient_or_stale_delivery_evidence'];
   }
   const announced = exactOrUnknown(raw.announced_at);
-  const reviewedEvidence = (action === 'announced_future' || action === 'confirmed_applied') && assessment
+  const reviewedEvidence = (action === 'announced_future' || action === 'confirmed_applied' || action === 'banked_offer') && assessment
     ? copyAssessment(assessment) : null;
   return {
     raw, attribution: context.attribution, detectedAt: detectionTime(context, now), reviewReasons, expectedTime,
@@ -180,9 +212,15 @@ function mapScheduled(
       }
     } catch { /* Invalid targets cannot be promoted. */ }
     if (verifiedFutureTarget !== null) {
-      action = 'announced_future';
-      expectedTime = verifiedFutureTarget;
-      reviewReasons = [];
+      const targetIssue = scheduledTargetIssue(assessment.futureTarget, verifiedFutureTarget);
+      if (targetIssue !== null) {
+        verifiedFutureTarget = null;
+        reviewReasons = [targetIssue];
+      } else {
+        action = 'announced_future';
+        expectedTime = verifiedFutureTarget;
+        reviewReasons = [];
+      }
     } else {
       reviewReasons = ['scheduled_target_not_future'];
     }

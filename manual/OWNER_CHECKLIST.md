@@ -51,7 +51,8 @@
 - [x] Typecheck/lint/offline tests/local HTTP simulation passed; independent review completed with no remaining critical/high/medium findings.
 - [ ] Owner reviews [Stage 3 report](../docs/28_STAGE3_REPORT.md) and independent review, then accepts or requests changes.
 - [x] Owner separately authorized a local Stage 3 commit after the report.
-- [ ] Separately authorize push/PR and a new Stage 4 assignment. No D1, deployment or Telegram send is authorized.
+- [x] Owner separately authorized two P2 fixes, independent review and commit/push to the existing PR #3 branch only.
+- [ ] Separately authorize merge/new PR operations and a new Stage 4 assignment. No D1, deployment or Telegram send is authorized.
 
 ## Worker/D1 staging (later)
 

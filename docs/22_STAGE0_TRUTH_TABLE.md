@@ -44,6 +44,25 @@
 
 Подтверждённая владельцем цель раннего обнаружения не задаёт гарантию «мгновенно»: локальный adapter не подключён к Cron, D1 или Telegram. Предложение для будущей Telegram policy — первая публикация eligible future announcement после review независимо от delivery, с отдельным безопасным текстом для unknown time; baseline/seeded history не публиковать. Решения о конкретных eligibility gates, скорости, dedup, изменениях/отзывах и последующем сообщении `confirmed_applied` остаются на Stage 4+ и требуют отдельного утверждения.
 
+### Уточнение Stage 3 по двум P2 PR #3
+
+Для `banked` положительная классификация требует отдельного assessment
+`assertion=banked_offer`, привязанного к полному текущему raw, с конкретным raw
+URL в evidence, primary URL и rationale. Иначе `needs_review` с причиной
+`banked_offer_unverified`. Даже `delivered_at` и assertion `applied` не доказывают
+предложение бонусного кредита или потребление сброса. Принятые evidence
+сохраняются, seeded/archive credit не теряется.
+
+Для `scheduled` явно переданный `assessment.futureTarget` должен совпасть с
+`raw.scheduled_for` (если он задан) либо `raw.day` по точности и значению.
+Exact сравнивается как UTC instant; date — как календарная дата. Cross-precision,
+explicit unknown, несовпадающие и некорректные значения дают `needs_review`
+с отдельной причиной; rejected assessment не переносит URL/audience и не
+заполняет verified target. Отсутствующий target сохраняет прежний путь после
+проверки evidence. Date-only не превращается в точное время; raw.day не
+сравнивается с UTC-днём scheduled_for без установленной timezone-политики.
+Unknown-time regular announcement сохраняет отдельную безопасную семантику.
+
 ## Captured fixtures — сокращённые проекции реального HTTP
 
 JSON ниже — **captured**, поля только выбраны из оригиналов, значения не придуманы. Это постоянные примеры исследования, **не полные fixtures для schema/parser tests**: опущены editorial summary/title, excerpts и часть полей/массивов. Fixture metadata и check — наши пояснения. Полные raw временно под /tmp, hashes в журнале. Источник остаётся третьей стороной; присутствие URL не доказывает независимое прочтение первичного поста.

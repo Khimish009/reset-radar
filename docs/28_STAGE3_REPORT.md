@@ -28,8 +28,9 @@ source-specific mapping, изолированный транспорт и in-mem
 `primarySourceUrl`, содержит URL и rationale; они сохраняются в внутреннем
 `reviewedEvidence`, а все проверенные ссылки — в provenance. Assessment не генерируется из
 timestamp/URL. `hinted`, старый непроверенный regular, слабое evidence и
-просроченный target остаются review. Banked остаётся offer, без утверждения
-потребления или текущей доступности. `effective` всегда unknown; `ts`/`date`
+просроченный target остаются review. Banked становится offer только с отдельным
+проверенным assertion=`banked_offer`, без утверждения потребления или текущей
+доступности. `effective` всегда unknown; `ts`/`date`
 сохранены в raw, announcement/delivery разделены. Date-only future сравнивается
 строго с текущей UTC-датой; полночь/таймзона события не выдумываются.
 
@@ -59,9 +60,13 @@ API, fallback и union нет. Worker handlers, logger, конфигурация
 не редактировались этой реализацией. На завершении реализации index был пуст,
 commit не создавался. После отчёта владелец отдельно разрешил локальный commit
 этого результата, включая связанную подготовку документации. Фактический SHA
-проверять по Git history; push и PR не разрешены.
+проверять по Git history. Позднее владелец разрешил только доработку существующего
+PR #3 с commit/push в его ветку; это не разрешает новый PR или merge.
 
 ## 3. Реальные команды и результаты
+
+Ниже проверки первоначальной реализации `dbf5e3c`; результаты двух P2
+исправлений PR #3 записаны в отдельном разделе в конце отчёта.
 
 | Команда / проверка | Фактический результат |
 |---|---|
@@ -94,8 +99,8 @@ main `0268056` и successful CI исправлений `ae89017`. Ветка Sta
 valid max-age/Age и минимум 60s; s-maxage не подменяет max-age.
 
 Не проверено содержимое первичных delivery posts. Ни одна live-запись не
-получила локального подтверждающего assessment. Без него regular остаются
-review; banked — offers. Ненулевой scheduled, undated announcement,
+получила локального подтверждающего assessment. После P2 исправлений без него
+regular и banked остаются review. Ненулевой scheduled, undated announcement,
 304/429/503 и failure ветви проверены synthetic/contract-based substitutes,
 не заявлены как новые live captures.
 
@@ -123,18 +128,58 @@ primary evidence — ввод reviewer, не автоматически извл
 предложения будущей publication policy записаны в docs 01/12/22 и не являются
 разрешением публикации. ADR-015/019/020 целиком не закрыты.
 
-Локальный commit отдельно разрешён владельцем после этого отчёта. Push/PR и
-Stage 4 требуют новых отдельных разрешений. Production truth,
+Локальный commit отдельно разрешён владельцем после этого отчёта; позднее отдельно
+разрешены два P2 исправления с commit/push в существующую ветку PR #3. Новый PR,
+merge и Stage 4 не разрешены. Production truth,
 два provider baseline, ресурсы/миграции/deployment и Telegram sends остаются
 закрытыми gates.
 
 ## 7. PR
 
-Stage 3 PR не создавался; push не выполнялся. Разрешение локального commit
-не включает remote-операции.
+Существующий [PR #3](https://github.com/Khimish009/reset-radar/pull/3) проверен
+read-only: открыт, head `feat/stage3-codex-adapter`, исходный SHA `dbf5e3c`.
+Новый PR агент не создаёт; owner разрешил commit/push только исправлений в эту ветку.
 
 ## 8. Внешние действия
 
 Только разрешённые read-only contract/GitHub проверки и локальная simulation.
 Cloudflare login/resources/secrets/migrations/deploy и Telegram sends не
 выполнялись. **Не развёрнуто / не опубликовано. Stage 4 не начат.**
+
+## Доработка PR #3 — два P2, 2026-10-21
+
+Внешнее review приняло архитектуру Stage 3 и ранние анонсы; владелец запросил
+только evidence gate для banked и согласованность scheduled target.
+
+- `banked_offer` требует одноимённого assertion, key текущего raw содержимого,
+  конкретного raw URL в evidence, явного primary URL и rationale. Без достаточной
+  оценки — `needs_review` / `banked_offer_unverified`. Принятые evidence/rationale
+  сохраняются. `applied` и delivery timestamp не подтверждают ни offer, ни consumption.
+- Для scheduled отсутствие `futureTarget` сохраняет прежний путь по raw. Если
+  target указан, precision должна совпасть: exact сравнивается по UTC instant,
+  date — по календарной строке. `.000Z` и `Z` допустимы как один instant.
+  Cross-precision и explicit unknown отклоняются; date-only никогда не получает
+  придуманное точное время. При наличии `scheduled_for` raw.day не сравнивается
+  с его UTC-днём, поскольку исходный календарный день может иметь другую timezone.
+- Несогласованность возвращает `scheduled_future_target_conflict`,
+  `scheduled_future_target_precision_mismatch` либо `scheduled_future_target_invalid`.
+  Rejected assessment не сохраняет URLs/audience; target/expected time остаются
+  unknown. Существующие exact/date/undated regular announcements сохранены.
+
+Файлы доработки: mapping и его тесты; README, docs 06/08/22/28/29,
+evidence README и owner checklist. Upstream captures, transport, schema,
+Worker/Cron/D1/Telegram/API, конфигурация и зависимости не менялись.
+
+Проверки доработки: `npm run typecheck` PASS, `npm run lint` PASS,
+`npm test` **186 passed / 2 skipped**, Stage 0 `verify.py` **139 PASS**,
+`git diff --check` PASS. Два skipped — opt-in HTTP simulations. Новый live GET
+или simulation не запускались: изменён чистый mapping, HTTP contract не менялся.
+Исходный CI SHA `dbf5e3c` — successful run #8; CI новых исправлений не считается
+пройденным заранее. Независимое review `pr3_p2_review` (reviewer,
+gpt-6.1-sol, reasoning high) завершено: оставшихся critical/high/medium findings
+нет. Reviewer независимо выполнил typecheck, lint, полный Vitest
+186 PASS / 2 skipped, Stage 0 verify139 PASS и diff check PASS.
+
+После успешных проверок и review разрешён commit/push в существующую ветку.
+Фактический SHA/результат push фиксируются в Git/итоговом сообщении; merge не
+выполняется. **Не развёрнуто / не опубликовано. Stage 4 не начат.**

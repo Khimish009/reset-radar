@@ -66,7 +66,7 @@ Codex reset API ┘                                           │
 3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage. Stage 3 was explicitly authorized for local implementation only. Stage 4 requires a separate assignment.
 4. Report actual changes/checks and stop before the next stage. See `prompts/STAGE_REVIEW.md`.
 5. For a new project beginning with source research, `prompts/START_CODEX.md` describes Stage 0. When resuming this repository, use the current handoff rather than repeating completed stages.
-6. [START_STAGE3](prompts/START_STAGE3.md) records the local assignment and its original source/base gates. The owner subsequently chose `codexreset.ai`; Stage 3 uses `main` containing the merged Stage 2 fixes. After the Stage 3 report, the owner separately authorized a local commit. Push, PR, deployment and Stage 4 remain unauthorized.
+6. [START_STAGE3](prompts/START_STAGE3.md) records the local assignment and its original source/base gates. The owner subsequently chose `codexreset.ai`; Stage 3 uses `main` containing the merged Stage 2 fixes. The owner now authorizes only the two P2 fixes, commit and push to the existing [PR #3](https://github.com/Khimish009/reset-radar/pull/3). Merge, deployment and Stage 4 remain unauthorized.
 
 ## Documents
 

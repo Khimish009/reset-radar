@@ -22,8 +22,9 @@ Stage 2 checks exercise the standalone Claude adapter only. The `Worker schedule
 ### Stage 3 — Codex adapter (local, codexreset.ai only)
 
 - [x] Full synthetic schema fixtures reject drift/unknown fields, kinds, certainty, missing fields, bad precision, duplicate IDs and bounded payload violations. Actual live feed separately accepted by parser; no historical projection is treated as a complete fixture.
-- [x] Announcement, detection and upstream-reported delivery clocks remain separate; `ts`/`date` never fill `effective`. Null delivery and weak/stale evidence never confirm application; banked remains an offer.
+- [x] Announcement, detection and upstream-reported delivery clocks remain separate; `ts`/`date` never fill `effective`. Null delivery and weak/stale evidence never confirm application; banked requires an explicit content-bound `banked_offer` assessment and never implies consumption.
 - [x] Future announcements with exact/date/unknown expected time require explicit content-bound primary-evidence assessment. Hinted, past/invalid targets and unreviewed rows stay review. Date-only compares strictly with the current UTC calendar date.
+- [x] A provided scheduled `futureTarget` must match raw precision and value; conflicting, malformed and cross-precision targets stay review without retaining rejected assessment URLs/audience. Omission preserves the existing raw-target path; date-only never becomes an exact time.
 - [x] Preserve scope/unknown audience and seeded/archive attribution. Detection of new/changed contents is retained in memory separately from HTTP check time; missing rows/scheduled retain provenance without inferred withdrawal.
 - [x] Conditional GET/304/cache, 60s floor/current 300s default, Retry-After/429/503, body limits, cancellation/lock/listener cleanup, late responses and independent Claude/Codex state covered offline.
 - [x] Opt-in real HTTP against our local synthetic Postman simulation exercises both providers and failure isolation. It does not verify live primary evidence or production behavior.

@@ -4,8 +4,9 @@
 Актуальная ветка при реализации: `feat/stage3-codex-adapter`, от main
 `0268056c98ec73b19c15202ddfb56666f8c6edd7` (merged PR #2 с fixes `ae89017`).
 Перед новой работой проверь staged/unstaged/untracked и последние указания
-владельца. После отчёта Stage 3 владелец отдельно разрешил локальный commit;
-фактический SHA проверять по Git history. Push/PR не разрешены и не выполнялись.
+владельца. Исходный Stage 3 сохранён как `dbf5e3c`; [PR #3](https://github.com/Khimish009/reset-radar/pull/3)
+открыт из `feat/stage3-codex-adapter`. Владелец отдельно разрешил только два P2
+исправления с commit/push в эту ветку. Новый PR и merge не разрешены.
 **Stage 4 не разрешён.**
 
 ## Разрешение и результат
@@ -24,7 +25,8 @@ Telegram publisher, публичных endpoints или website implementation.
 На завершении реализации новые код/тесты/evidence были untracked.
 Существовавшие до Stage 3 README, docs 08/27 и START_STAGE3 сохранены и входят
 в отдельно разрешённый локальный commit вместе с результатом Stage 3.
-Новая копия remote не содержит локальную работу до отдельного разрешения push.
+При старте доработки PR #3 remote/local совпадали на `dbf5e3c`, CI этого SHA
+был successful. SHA исправлений сверять по Git history и фактическому head PR.
 
 ## Семантика и interfaces
 
@@ -57,6 +59,15 @@ Telegram publisher, публичных endpoints или website implementation.
   assessment с достаточным primary evidence. Homepage/URL/timestamp сами по себе
   недостаточны. Live originals в Stage 3 не подтверждались. Hinted/unreviewed
   regular остаются review. Banked не consumption/current-active reset.
+- Banked без отдельного достаточного assessment assertion=`banked_offer`
+  остаётся `needs_review` с `banked_offer_unverified`. Проверка связывает raw
+  URL, полный record key, rationale и primary URL. Принятый assessment сохраняется
+  в reviewedEvidence/provenance; `delivered_at` не заменяет evidence оффера.
+- Для scheduled явный `assessment.futureTarget` должен совпасть с raw target
+  по precision и значению. Exact сравнивается как UTC instant, date — буквально;
+  отсутствующий target сохраняет прежний raw-derived путь. Explicit unknown,
+  cross-precision, conflict и malformed target — review с отдельной причиной.
+  `scheduled_for` при наличии определяет target; raw.day не превращается в UTC-день.
 - `announced_at`, delivered и local detection сохранены раздельно; `ts`/`date`
   остаются raw и никогда не заполняют effective. Date-only future строго после
   сегодняшней UTC-даты, без придуманной полуночи/timezone события.
@@ -65,10 +76,14 @@ Telegram publisher, публичных endpoints или website implementation.
 
 ## Проверки и продолжение
 
-Последние результаты: typecheck/lint PASS, полный offline Vitest 162 passed /
-2 opt-in skipped, Stage 0 verify139 PASS, diff whitespace PASS. Local Postman
-HTTP simulation1 PASS на финальном коде; mock остановлен, процесс exit0/SIGINT.
-Независимое review `stage3_review` (reviewer, gpt-6.1-sol, reasoning high)
+Последние результаты доработки PR #3: typecheck/lint PASS, полный offline Vitest
+186 passed / 2 opt-in skipped, Stage 0 verify139 PASS, diff whitespace PASS.
+Независимое review двух P2 `pr3_p2_review` (reviewer, gpt-6.1-sol, reasoning high)
+завершено без оставшихся critical/high/medium findings; reviewer независимо
+выполнил те же пять обязательных проверок, включая полный набор 186 PASS / 2 skipped.
+Первоначальная HTTP simulation1 PASS относится к `dbf5e3c`; после чистых
+mapping исправлений simulation не повторялась. Mock остановлен, exit0/SIGINT.
+Первоначальное review `stage3_review` (reviewer, gpt-6.1-sol, reasoning high)
 завершено без оставшихся critical/high/medium findings; 124 targeted Codex/Claude
 tests и diff check PASS. Исправлена потеря дополнительных primary evidence URLs.
 
