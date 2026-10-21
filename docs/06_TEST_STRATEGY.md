@@ -6,6 +6,19 @@ Vitest with deterministic clock and fetch; Wrangler local D1 bindings for integr
 
 ## Data ingestion / truth gates
 
+### Stage 2 — Claude adapter (local)
+
+Stage 2 checks exercise the standalone Claude adapter only. The `Worker scheduled()` and `fetch()` handlers remain inert; these tests do not establish D1 persistence, production source baselines, Telegram eligibility or production truth policy. Mark a check complete only when its current test or recorded local command covers it.
+
+- [x] Strict Claude status/resets/sources contract parsing rejects unknown/missing fields and enum values; schema rejection retains the payload and source URL for internal review diagnostics.
+- [x] Mapping preserves raw kind/status, revision, source/evidence URLs, audience, plans, exclusions, windows and date-only precision. Confirmed application and future announcement require an explicit evidence assessment matching the event revision and original source URLs; otherwise the record stays `needs_review`.
+- [x] A confirmed `credit` with a `reset_offer` maps to `banked_offer`; it does not claim use, current activity or a precise expiry time. Applied/delivered times are never fabricated.
+- [x] Conditional GET uses endpoint plus canonical query as its cache key; a valid `304` retains the previous snapshot and validator. Cache minimum is 60 seconds; `sources.last_reviewed_at` accepts date-only values.
+- [x] Bounded cursor paging accepts only a complete, revision-consistent walk. Failed/partial walks keep the previous complete history; missing rows are retained without inferring withdrawal.
+- [x] Deterministic transport/adapter tests cover cache/backoff, `304` with and without a snapshot, timeout, invalid responses, `429`/`Retry-After`, `503`, and pagination failures.
+- [x] An opt-in Postman local simulation test calls a loopback mock; it does not call the real upstream. Live HTTP reads were separate targeted manual checks and are not automated tests.
+- [ ] Independent Stage 2 review and owner acceptance; see [Stage 2 report](26_STAGE2_REPORT.md).
+
 - [ ] Claude: confirmed reset, future announcement, active/redeemable banked offer, expired offer, revision and explicit withdrawal, unexpected enum.
 - [ ] Codex: announcement with `delivered_at=null` **never** labeled complete; delivered later creates correct state change; `scheduled.certainty=hinted` not auto-published.
 - [ ] `304` preserves cached snapshot; bad JSON, partial pagination and 429/503 do not delete records or trigger retractions.

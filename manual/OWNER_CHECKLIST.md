@@ -32,7 +32,15 @@
 - [x] Local Worker skeleton, isolated dry-run configuration, safe logger and typed vocabulary; no upstream/D1/Telegram integration.
 - [x] Documentation/prompts visible to Git; secrets/dependencies/local runtime artifacts ignored. No automatic commit or push.
 - [ ] Review actual checks and independent review in `docs/24_STAGE1_REPORT.md`; owner accepts the stage.
-- [ ] Separately authorize Stage 2. No automatic continuation or remote operations.
+- [x] Separately authorize Stage 2 through `prompts/START_STAGE2.md`; this authorization does not choose Codex or accept production truth policy.
+
+## Stage 2 — local Claude adapter only
+
+- [x] Claude status/resets/sources adapter, strict contract validation, conservative mapping and deterministic tests implemented locally.
+- [x] Evidence contract projection is saved separately in `docs/evidence/stage2-claude-2026-10-21/`; raw upstream response bodies are not committed.
+- [ ] Review the independent review result and the factual [Stage 2 report](../docs/26_STAGE2_REPORT.md), then accept or request changes.
+- [ ] Keep Codex source choice, provider baseline and production publication truth policy pending. None is approved by Stage 2.
+- [ ] Give a separate explicit Stage 3 assignment before Codex adapter work. Do not infer authorization from this checklist or the prepared prompt.
 
 ## Worker/D1 staging (later)
 
