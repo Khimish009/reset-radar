@@ -102,10 +102,23 @@ function asIso(ms: number): string {
 }
 
 function cancelBody(response: Response): void {
-  if (response.body) void response.body.cancel().catch(() => undefined);
+  if (!response.body) return;
+  try {
+    void response.body.cancel().catch(() => undefined);
+  } catch {
+    // A response body may already be locked or canceled.
+  }
 }
 
-async function readBoundedBody(response: Response): Promise<{ ok: true; text: string } | { ok: false; reason: "too_large" | "read_error" }> {
+type BodyReadResult =
+  | { ok: true; text: string }
+  | { ok: false; reason: "too_large" | "read_error" | "aborted" };
+
+async function readBoundedBody(response: Response, signal: AbortSignal): Promise<BodyReadResult> {
+  if (signal.aborted) {
+    cancelBody(response);
+    return { ok: false, reason: "aborted" };
+  }
   const contentLength = Number(response.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
     cancelBody(response);
@@ -116,20 +129,50 @@ async function readBoundedBody(response: Response): Promise<{ ok: true; text: st
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let totalBytes = 0;
+  let removeAbortListener: () => void = () => {};
+  const aborted = new Promise<"aborted">((resolve) => {
+    const onAbort = () => {
+      try {
+        // Do not await this: an underlying source can leave cancel() pending forever.
+        void reader.cancel().catch(() => undefined);
+      } catch {
+        // The reader can already be closed or canceled.
+      }
+      resolve("aborted");
+    };
+    if (signal.aborted) {
+      onAbort();
+      return;
+    }
+    signal.addEventListener("abort", onAbort, { once: true });
+    removeAbortListener = () => signal.removeEventListener("abort", onAbort);
+    if (signal.aborted) onAbort();
+  });
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      if (signal.aborted) return { ok: false, reason: "aborted" };
+      const read = reader.read();
+      const result = await Promise.race([read, aborted]);
+      if (result === "aborted" || signal.aborted) return { ok: false, reason: "aborted" };
+      const { done, value } = result;
       if (done) break;
       totalBytes += value.byteLength;
       if (totalBytes > MAX_BODY_BYTES) {
-        void reader.cancel().catch(() => undefined);
+        try {
+          void reader.cancel().catch(() => undefined);
+        } catch {
+          // Ignore cancellation failures after the size limit has been reached.
+        }
         return { ok: false, reason: "too_large" };
       }
       chunks.push(value);
     }
+    if (signal.aborted) return { ok: false, reason: "aborted" };
   } catch {
+    if (signal.aborted) return { ok: false, reason: "aborted" };
     return { ok: false, reason: "read_error" };
   } finally {
+    removeAbortListener();
     reader.releaseLock();
   }
 
@@ -249,8 +292,8 @@ export function createClaudeTransport(
         cancelBody(response);
         return { ok: false, code: "invalid_response", lastValid, retryAt: asIso(deps.clock.now().getTime() + MIN_CACHE_MS) };
       }
-      const body = await readBoundedBody(response);
-      if (timedOut) {
+      const body = await readBoundedBody(response, controller.signal);
+      if (timedOut || controller.signal.aborted || (body.ok === false && body.reason === "aborted")) {
         return { ok: false, code: "timeout", lastValid, retryAt: asIso(deps.clock.now().getTime() + MIN_CACHE_MS) };
       }
       if (!body.ok) {
@@ -279,6 +322,9 @@ export function createClaudeTransport(
       }
 
       const afterParseMs = deps.clock.now().getTime();
+      if (timedOut || controller.signal.aborted) {
+        return { ok: false, code: "timeout", lastValid, retryAt: asIso(afterParseMs + MIN_CACHE_MS) };
+      }
       const etag = response.headers.get("etag");
       state.entries.set(key, {
         value,

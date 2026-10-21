@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, type MockInstance } from "vitest";
 import { createClaudeHttpState, createClaudeTransport, type ClaudeEndpoint, type ClaudeHttpResult } from "../src/providers/claude/transport";
 import type { RuntimeDependencies } from "../src/runtime";
 import { createLogger } from "../src/utils/logging";
@@ -247,6 +247,137 @@ describe("Claude HTTP transport", () => {
       const timeoutBodyResult = await pendingBody;
       expect(timeoutBodyResult).toMatchObject({ ok: false, code: "timeout" });
       expect(Date.parse(failure(timeoutBodyResult).retryAt) - h2.now()).toBe(120_000);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("cancels a stalled response stream on timeout and keeps the last snapshot", async () => {
+    vi.useFakeTimers();
+    try {
+      const firstResponse = jsonResponse({ value: "saved" }, { etag: '"saved-etag"' });
+      let cancelCalled = false;
+      const stalledBody = new ReadableStream<Uint8Array>({
+        pull() {},
+        cancel() {
+          cancelCalled = true;
+          // A hostile stream may never settle its cancellation promise.
+          return new Promise<void>(() => undefined);
+        },
+      });
+      const hangingResponse = new Response(stalledBody, { headers: { "content-type": "application/json" } });
+      const fetch = vi.fn<RuntimeDependencies["fetch"]>()
+        .mockResolvedValueOnce(firstResponse)
+        .mockResolvedValueOnce(hangingResponse)
+        .mockResolvedValueOnce(jsonResponse({ value: "recovered" }));
+      const h = harness(fetch);
+      const state = createClaudeHttpState();
+      const transport = createClaudeTransport(h.deps, state, { timeoutMs: 25 });
+      const query = new URLSearchParams();
+      const parsed = vi.fn(parseObject);
+
+      expect(await transport.get("status", query, parsed)).toMatchObject({ ok: true, value: { value: "saved" } });
+      const savedEntry = state.entries.get("status?");
+      h.advance(60_000);
+
+      const refresh = transport.get("status", query, parsed);
+      const activeSignal = fetch.mock.calls[1]?.[1]?.signal;
+      expect(activeSignal?.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(25);
+      expect(await refresh).toMatchObject({ ok: false, code: "timeout", lastValid: { value: "saved" } });
+
+      expect(activeSignal?.aborted).toBe(true);
+      expect(cancelCalled).toBe(true);
+      expect(stalledBody.locked).toBe(false);
+      expect(parsed).toHaveBeenCalledTimes(1);
+      expect(state.entries.get("status?")).toBe(savedEntry);
+
+      h.advance(120_000);
+      expect(await transport.get("status", query, parsed)).toMatchObject({ ok: true, origin: "network", value: { value: "recovered" } });
+      expect(new Headers(fetch.mock.calls[2]?.[1]?.headers).get("if-none-match")).toBe('"saved-etag"');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("contains a rejected body cancellation when a timed-out stream is canceled", async () => {
+    vi.useFakeTimers();
+    try {
+      let cancelCalled = false;
+      const body = new ReadableStream<Uint8Array>({
+        pull() {},
+        cancel() {
+          cancelCalled = true;
+          return Promise.reject(new Error("cancel failed"));
+        },
+      });
+      const fetch = vi.fn<RuntimeDependencies["fetch"]>().mockResolvedValue(
+        new Response(body, { headers: { "content-type": "application/json" } }),
+      );
+      const h = harness(fetch);
+      const result = createClaudeTransport(h.deps, createClaudeHttpState(), { timeoutMs: 25 })
+        .get("status", new URLSearchParams(), parseObject);
+
+      await vi.advanceTimersByTimeAsync(25);
+      await expect(result).resolves.toMatchObject({ ok: false, code: "timeout" });
+      expect(cancelCalled).toBe(true);
+      expect(body.locked).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it.each([false, true])("removes the body abort listener and reader lock after read error=%s", async (readError) => {
+    const response = readError
+      ? new Response(new ReadableStream<Uint8Array>({ start(controller) { controller.error(new Error("synthetic read error")); } }), {
+        headers: { "content-type": "application/json" },
+      })
+      : jsonResponse({ value: "valid" });
+    let signal: AbortSignal | undefined;
+    let add: MockInstance<AbortSignal["addEventListener"]> | undefined;
+    let remove: MockInstance<AbortSignal["removeEventListener"]> | undefined;
+    const fetch = vi.fn<RuntimeDependencies["fetch"]>(async (_input, init) => {
+      signal = init?.signal ?? undefined;
+      if (!signal) throw new Error("Expected managed request signal");
+      add = vi.spyOn(signal, "addEventListener");
+      remove = vi.spyOn(signal, "removeEventListener");
+      return response;
+    });
+    const result = await createClaudeTransport(harness(fetch).deps).get("status", new URLSearchParams(), parseObject);
+    expect(result.ok).toBe(!readError);
+    expect(response.body?.locked).toBe(false);
+    const listener = add?.mock.calls.find(([event]) => event === "abort")?.[1];
+    expect(listener).toBeTypeOf("function");
+    expect(remove).toHaveBeenCalledWith("abort", listener);
+    expect(signal?.aborted).toBe(false);
+  });
+
+  it("cancels a late response after timeout without parsing or replacing the cached snapshot", async () => {
+    vi.useFakeTimers();
+    try {
+      let resolveFetch!: (response: Response) => void;
+      const fetch = vi.fn<RuntimeDependencies["fetch"]>()
+        .mockResolvedValueOnce(jsonResponse({ value: "saved" }, { etag: '"saved"' }))
+        .mockImplementationOnce(() => new Promise((resolve) => { resolveFetch = resolve; }));
+      const h = harness(fetch);
+      const state = createClaudeHttpState();
+      const transport = createClaudeTransport(h.deps, state, { timeoutMs: 25 });
+      const parsed = vi.fn(parseObject);
+      await transport.get("status", new URLSearchParams(), parsed);
+      const cached = state.entries.get("status?");
+      h.advance(60_000);
+      const pending = transport.get("status", new URLSearchParams(), parsed);
+      await vi.advanceTimersByTimeAsync(25);
+      await expect(pending).resolves.toMatchObject({ ok: false, code: "timeout" });
+      const cancel = vi.fn();
+      const body = new ReadableStream<Uint8Array>({ cancel });
+      resolveFetch(new Response(body, { headers: { "content-type": "application/json", etag: '"late"' } }));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(body.locked).toBe(false);
+      expect(parsed).toHaveBeenCalledTimes(1);
+      expect(state.entries.get("status?")).toBe(cached);
+      expect(state.inFlight.size).toBe(0);
     } finally {
       vi.useRealTimers();
     }

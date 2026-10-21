@@ -230,3 +230,67 @@ describe("Claude schema rejects unsupported or malformed payloads safely", () =>
     expect(() => parseClaudePage({ data: [projection] })).toThrowError("claude_schema_rejected");
   });
 });
+
+describe("PR #2 SYNTHETIC future announcement regressions", () => {
+  const announced = syntheticEvent({ event_status: "announced" });
+  const assessment = {
+    eventId: announced.id, revision: announced.revision,
+    assertion: "future_announcement" as const, evidenceUrls: [evidenceUrl],
+  };
+
+  it.each([
+    ["tomorrow", "2026-10-21T12:00:00Z", "2026-10-22", true],
+    ["today", "2026-10-21T12:00:00Z", "2026-10-21", false],
+    ["yesterday", "2026-10-21T12:00:00Z", "2026-10-20", false],
+    ["several days ahead", "2026-10-21T12:00:00Z", "2026-10-25", true],
+    ["before UTC midnight", "2026-10-21T23:59:59.999Z", "2026-10-22", true],
+    ["at UTC midnight", "2026-10-22T00:00:00Z", "2026-10-22", false],
+    ["after UTC midnight", "2026-10-22T00:00:00.001Z", "2026-10-22", false],
+    ["year boundary", "2026-12-31T23:59:59.999Z", "2027-01-01", true],
+    ["UTC date ahead of clock's -12 offset date", "2026-12-31T23:30:00-12:00", "2027-01-01", false],
+    ["UTC date behind clock's +14 offset date", "2027-01-02T00:30:00+14:00", "2027-01-02", true],
+    ["valid leap day tomorrow", "2028-02-28T12:00:00Z", "2028-02-29", true],
+  ])("uses the UTC reference calendar for %s", (_label, at, on, future) => {
+    const mapped = mapClaudeEvent(announced, new Date(at), {
+      ...assessment, futureTarget: { precision: "date", on },
+    });
+    expect(mapped.record.action).toBe(future ? "announced_future" : "needs_review");
+    expect(mapped).toHaveProperty("verifiedFutureTarget", future ? { precision: "date", on } : null);
+    expect(mapped.record.effective).toEqual({ precision: "unknown" });
+    expect(mapped.record.delivered).toEqual({ precision: "unknown" });
+  });
+
+  it.each(["2026-02-30", "2099-02-29", "2099-13-01", "2099-1-02", "2099-01-01T00:00:00Z"])(
+    "keeps invalid date-only target %s in review without a verified target", (on) => {
+      const mapped = mapClaudeEvent(announced, now, { ...assessment, futureTarget: { precision: "date", on } });
+      expect(mapped.record.action).toBe("needs_review");
+      expect(mapped).toHaveProperty("verifiedFutureTarget", null);
+    },
+  );
+
+  it("returns the checked exact target separately from effective/delivered", () => {
+    const target = { precision: "exact" as const, at: "2026-10-21T12:00:00.001Z" };
+    const mapped = mapClaudeEvent(announced, now, { ...assessment, futureTarget: target });
+    expect(mapped.record.action).toBe("announced_future");
+    expect(mapped).toHaveProperty("verifiedFutureTarget", target);
+    expect(mapped.record.effective).toEqual({ precision: "unknown" });
+    expect(mapped.record.delivered).toEqual({ precision: "unknown" });
+    target.at = "2020-01-01T00:00:00Z";
+    expect(mapped).toHaveProperty("verifiedFutureTarget", { precision: "exact", at: "2026-10-21T12:00:00.001Z" });
+  });
+
+  it("never exposes an unverified, expired, unknown or irrelevant assessment target", () => {
+    const futureTarget = { precision: "date" as const, on: "2099-01-01" };
+    const unverified = [
+      mapClaudeEvent(announced, now),
+      mapClaudeEvent(announced, now, { ...assessment, eventId: "another-event", futureTarget }),
+      mapClaudeEvent(announced, now, { ...assessment, revision: 999, futureTarget }),
+      mapClaudeEvent(announced, now, { ...assessment, evidenceUrls: [], futureTarget }),
+      mapClaudeEvent(announced, now, { ...assessment, evidenceUrls: ["https://example.invalid/unverified"], futureTarget }),
+      mapClaudeEvent(announced, now, { ...assessment, futureTarget: { precision: "unknown" } }),
+      mapClaudeEvent(announced, now, { ...assessment, futureTarget: { precision: "exact", at: now.toISOString() } }),
+      mapClaudeEvent(syntheticEvent(), now, { ...assessment, assertion: "applied", futureTarget }),
+    ];
+    for (const mapped of unverified) expect(mapped).toHaveProperty("verifiedFutureTarget", null);
+  });
+});

@@ -16,12 +16,16 @@ export interface ClaudeEvidenceAssessment {
   futureTarget?: EventTime;
 }
 
+export type ClaudeFutureTarget = Exclude<EventTime, { readonly precision: 'unknown' }>;
+
 export interface ClaudeMappedEvent {
   record: EventRecord;
   raw: ClaudeEvent;
   audience: ClaudeEvent['audience'];
   windows: ClaudeEvent['windows'];
   reviewReasons: readonly string[];
+  /** Validated, evidence-bound target only for an accepted future announcement. */
+  verifiedFutureTarget: ClaudeFutureTarget | null;
 }
 
 /** Source-specific mapping only. Unreviewed execution claims fail closed. */
@@ -37,6 +41,7 @@ export function mapClaudeEvent(
     Number.isSafeInteger(assessment.previous.revision) && assessment.previous.revision >= 1 &&
     assessment.previous.revision < raw.revision;
   let action: EventAction = 'needs_review';
+  let verifiedFutureTarget: ClaudeFutureTarget | null = null;
   let reason = 'insufficient_evidence';
   const withdrawn = raw.event_status === 'cancelled' || raw.event_status === 'retracted' ||
     raw.correction?.kind === 'retraction';
@@ -55,21 +60,27 @@ export function mapClaudeEvent(
     action = 'confirmed_applied';
   } else if (raw.event_status === 'announced' && verified && assessment.assertion === 'future_announcement') {
     const target = assessment.futureTarget;
-    // A date-only day has no timezone; require a full day of separation to avoid
-    // treating an already-started day anywhere on Earth as an established future.
-    let future = false;
+    // Date-only policy: compare calendar dates against today's UTC date. Today
+    // and past dates stay in review; tomorrow qualifies. UTC is only the stable
+    // comparison reference, not an inferred event timezone or midnight instant.
+    // This does not claim the date has yet to start in every timezone.
     try {
-      future = target?.precision === 'exact' ? Date.parse(instant(target.at)) > now.getTime()
-        : target?.precision === 'date' && date(target.on) > new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
+      if (target?.precision === 'exact') {
+        const at = instant(target.at);
+        if (Date.parse(at) > now.getTime()) verifiedFutureTarget = { precision: 'exact', at };
+      } else if (target?.precision === 'date') {
+        const on = date(target.on);
+        if (on > now.toISOString().slice(0, 10)) verifiedFutureTarget = { precision: 'date', on };
+      }
     } catch { /* Invalid assessment dates cannot promote a record. */ }
-    if (future) action = 'announced_future';
+    if (verifiedFutureTarget !== null) action = 'announced_future';
     else reason = 'future_target_not_established';
   }
   const announced: EventTime = raw.time_precision === 'exact' && raw.announced_at !== null
     ? { precision: 'exact', at: raw.announced_at }
     : raw.announced_on !== null ? { precision: 'date', on: raw.announced_on } : { precision: 'unknown' };
   return {
-    raw, audience: raw.audience, windows: raw.windows,
+    raw, audience: raw.audience, windows: raw.windows, verifiedFutureTarget,
     reviewReasons: action === 'needs_review' ? [reason] : [],
     record: {
       provider: 'claude', action, announced,

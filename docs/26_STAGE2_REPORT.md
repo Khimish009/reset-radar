@@ -1,6 +1,14 @@
 # 26 — Отчёт Stage 2: локальный Claude adapter
 
-Дата: **2026-10-21**. Stage 2 отдельно разрешён владельцем через `prompts/START_STAGE2.md`. Работа выполнена в локальной ветке `feat/stage2-claude-adapter`, основанной на `main`. Отчёт фиксирует implementation и проверки; принятие результата владельцем ещё не отмечено. Codex feed и production truth policy остаются pending. **Не развёрнуто / не опубликовано.**
+Дата: **2026-10-21**. Stage 2 отдельно разрешён владельцем через `prompts/START_STAGE2.md`. Работа выполнена в ветке `feat/stage2-claude-adapter`, основанной на `main`. В задании по [PR #2](https://github.com/Khimish009/reset-radar/pull/2) владелец принял архитектуру и основную реализацию и разрешил исправления трёх замечаний с commit/push в ту же ветку. Codex feed и production truth policy остаются pending. **Не развёрнуто / не опубликовано.**
+
+## Доработка PR #2
+
+- **Date-only future:** проверенная календарная дата должна быть строго позже текущей даты UTC. Завтра принимается, сегодня и вчера остаются `needs_review`. UTC служит единой базой сравнения, независимо от часового пояса процесса; это не timezone события и не вымышленное время `00:00:00Z`. Политика консервативно не принимает оставшуюся часть сегодняшнего дня и не утверждает, что завтрашняя UTC дата ещё не наступила ни в одном часовом поясе. Это локальная классификация, не production signoff.
+- **Проверенный target:** результат mapping содержит `verifiedFutureTarget: ClaudeFutureTarget | null`, где тип допускает только `exact` или `date`. Копируется только валидный будущий target после проверки ID/revision/original evidence и статуса анонса. У неподтверждённых, просроченных и иных событий поле равно `null`; `effective` и `delivered` не подменяются. Persistence не добавлен.
+- **HTTP body:** timeout отменяет fetch и активный reader; отмена reader не ожидает потенциально зависший underlying `cancel()`. Abort-обработчик удаляется, lock освобождается; ошибки отмены обработаны. Поздний ответ не парсится и не обновляет cache. ETag/304/Retry-After/backoff сохранены.
+
+Добавлены 23 synthetic regression cases: 18 mapping (завтра/сегодня/вчера, несколько дней, UTC/year/leap-day boundaries, offsets, invalid dates и сохранение target) и 5 transport (фактическая отмена, зависший/rejected cancel, cleanup success/error, поздний response). До исправлений точечные команды воспроизвели неверный отказ для завтра, отсутствие target и отсутствие вызова `cancel()` у зависшего потока. Исторические captures не менялись; новых live upstream запросов в этой доработке не было.
 
 ## 1. Выполнено / не выполнено
 
@@ -22,15 +30,16 @@ Evidence: `docs/evidence/stage2-claude-2026-10-21/contract.json` — струк�
 
 | Команда / проверка | Результат |
 |---|---|
-| `npm run typecheck` | PASS на финальном исходнике после transport hardening. Промежуточный TypeScript TS2454 при refactor cleanup исправлен и перепроверен. |
-| `npm run lint` | PASS после исправления двух первоначально найденных lint замечаний. |
-| `npm test` | PASS: **74 passed, 1 skipped**. Пропущенный тест — opt-in loopback simulation, запускается отдельной командой. |
+| `npm run typecheck` | PASS на финальном исходнике доработки PR #2. |
+| `npm run lint` | PASS на финальном исходнике доработки PR #2. |
+| `npm test` | PASS: **97 passed, 1 skipped**. Пропущенный тест — opt-in loopback simulation, запускается отдельной командой. |
 | `env CLAUDE_SIMULATION_URL=http://127.0.0.1:4901/claude npm test -- --run tests/claude-simulation.test.ts` | PASS: **1 passed** против локального mock. |
 | `postman simulation run postman/simulations/claude-local.sim.yaml --port 4901 --output ndjson --no-history` | Завершено локально: 9 loopback вызовов, 8 ответов и один намеренно задержанный вызов, завершённый timeout; mock остановлен. Первые прогоны выявили фикстуру и loopback permissions, исправления затем проверены; они не записаны как успешные первые попытки. |
 | Отдельные read-only `curl` GET к `https://clauderesets.com/api/openapi.json`, `/api/docs`, `/api/v1/status`, `/api/v1/resets?limit=100` и `/api/v1/sources` | Все проверенные текущие endpoints ответили HTTP 200; parser принял status, resets (12 строк) и sources (7 строк) с `content_revision=371643df80cca0ae`. В `observations.json` сохранены URL, status и SHA-256 тел, сами тела не сохранены. Codex не опрашивался. |
 | `python3 docs/evidence/stage0-2026-10-21/verify.py` | PASS: 139 offline assertions на последнем запуске; архивные captures/manifest не изменялись. |
 | `git diff --check HEAD` | PASS: whitespace check чистый на последнем запуске. |
 | Independent review | Завершено: `stage2_review` (reviewer, gpt-6.1-sol, reasoning high). Исправлены и покрыты регрессиями overflow HTTP delay headers и разный backoff concurrent failures. Оставшихся critical/high/medium findings нет. Reviewer независимо выполнил 34 mapping/adapter и 16 transport tests (50 PASS), diff check PASS; live upstream/simulation им не запускались. |
+| Independent review доработки PR #2 | Завершено: `pr2_review` (reviewer, gpt-6.1-sol, reasoning high). Оставшихся critical/high/medium findings нет; все три замечания закрыты. Независимо выполнены **59 mapping/transport tests PASS** и `git diff --check HEAD` PASS; scope, cleanup и guards проверены. |
 | Website build / удалённый CI / D1 / Worker runtime / Telegram E2E | Неприменимо или не запускалось; website пока placeholder, remote и инфраструктурные проверки не разрешены. |
 
 Исторические провайдерские тела для parser tests не использовались как будто это полные ответы: Stage 0 архив содержит сокращённые projections; тесты используют помеченные synthetic contract-shaped fixtures. Live upstream вызовы не входят в автоматические тесты. Postman simulation обращалась только к локальному loopback mock.
@@ -47,16 +56,16 @@ Evidence: `docs/evidence/stage2-claude-2026-10-21/contract.json` — струк�
 - Claude `304` и реальные correction/withdrawal/future announcements не наблюдались. Соответствующие ветви проверены synthetic/contract tests; живые 429/503 намеренно не провоцировались.
 - После перезапуска in-memory cache/history теряются; durable baseline и revision journal относятся к будущему отдельному этапу.
 - Любое расширение upstream схемы сначала отвергается. Это сохраняет fail-closed поведение, но потребует обновления контракта/parser при реальном изменении источника.
-- Reviewed future target передаётся в assessment и не копируется в `effective`/`delivered`. Его durable хранение вместе с evidence потребует решения в shared policy этапе; assessment не сохраняется автоматически.
+- Reviewed future target сохраняется в `verifiedFutureTarget` отдельно от `effective`/`delivered`. Его durable хранение вместе с evidence потребует решения в shared policy этапе; состояние процесса не является persistence.
 
 ## 6. Действия владельца и разрешения
 
-Владельцу нужно изучить итог независимого review, затем отдельно принять либо вернуть Stage 2 на доработку. Принятие локального adapter не выбирает Codex feed и не утверждает production truth policy. Provider baseline, D1, публикация и production остаются закрытыми gates. Для Stage 3 требуется отдельное явное задание владельца; до него работу не продолжать.
+Владелец принял архитектуру и основную реализацию и разрешил только перечисленную доработку PR #2 с commit/push. Это не выбирает Codex feed и не утверждает production truth policy. Provider baseline, D1, публикация и production остаются закрытыми gates. Merge и Stage 3 требуют отдельных разрешений.
 
 ## 7. PR
 
-PR не создан.
+Существующий [PR #2](https://github.com/Khimish009/reset-radar/pull/2) обновляется через push в `feat/stage2-claude-adapter`; новый PR не создаётся.
 
 ## 8. Внешние действия
 
-После завершения локального этапа владелец отдельно разрешил commit и push `feat/stage2-claude-adapter`; фактический результат этих Git-операций сообщается отдельно. PR, merge, D1, Cloudflare login/resources/migrations, deploy и Telegram sends не выполнялись и этим поручением не разрешены. **Не развёрнуто / не опубликовано. Stage 3 без нового задания не начинать.**
+Владелец отдельно разрешил commit и push исправлений PR #2 в `feat/stage2-claude-adapter`; фактический SHA и результат push сообщаются отдельно. Перед commit проверены diff, scope из шести файлов и типичные credential patterns: совпадений нет. Merge, D1, Cloudflare login/resources/migrations, deploy и Telegram sends не выполнялись и этим поручением не разрешены. **Не развёрнуто / не опубликовано. Stage 3 без нового задания не начинать.**
