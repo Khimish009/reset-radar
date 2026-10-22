@@ -111,7 +111,7 @@ Details and exact SHAs: [current handoff](33_STAGE5_HANDOFF.md).
 [START_STAGE6](../prompts/START_STAGE6.md), с принятием Stage 5 из merged PR #5.
 Scope: dry-run runtime integration, настоящий local D1, offline/loopback HTTP
 tests, независимое review и конкретный remote plan. Фактические результаты:
-[original local report](34_STAGE6_LOCAL_REPORT.md), [current handoff](37_STAGE6_PREFLIGHT_HANDOFF.md).
+[original local report](34_STAGE6_LOCAL_REPORT.md), [current handoff](39_STAGE6_CAPACITY_HANDOFF.md).
 Полный acceptance ниже остаётся pending до отдельно разрешённого remote наблюдения.
 
 Scheduled подключает ingestion только при явных local/staging настройках и DB.
@@ -131,8 +131,22 @@ timeout/parallelism, добавлен real-D1 workload harness и подгото
 change set. Фактические проверки и review — [preflight report](36_STAGE6_PREFLIGHT_REPORT.md).
 Активный staging **NO-GO**: account/plan/target/budget, query accounting и CPU
 не подтверждены, capacity>100 требует отдельного решения (ADR-042).
-Stable-staging acceptance pending; новый GitHub CI не запускался. Следующие
-remote gates разрешаются отдельно; Stage 7–11 не назначены.
+После отчёта владелец разрешил commit/push:7a9eedf отправлен агентом и вошёл в
+[PR#7](https://github.com/Khimish009/reset-radar/pull/7), merged внешним процессом
+как1bfbe98. PR CI19 и merge CI20 success; CI18 остаётся historical failure.
+[Evidence](evidence/stage6-2026-10-22/pr7-ci.md). Stable-staging acceptance pending.
+**Capacity design назначен владельцем 2026-10-22** через
+[CONTINUE_STAGE6_CAPACITY](../prompts/CONTINUE_STAGE6_CAPACITY.md): только local
+design/decision, checks/review и STOP. [Decision proposal](38_STAGE6_CAPACITY_DECISION.md)
+сравнивает A/B/C; после product review PR#8 предложен B-first → bounded A
+только после gates, C при measured capacity/latency need, owner choice pending.
+C дополнен priority detection отдельно от backfill и proposed latency target,
+без обхода первого полного baseline/evidence gates. Новый protocol не реализован.
+Следующий предлагаемый implementation gate — отдельное local B assignment; remote account/plan/budget/accounting остаются
+unknown и active staging NO-GO. [Текущий handoff](39_STAGE6_CAPACITY_HANDOFF.md).
+Stage7 — только после завершения Stage6 и отдельного назначения.
+Сервисные remote действия не разрешены; текущий docs-only follow-up отдельно
+разрешает commit/push только в ветку PR#8, без merge.
 
 Owner-controlled D1/Secrets/Wrangler setup, staging Cron observation, dedup and upstream staleness monitoring; staging channel tests only after approval. Review quotas/logs.
 
