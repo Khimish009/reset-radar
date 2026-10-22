@@ -160,3 +160,35 @@ E2E не выполнен.** Локальный scope завершён; оста
 Stage 6 с сохранённой подготовкой документации. Это разрешение не распространяется
 на push/PR/merge, remote/live операции или следующие этапы. Проверенная реализация
 при сохранении не менялась; SHA локального commit доступен в Git history.
+
+## Подготовка следующей сессии после merge PR #6
+
+Local commit **`7b4e1294761e60288a829aa4b4f8d377d7b3b455`** включил реализацию
+и сохранённую подготовку: 30 files, 1538 insertions / 172 deletions. Push/PR/merge
+выполнил владелец/внешний процесс. Read-only GitHub подтвердил PR #6 merged
+`2026-10-22T09:43:24Z`, merge/main **`22ebefe1e1a6243df4a0e769417dbbe184f1c5a4`**.
+Local main/origin/main совпали с этим SHA, дерево при начале подготовки чистое.
+
+[CI #17](https://github.com/Khimish009/reset-radar/actions/runs/39757187598)
+на PR head — success; merge
+[CI #18](https://github.com/Khimish009/reset-radar/actions/runs/39757621399)
+— failure. Job `119753530873`: install/typecheck/lint success; tests 310 passed,
+1 failed, 5 skipped; offline verify skipped. Test `tests/stage4-ingest.test.ts:313:3`
+cache validators/unsolicited 304 превысил 5000ms budget (5018ms), full run 40.80s.
+Stage 4 retention с 20s budget прошёл за 11022ms; это другой test.
+Факты и ограничения диагноза: [CI evidence](evidence/stage6-2026-10-22/ci18.md).
+Historical local checks выше не заменяют failed CI; в этой подготовке tests
+не воспроизводились и code/test/config не менялись.
+
+Последнее назначение — только сохранить контекст и подготовить
+[CONTINUE_STAGE6](../prompts/CONTINUE_STAGE6.md), не реализовывать его. Он при
+отдельном назначении разрешит local CI diagnosis/fix, затем D1 workload/capacity
+preflight перед отдельно разрешаемыми remote gates. Stage 7 не назначен,
+полный stable-staging acceptance остаётся pending. Нового commit/push/PR/merge,
+remote/live действий в этой подготовке нет. **Не развёрнуто / не опубликовано.**
+
+Проверки docs-only подготовки: diff-check PASS,61 local links PASS, Stage 0
+offline verify139 PASS. Application tests/typecheck/lint заново не запускались;
+runtime/config/tests/CI/dependencies без изменений. Независимый
+`stage6_continuation_prompt_review` (reviewer,gpt-6.1-sol,high) завершён без
+существенных findings; reviewer сделал diff-check, tests не перезапускал.

@@ -18,7 +18,7 @@ npm run d1:migrate:local
 python3 docs/evidence/stage0-2026-10-21/verify.py
 ```
 
-`typecheck` generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` retains isolated dry-run targets with no bindings, routes or active Cron triggers. HTTP remains inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. Scheduled ingestion requires explicit opt-in and DB; default/missing/invalid settings cannot start polling. Local tests inject clock/fetch and real Miniflare D1; opt-in HTTP tests route only to a loopback Postman substitute. No test or preview sends to Telegram. Codex uses only `codexreset.ai`, with no fallback or union with `codex-resets.com`. CORS and real public endpoints belong to Stage 9. See the [Stage 6 local report](docs/34_STAGE6_LOCAL_REPORT.md) and [current handoff](docs/35_STAGE6_LOCAL_HANDOFF.md).
+`typecheck` generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` retains isolated dry-run targets with no bindings, routes or active Cron triggers. HTTP remains inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. Scheduled ingestion requires explicit opt-in and DB; default/missing/invalid settings cannot start polling. Local tests inject clock/fetch and real Miniflare D1; opt-in HTTP tests route only to a loopback Postman substitute. No test or preview sends to Telegram. Codex uses only `codexreset.ai`, with no fallback or union with `codex-resets.com`. CORS and real public endpoints belong to Stage 9. See the [Stage 6 preflight report](docs/36_STAGE6_PREFLIGHT_REPORT.md) and [current handoff](docs/37_STAGE6_PREFLIGHT_HANDOFF.md).
 
 Local D1 checks (Miniflare/workerd needs loopback access):
 
@@ -72,13 +72,13 @@ Codex reset API ┘                                           │
 
 ## Start with Codex CLI (recommended workflow)
 
-1. Read `AGENTS.md`, this README, the [current handoff](docs/35_STAGE6_LOCAL_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
+1. Read `AGENTS.md`, this README, the [current handoff](docs/37_STAGE6_PREFLIGHT_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
 2. Run Codex from the repository root and inspect `git status`, including staged and unstaged changes; preserve existing work.
-3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage. The owner accepted Stage 5 from merged PR #5 and assigned only the local part of Stage 6 through `prompts/START_STAGE6.md`. Commit/push/PR/merge and remote/live operations remain unauthorized.
+3. Follow the **latest explicitly owner-approved task**. The owner assigned `CONTINUE_STAGE6.md`: local CI #18 test fix, D1 budget preflight, synthetic/loopback checks and independent review only. The report/handoff record the result; no later stage or remote/live/Git publication action is authorized. Previous commit permission does not carry forward.
 4. Report actual changes/checks and stop before the next stage. See `prompts/STAGE_REVIEW.md`.
 5. For a new project beginning with source research, `prompts/START_CODEX.md` describes Stage 0. When resuming this repository, use the current handoff rather than repeating completed stages.
-6. Stage 5 is merged through [PR #5](https://github.com/Khimish009/reset-radar/pull/5) as `ba8bd58`; PR head `bb2cd25` passed [CI #15](https://github.com/Khimish009/reset-radar/actions/runs/39744232678), and the merge passed [CI #16](https://github.com/Khimish009/reset-radar/actions/runs/39745365708). At handoff preparation, local `main` and `origin/main` matched the merge. The owner/external process performed the merge. See the current handoff for exact SHAs, test results and pending policy. The old stash, detached fallback worktree and recovery backup remain preserved; do not apply the old stash again.
-7. [START_STAGE6](prompts/START_STAGE6.md) defines the assigned local scope. Full Stage 6 stable-staging acceptance requires separate remote observation and remains pending. Future D1 creation/migration, deploy/bindings, upstream polling/Cron, real publisher design/token/channel setup and real Telegram requests/sends are distinct owner decisions; see the [runbook](docs/07_DEPLOYMENT_RUNBOOK.md). Commit/push/PR/merge permissions from PR #5 do not carry forward.
+6. Stage 6 implementation `7b4e129` is merged through [PR #6](https://github.com/Khimish009/reset-radar/pull/6) as `22ebefe`; [CI #17](https://github.com/Khimish009/reset-radar/actions/runs/39757187598) on the PR head passed. **Merge [CI #18](https://github.com/Khimish009/reset-radar/actions/runs/39757621399) failed**: the cache-validation D1 test exceeded 5s; typecheck/lint passed. At handoff preparation, local `main` and `origin/main` matched the verified remote merge. Exact SHAs, failure evidence and historical local checks are in the [handoff](docs/35_STAGE6_LOCAL_HANDOFF.md). The owner/external process performed push/PR/merge; the agent created only the authorized local commit. Recovery artifacts remain preserved; do not apply the old stash again.
+7. The local [CONTINUE_STAGE6](prompts/CONTINUE_STAGE6.md) assignment adds a reproducible real-D1 workload harness (`npm run test:workload`). Local passing tests do not replace failed CI #18 or prove remote quotas/CPU. Active staging is **NO-GO** until account/plan/budget, query accounting and capacity scope are resolved. Full stable-staging acceptance remains pending; Stage 7 is not assigned. D1 creation/migration, inactive deploy/bindings, upstream/Cron observation and real Telegram work remain separate decisions; see the [runbook](docs/07_DEPLOYMENT_RUNBOOK.md).
 
 ## Documents
 
@@ -95,11 +95,13 @@ Codex reset API ┘                                           │
 - [Stage 3 report](docs/28_STAGE3_REPORT.md), [historical handoff](docs/29_STAGE3_HANDOFF.md) — accepted local Codex adapter and PR #3 fixes.
 - [Stage 4 report](docs/30_STAGE4_REPORT.md), [historical handoff](docs/31_STAGE4_HANDOFF.md) — local D1, normalization, ingestion, checks and pending production decisions.
 - [Stage 5 report](docs/32_STAGE5_REPORT.md), [historical handoff](docs/33_STAGE5_HANDOFF.md) — accepted local Telegram rendering, publisher and loopback simulation; production decisions remain pending.
-- [Stage 6 local report](docs/34_STAGE6_LOCAL_REPORT.md), [current handoff](docs/35_STAGE6_LOCAL_HANDOFF.md) — scheduled dry-run integration, local verification and the separately gated staging plan; stable staging remains pending.
+- [Stage 6 local report](docs/34_STAGE6_LOCAL_REPORT.md), [historical handoff](docs/35_STAGE6_LOCAL_HANDOFF.md) — original scheduled dry-run integration and merge/CI context.
+- [Stage 6 preflight report](docs/36_STAGE6_PREFLIGHT_REPORT.md), [current handoff](docs/37_STAGE6_PREFLIGHT_HANDOFF.md) — local CI test fix, real-D1 workload evidence, conditional go/no-go and separate remote gates; stable staging remains pending.
 - `prompts/START_STAGE3.md` — local Codex adapter assignment with explicit source/base gates.
 - `prompts/START_STAGE4.md` — explicitly assigned local D1/policy scope; reading or preparing the prompt alone grants no permission.
 - `prompts/START_STAGE5.md` — owner-assigned local Telegram publisher scope; does not authorize production publication or Stage 6.
 - [START_STAGE6](prompts/START_STAGE6.md) — assigned local staging preparation; remote operations and real sends remain excluded.
+- [CONTINUE_STAGE6](prompts/CONTINUE_STAGE6.md) — owner-assigned local continuation scope; future remote gates remain separately authorized. The prompt alone grants no new assignment.
 - `manual/OWNER_CHECKLIST.md` — actions that require the owner, **no secrets**.
 - `prompts/START_CODEX.md` — exact Stage 0 assignment; `prompts/STAGE_REVIEW.md` — stage acceptance report.
 - `brand/channel-avatar.png`, `brand/bot-avatar.png` — distinct matching brand assets.

@@ -159,6 +159,34 @@ Timeout/abort/parse failure remain uncertain and never allow automatic retry.
 Фактические проверки и ограничения: [Stage 6 local report](34_STAGE6_LOCAL_REPORT.md),
 дальнейшие remote gates: [runbook](07_DEPLOYMENT_RUNBOOK.md).
 
+### Stage 6 continuation — capacity decision, 2026-10-22
+
+**ADR-042 — proposed, owner decision pending; не реализован новый protocol.**
+Локальное продолжение назначено через CONTINUE_STAGE6. Измерять SQL statements
+и D1 execution calls отдельно на настоящем binding; подготовку/миграции не
+включать в handler sample. Metadata coverage и отсутствие remote CPU evidence
+показывать явно. [Primary limits comparison](evidence/stage6-2026-10-22/cloudflare-preflight.md)
+не разрешает автоматически выбрать Paid или признать workload Free-ready.
+
+Текущий runtime допускает только 100 records/full snapshot и читает до 101
+сохранённой canonical rows/provider. Превышение сохранённой истории безопасно
+останавливает дальнейший import этого provider. Удаление/усечение history,
+versions/evidence или завершение partial baseline не являются вариантами.
+Увеличение числового cap без новых доказательств тоже не решает capacity.
+
+| Вариант | Что потребуется | Граница решения |
+|---|---|---|
+| A. Сохранить нынешний предел для короткого staging observation | Подтвердить текущие feed/union sizes в отдельно разрешённом окне, plan/query accounting, CPU и stop budget; при partial/limit остановиться | Условный эксперимент, не решение роста истории и не stable-staging acceptance |
+| B. Уменьшить работу existing atomic repository | Спроектировать групповые prepared writes/идемпотентное обновление, сравнить rows/SQL/CPU на том же harness, сохранить CAS, audit observations/versions и rollback | Отдельно выбрать scope; само уменьшение SQL не решает feed>100 или full-baseline protocol |
+| C. Ввести durable bootstrap/snapshot protocol по нескольким invocations | Отдельный ADR/schema review для manifest, provider-scoped generation/snapshot identity, bounded chunks, restart/overlap и atomic finalization полного baseline; старый canonical snapshot доступен до завершения | Существенный новый protocol: требуется отдельное owner assignment до реализации; возможны только forward migrations |
+
+Сейчас варианты B/C не реализуются. До active remote staging необходимо
+выбрать допустимый scope и принять ограничения A либо отдельно поручить
+capacity design. Подробные измерения и go/no-go —
+[continuation report](36_STAGE6_PREFLIGHT_REPORT.md). Account/plan/budget/target,
+remote D1, migrations, inactive deploy, observation и Telegram остаются
+раздельными gates. Stage 7–11 не назначены.
+
 ## Items for owner to confirm later (not blockers for Stage 0)
 
 1. Actual GitHub `owner`/repo URL and verified Telegram handles (`@resetradarai`, `@resetradaraibot` suggested).

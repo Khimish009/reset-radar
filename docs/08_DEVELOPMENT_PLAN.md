@@ -111,7 +111,7 @@ Details and exact SHAs: [current handoff](33_STAGE5_HANDOFF.md).
 [START_STAGE6](../prompts/START_STAGE6.md), с принятием Stage 5 из merged PR #5.
 Scope: dry-run runtime integration, настоящий local D1, offline/loopback HTTP
 tests, независимое review и конкретный remote plan. Фактические результаты:
-[local report](34_STAGE6_LOCAL_REPORT.md), [current handoff](35_STAGE6_LOCAL_HANDOFF.md).
+[original local report](34_STAGE6_LOCAL_REPORT.md), [current handoff](37_STAGE6_PREFLIGHT_HANDOFF.md).
 Полный acceptance ниже остаётся pending до отдельно разрешённого remote наблюдения.
 
 Scheduled подключает ingestion только при явных local/staging настройках и DB.
@@ -119,7 +119,20 @@ Default/missing config и production не начинают polling; supplied con
 сохраняют dry_run/Cron off. Invocation ограничен страницами/записями/requests;
 partial history не завершает baseline. HTTP guards и оба synthetic send journals
 сохранены, real publisher отсутствует. Remote deploy/migrations/secrets, Cron,
-реальные upstream/Telegram requests, commit/push/PR/merge и Stage 7–11 не разрешены.
+реальные upstream/Telegram requests, новые commit/push/PR/merge и Stage 7–11 не разрешены.
+
+**Подготовка следующей сессии:** local commit `7b4e129` вошёл в merged
+[PR #6](https://github.com/Khimish009/reset-radar/pull/6), main `22ebefe`.
+PR CI #17 success, merge CI #18 failure: cache-validation D1 test timeout 5s,
+310 passed/1 failed/5 skipped; [historical evidence](evidence/stage6-2026-10-22/ci18.md)
+сохранено. Затем владелец явно назначил [CONTINUE_STAGE6](../prompts/CONTINUE_STAGE6.md).
+В локальном продолжении cache-validation cases разделены без изменения global
+timeout/parallelism, добавлен real-D1 workload harness и подготовлен staging
+change set. Фактические проверки и review — [preflight report](36_STAGE6_PREFLIGHT_REPORT.md).
+Активный staging **NO-GO**: account/plan/target/budget, query accounting и CPU
+не подтверждены, capacity>100 требует отдельного решения (ADR-042).
+Stable-staging acceptance pending; новый GitHub CI не запускался. Следующие
+remote gates разрешаются отдельно; Stage 7–11 не назначены.
 
 Owner-controlled D1/Secrets/Wrangler setup, staging Cron observation, dedup and upstream staleness monitoring; staging channel tests only after approval. Review quotas/logs.
 

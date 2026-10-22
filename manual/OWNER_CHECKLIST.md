@@ -80,7 +80,18 @@
 - [x] Owner explicitly assigned START_STAGE6 and accepted local Stage 5; only local dry-run runtime integration, tests, independent review and staging planning are authorized.
 - [ ] Review [Stage 6 local report](../docs/34_STAGE6_LOCAL_REPORT.md) and independent review; local preparation does not satisfy the full stable-staging acceptance.
 - [x] After the local Stage 6 report, owner separately authorized its local commit, including preserved documentation preparation.
-- [ ] Separately authorize any push/PR/merge; prior permission for the existing PR #5 branch does not carry forward.
+- [x] Read-only verification found local commit `7b4e129` in merged PR #6 (`22ebefe`), pushed/merged by owner or external process. PR CI #17 success; merge CI #18 failed on the existing cache-validation D1 test timeout.
+- [ ] Separately authorize any new commit/push/PR/merge; prior Git permissions do not carry forward.
+
+## Stage 6 continuation — local preflight assigned
+
+- [x] Save CONTINUE_STAGE6 and update report/handoff/README with merge/CI state, exact failure evidence, preserved safeguards and remaining gates.
+- [x] Owner explicitly assigned [CONTINUE_STAGE6](../prompts/CONTINUE_STAGE6.md) for local CI #18 diagnosis/fix, D1 workload/capacity preflight, checks and independent review only.
+- [ ] Review [new preflight report](../docs/36_STAGE6_PREFLIGHT_REPORT.md) and [handoff](../docs/37_STAGE6_PREFLIGHT_HANDOFF.md); local passing checks do not override failed merge CI or prove stable staging.
+- [x] After the preflight report, owner separately authorized commit and push of the reviewed result to `feat/stage6-staging-preflight` only; PR/merge and remote/live service operations remain separate gates.
+- [ ] Confirm account/profile, effective Workers plan/D1 limits, shared quota headroom, staging target/region, maximum cost and numeric stop thresholds before remote decisions; no automatic Paid upgrade.
+- [ ] Decide the capacity scope in ADR-042: accept the current bound for a short observation or separately assign a repository/bootstrap design. Do not delete history or treat partial baseline as complete.
+- [ ] Separately authorize only staging D1 creation after the preceding review; actual ID/binding, migrations, inactive deploy and upstream/Cron window remain later separate gates in the runbook.
 
 ## Worker/D1 staging (later; separate authorization)
 
