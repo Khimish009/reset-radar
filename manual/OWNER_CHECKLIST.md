@@ -98,9 +98,10 @@
 
 - [x] Save [CONTINUE_STAGE6_CAPACITY](../prompts/CONTINUE_STAGE6_CAPACITY.md) with current commit/merge/CI, local ref drift, tested workload facts, ADR options and permission boundaries.
 - [x] Owner explicitly assigned that prompt for local design/decision, checks/review/report only; protocol implementation and remote operations remain excluded.
-- [ ] Review [capacity decision38](../docs/38_STAGE6_CAPACITY_DECISION.md) and [handoff39](../docs/39_STAGE6_CAPACITY_HANDOFF.md); choose A/B/C. Recommendation C is proposed, not owner approval.
+- [ ] Review [capacity decision38](../docs/38_STAGE6_CAPACITY_DECISION.md) and [handoff39](../docs/39_STAGE6_CAPACITY_HANDOFF.md); choose A/B/C after the PR #8 priority-announcement follow-up. B-first is proposed; C/plan/latency SLA remain owner choice pending.
 - [ ] Supply safe account/profile label, effective plan/limits/headroom, target/region, history/cadence and numeric maximum spend/stop budgets; all currently unknown.
-- [ ] Exactly next proposed gate: separately assign **local C implementation** using docs38 §9, with its acceptance/measurement matrix; no remote permission. If choosing A instead, after prerequisites authorize only isolated staging D1 creation, not migrations/deploy/reads.
+- [ ] Next proposed implementation gate: separately assign **local B** using docs38 §9, with its acceptance/measurement matrix; no remote permission. If choosing A instead, after prerequisites authorize only isolated staging D1 creation, not migrations/deploy/reads.
+- [ ] Review priority detection vs first-full-baseline publication limits, source coverage and proposed latency target in docs38 §6.5–6.6; if C is chosen, include inbox/overlay/reconciliation in a separate local assignment.
 - [ ] Complete Stage 6 stable-staging acceptance before a separate Stage 7 assignment.
 
 ## Worker/D1 staging (later; separate authorization)

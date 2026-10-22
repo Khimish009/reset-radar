@@ -184,9 +184,12 @@ versions/evidence или завершение partial baseline не являют
 назначил локальную capacity design/decision фазу через CONTINUE_STAGE6_CAPACITY.
 [Decision record38](38_STAGE6_CAPACITY_DECISION.md) содержит bounded A,
 минимальный repository change set B, manifest/chunk/finalization C, измерительную
-матрицу и owner inputs. Рекомендован C с grouped writes внутри chunks, но выбор
-владельцем не сделан. B/C не реализованы; plan/cost budget не выбран.
-Следующий предлагаемый gate — отдельное local C implementation assignment,
+матрицу и owner inputs. Product follow-up PR#8 разделяет оперативные observations
+и архивный backfill (§6.5), предлагает latency target (§6.6), сохраняет полные
+baseline/evidence gates и добавляет competing ingestion tests. Предлагается
+B-first и затем bounded A при выполнении gates; C — при measured need и только
+с priority processing. **Owner choice pending**: B/C не реализованы, latency SLA
+и plan/cost budget не выбраны. Следующий предлагаемый implementation gate — local B,
 ещё без remote действий. Unknown account/plan/budget/target и remote accounting
 сохраняют active staging NO-GO. Stage6 stable acceptance pending, Stage7 следует
 после завершения Stage6 и отдельного назначения. Текущий результат/checks/review:

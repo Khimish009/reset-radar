@@ -6,18 +6,22 @@
 проверки, независимое review и отчёт. Этот документ — конкретное предложение,
 не разрешение реализовывать protocol, выбирать тариф или выполнять remote.
 
-**Рекомендация: C с групповыми prepared writes из B внутри chunks.** C нужен
-для роста сохранённой истории и full feeds >100; B отдельно уменьшает SQL,
-но сохраняет capacity stop. A — только короткое ограниченное наблюдение,
-не путь к принятию stable staging. Следующий предлагаемый gate — **отдельное
-локальное implementation assignment C**, точно ограниченное разделом 9.
+**Приоритет продукта — оперативное обнаружение достоверных анонсов будущих
+дополнительных сбросов.** Архивный импорт не должен задерживать их регистрацию
+и проверку. Первоначальная рекомендация C уточнена после продуктового review
+PR #8: **предлагается сначала локальная оптимизация B и измерения, затем
+ограниченное staging-наблюдение A только по отдельным gates; C — при
+подтверждённой capacity/latency потребности**. Нынешний C без отдельной
+оперативной обработки не отвечает этому приоритету. Это рекомендация,
+**owner choice pending**, не утверждённая архитектура или тариф.
+Следующий предлагаемый implementation gate — local B (§9), без remote.
 Owner decision и account/plan/budget отсутствуют: **active staging NO-GO**.
 Stage 6 не завершён; Stage 7 начинается только после его завершения и отдельного
 назначения. **Не развёрнуто / не опубликовано. Real staging E2E pending.**
 
 ## 1. Проверенная база и границы доказательств
 
-В этой сессии `git fetch origin` и read-only GitHub API подтвердили:
+В первоначальной design-сессии `git fetch origin` и read-only GitHub API подтвердили:
 [PR #7](https://github.com/Khimish009/reset-radar/pull/7) merged
 2026-10-22T10:23:42Z; remote main/origin/main —
 `1bfbe98aa7574b77f18ffebfe9ee77ced150c4ff`, содержит
@@ -103,11 +107,21 @@ cost рассчитывать по фактическим account totals, вкл
 | B, atomic repository | Те же caps и full import | Группирует writes, уменьшает statements; исключает доказуемо лишние writes | Feed/history>100, completeness protocol; rows не пропорциональны SQL |
 | C, durable manifests/chunks | Полный snapshot через несколько bounded invocations; history сохраняется | Распределяет работу; B внутри chunks снижает SQL overhead | Полнота upstream остаётся допущением, суммарные rows/storage могут вырасти, remote fit не доказан |
 
-Предлагается C: known union101 stop неизбежен при росте даже sliding feed100.
-Риск C — новый schema/read protocol и больше промежуточного storage; ради
-одного короткого эксперимента владелец может выбрать A, если принимает его
-ограничения. B — полезная меньшая альтернатива для измерения repository cost,
-но результат B не следует называть capacity-ready.
+Known union101 stop остаётся даже после B. Выбор пути должен учитывать не
+только capacity, но и время появления свежего события в durable состоянии.
+
+| Путь | Сложность и сроки | Расходы и ограничения | Условие перехода |
+|---|---|---|---|
+| B → ограниченное A → решение о C | Меньше новых компонентов: текущие atomic repository/baseline gates; быстрее получить проверяемый меньший change set, но календарные сроки не оценены | B не гарантирует снижение rows/CPU; A ограничен caps100, unknown current volume и бюджетом | Только если полный baseline укладывается в caps, latency target проверен и account/budget gates закрыты |
+| C сразу, с оперативной обработкой §6.5 | Новые manifests, overlay/read protocol, два режима progress, fencing/reconciliation/rollback; больше реализации и review, без выдуманных дней/стоимости | Дополнительные polls/inbox/overlay и O(history) backfill; не доказан remote fit; snapshot-only C задерживает новинки | Измеренные limit/рост union или задержка full snapshot обосновывают C, и отдельно проверены freshness и baseline policy |
+
+Предлагается B-first как меньший следующий локальный шаг, а не обещание
+работоспособности B при любой истории. Если уже в разрешённом scope обнаружены
+feed/history>100 или нарушение freshness target, A **NO-GO**; B не позволяет
+просто повысить cap или обрезать историю. В таком случае owner отдельно
+выбирает C с приоритетом оперативной обработки либо останавливает запуск.
+Не проводить заведомо непригодное staging-наблюдение ради последовательности.
+Ни этот порядок, ни необходимость capacity сами по себе не утверждают C/Paid.
 
 ## 4. A — точный bounded observation proposal, условный
 
@@ -213,6 +227,10 @@ rollback B использует прежнюю schema; immutable audit и semant
 Это новый **внутренний D1 protocol**, не public HTTP API. Здесь нет нового
 endpoint, direct upstream из браузера, Cron activation или real publisher.
 
+**Граница:** §§6.1–6.4 описывают только исторический bootstrap/backfill.
+Это не допустимая общая очередь всех новых событий. Отдельная оперативная
+обработка и её условия описаны в §6.5; без неё C не предлагается к запуску.
+
 ### 6.1 Identity, states и fencing
 
 Provider-scoped `snapshot_id = digest(provider, upstream, protocol_version,
@@ -246,8 +264,9 @@ Claude: bounded pages25records, cursor/revision/total фиксируются dur
 unique IDs, filters; status берётся с audience=all/window=any, совпадающим
 revision/total и равными duplicate bodies. Status-only offers/announcements
 включаются в union, count history отдельно от union. Предлагаемый cap — **одна
-page fetch и один chunk commit/provider/invocation**, status fetch только вместо
-page, итого до2upstream requests/invocation для двух providers. Не импортировать
+page fetch и один chunk commit/provider/invocation** для архивной работы,
+status fetch только вместо archive page, до2archive requests/invocation для
+двух providers. Это **не общий budget новой оперативной обработки** (§6.5). Не импортировать
 всю историю заново в каждом invocation. Сбор может занять больше исходных5минут;
 truth time не приравнивается к времени финализации.
 
@@ -282,7 +301,7 @@ last_success. При restart читать progress из D1; повтор committ
 read-back progress/root. После expiry нельзя заново запросить страницу иной
 revision и притвориться тем же snapshot.
 
-### 6.3 Bounded preparation и atomic visibility
+### 6.3 Bounded preparation и atomic visibility архива
 
 Предложение additive v3 schema, окончательные DDL/constraints — в отдельном
 implementation review. Existing0001/0002 и immutable triggers не переписывать:
@@ -332,8 +351,8 @@ UPDATE недостаточен. Переключение только одно�
 В будущем approval должна быть привязана к конкретному baseline; v3 migration
 никогда не переносит synthetic approval как production decision.
 
-Все readers pin active root в начале операции и читают только roots со
-state=complete. Repository/publisher read joins должны учитывать root;
+Archive readers pin active root в начале операции и читают только roots со
+state=complete; оперативная проекция отдельно описана в §6.5. Repository/publisher read joins должны учитывать root;
 подготовленные/aborted records не доступны через старые direct-table queries.
 После terminal complete root entries/source proofs/candidate refs становятся
 неизменяемыми через SQL guards/triggers; build/cleanup не может изменить
@@ -379,7 +398,9 @@ commit/provider/invocation означает до400copy steps для10,000preser
 несколько bounded local D1chunks/invocation. Не продлевать TTL бесконечно
 ради завершения; time-to-complete — acceptance metric. Это конечный test envelope, не
 обещание remote capacity или hard total cost. Local planner резервирует итоговый guard/progress/health overhead и проверяет
-≤48SQL members и≤16D1execution calls на **весь invocation обоих providers**;
+≤48SQL members и≤16D1execution calls на **весь invocation обоих providers**,
+включая priority polling/inbox/overlay из §6.5; новые budgets не складываются
+поверх прежних caps;
 при нехватке budget не начинает следующий phase step. Одна SQL failure может
 потребовать read-back из оставленного резерва; unlimited recovery queries
 запрещены. Эти caps проверяются harness, не hard CPU/spend cancellation.
@@ -404,7 +425,121 @@ writer marker должен fail closed. Без проверенного обра
 пути rollback означает inactive service и сохранение D1, не ложное обещание
 автоматического downgrade. Схема только forward, data recovery отдельный gate.
 
-## 7. Test/measurement matrix рекомендованного C
+### 6.5 Оперативное обнаружение отдельно от истории — proposed
+
+**Текущий runtime этого не умеет:** ingestion сохраняет events только при
+complete snapshot, а stored history>100 останавливает даже fetch. Поэтому ни
+B сам по себе, ни название «priority» не исправляют эту границу. Следующее —
+дополнение к возможному C, требующее отдельного local design/schema assignment.
+
+В каждом разрешённом Cron invocation сначала резервируются upstream/D1/CPU
+budgets для **текущего состояния источников**, записи наблюдений и проверки
+новых/изменённых IDs; только остаток достаётся archive chunk. Archive lease,
+долгий build или changed revision не должны блокировать эту работу. Archive
+приостанавливается первым при дефиците budget; provider backoff/cache≥60s,
+Retry-After, timeouts/body caps и независимость providers остаются общими,
+повторные GET для двух задач coalesce. Нет нового public trigger/очереди sends.
+Если даже при paused archive priority работа не помещается в bounds — stop и
+зафиксированный latency miss, не тихая starvation или повышение лимита.
+
+Для Claude — validated current status (announced_reset/offers/latest) и, если
+позволяет budget, head page; revision и provenance фиксируются отдельно от
+старого archive manifest. **Не доказано**, что эти surfaces включают каждый
+новый/обновлённый анонс: старый ID с новой публикацией может быть вне head,
+status не является полной историей. Coverage этих surfaces — условие будущего
+приёмочного исследования, не новая гарантия upstream. Для Codex нужен текущий
+полный validated unpaginated body, включая scheduled, с последующим indexed
+сравнением raw keys; старый frozen body архива не годится для fresh detection.
+Нет доказанного delta endpoint и O(1) parsing: body/CPU overflow означает
+NO-GO для target, не право выдумать pagination или пропустить validation.
+
+Достоверное наблюдение атомарно попадает в **durable operational inbox**:
+provider/upstream/surface/ID, raw key/revision, precise source URL, evidence,
+source/first-observed timestamps и normalized assessment. Dedup по observation
+identity и CAS на текущую event revision; никакого TTL удаления непрочитанного
+события ради вместимости. Inbox capacity/backlog/time-to-process измеряются,
+при исчерпании — degraded/stop, без обещания бессрочной очереди. Повтор raw key
+не создаёт новую version, A→B→A сохраняет lineage, новое evidence той же
+material version сохраняется отдельно. Source timestamp не заменяется clock
+backfill, `announced_future` не превращается в delivery; `hinted`, unknown и
+недостаточное evidence остаются безопасными review-состояниями.
+
+| Состояние provider | Что происходит со свежим анонсом | Publication gate |
+|---|---|---|
+| Первого полного baseline ещё нет | Немедленная durable регистрация и assessment в inbox, history явно incomplete | Ни candidate для отправки, ни approval, ни send; завершение частичного импорта не считается baseline |
+| Полный baseline уже есть, backfill/rebuild ещё идёт | Bounded CAS update оперативной проекции данного события поверх прежнего complete root; archive chunk не нужен для этой записи | Eligibility может быть оценена только относительно уже принятого baseline, current evidence/review/freshness и отдельных approvals; здесь publisher отсутствует |
+| Evidence/coverage/ordering конфликтуют или источник недоступен | Сохранение observation с needs_review/degraded и старой принятой truth | Никакой выдуманной доставки, снятия gates или retry ambiguous send |
+
+**Новый свежий анонс до первого baseline не равен разрешению публикации.**
+После первого baseline inbox не превращается в автоматический history blast:
+всё наблюдённое до его завершения исключается из автоматических кандидатов
+bootstrap. Если требуется отправлять именно такие анонсы до первого полного
+baseline, это несовместимо с нынешними gates: нужен отдельный owner-reviewed
+baseline/publication design, не переименование частичной истории в полный
+baseline и не неявный approval в этом документе. Быстрая detection/assessment
+не означает, что delivery latency уже решена.
+
+Для provider с принятым baseline предлагается **оперативная проекция поверх
+архивного root**, а не клонирование всей history на каждую новинку. Она содержит
+только принятые изменения событий, generation/watermark и immutable lineage.
+Reader атомарно pin-ит `(archive_root, operational_generation)` и использует
+последнюю принятую version per ID; pending inbox/partial archive не выдаются
+за canonical truth. Event-level commit сверяет baseline identity, current
+version и generation; baseline gate/history completeness — разные поля, не
+один флаг success. Пока operational coverage не подтверждена, latest check не
+обновляет full-history completeness/last-success как будто импорт завершён.
+
+Archive и operational writers имеют раздельный progress/fence, общий контроль
+совместимости protocol и короткие CAS transactions. Старый manifest не может
+затереть анонс более новой revision. Archive finalization pin-ит operational
+watermark: несовпадение требует bounded reconciliation перед CAS, без lock
+на весь многозапусковый backfill. Смена archive root сохраняет overlay; cleanup
+overlay разрешён лишь после доказанного переноса **точно тех же version refs**
+в complete root, с сохранением audit. Конфликт одного ID при неизвестном порядке
+revision/digest идёт в review, не last-writer-wins по wall time. Restart читает
+inbox/overlay/fences из D1; overlap не создаёт повторный assessment/кандидат.
+
+Это расширяет read/schema/rollback design §§6.1–6.4: новый protocol marker
+обязан исключить legacy readers, теряющие overlay. Старые caps/SQL estimates
+не доказывают fit двух видов работы; нужна совместная measurement matrix.
+**Первый полный baseline всё ещё может занять долго**, а archive может
+голодать при постоянных новых событиях. Измерять оба backlog/возраст и явно
+сохранять incomplete; нельзя пожертвовать freshness незаметно или объявить
+полную историю ради завершения Stage6.
+
+### 6.6 Предлагаемая цель задержки, не SLA
+
+Для проверки обсуждается цель: при согласованном cadence5min, доступных
+источниках и достаточном budget **p95 от появления анонса в наблюдаемом API
+до durable detection ≤6min**, а **p95 от успешного чтения response до durable
+assessment ≤30s**, включая работающий backfill. Требование owner-approved SLA
+этим не устанавливается; выбор percentile/window/cadence требует владельца.
+Это elapsed time, не допустимый billed CPU и не Telegram-delivery target.
+Assessment здесь — schema validation и консервативная классификация с явным
+pending evidence review, если оно нужно; срок человеческого review/approval
+не обещается и учитывается отдельно в gate-blocked age.
+Отсчёт относится к выбранному tracker API; задержка от оригинального поста
+Anthropic/OpenAI до tracker — отдельная неизвестная величина.
+
+В synthetic tests `source_visible_at` задаётся точным injected clock;
+фиксировать `first_observed_at`, `durable_detected_at`, `assessed_at` и тип
+перехода. В будущих разрешённых наблюдениях event announced_at/generated_at
+не считать доказанным временем появления в API (возможны backdating/cache).
+При неизвестном source-visible time использовать interval между последней
+успешной проверкой отсутствия и первой наличия **только при доказанной coverage**;
+иначе source-relative latency unknown. Отдельно показывать sample size/window,
+clock uncertainty, interval bounds, cold/restart/backfill и 429/503/outage
+cohorts; не выдавать upper bound за measured timestamp, не скрывать пропуски.
+
+Нужны две метрики: detection/assessment и **gate-blocked age/reason** до возможной
+eligibility; первая не доказывает вторую или доставку. В controlled healthy
+cases новый анонс должен быть обработан в том же успешном poll, без ожидания
+следующего archive chunk; fixture нарушает proposed target → acceptance fail,
+не пересмотр threshold задним числом. Outage/backoff фиксируются отдельно с
+числом/возрастом пропущенных окон; percentile healthy cohort не обещание
+общего uptime или наблюдения каждого события.
+
+## 7. Test/measurement matrix для выбора B/C
 
 Это **будущие acceptance tests**, не результаты текущей docs-only сессии.
 Existing harness расширяется реальным local Miniflare D1, injected deterministic
@@ -426,6 +561,14 @@ clock/fetch; HTTP paths при необходимости existing loopback Post
 | Crash before/after chunk и finalize, lost commit response, CAS loser | Atomic old/new visibility; read-back; no partial root, no mixed generation/read |
 | Independent provider success/failure | Ни shared baseline, ни transaction обоих providers; NULL approvals, empty journals, zeroTelegram |
 | Forward import/v3 activation/rollback/cleanup | Legacy rows/triggers intact; imported identity/hash/sequence preserved; v2 writer blocked после switch; abort audit preserved |
+| Новый достоверный future announcement во время first bootstrap | Durable inbox/assessment в том же successful poll, latency clocks; archive incomplete, baselineNULL,0candidates/approvals/journals; после baseline нет history blast |
+| Новый анонс при accepted baseline и незавершённом backfill | Operational CAS commit без archive finalize; existing baseline unchanged; independent freshness/coverage, overlay виден принятому reader, pending draft скрыт |
+| Обновление/отзыв анонса, старый ID вне head, hinted/null delivery | Новая immutable observation/нужная material version; coverage gap раскрыт, conflict→review, correction требует linkage; no invented confirmed_applied |
+| Новый подтверждённый сброс во время bootstrap/backfill | confirmed_applied только при достаточном delivery evidence; baselineNULL блокирует candidates; accepted baseline не заменяет review/approval/send gates |
+| Priority restart/lost ack после inbox или overlay commit | Durable replay/dedup, clocks/lineage preserved, no duplicate transition; archive progress не требуется для priority resume |
+| Overlapping priority + archive finalize, новая revision после watermark | CAS/fence loser не затирает overlay; reader получает coherent pair root/generation; bounded reconciliation и независимость providers |
+| History никогда не завершается, archive revisions постоянно меняются | Priority latency не зависит от числа chunks; archive остаётся incomplete, blocked age виден; history не теряется, новый baseline не выдумывается |
+| Общий budget/inbox capacity исчерпан,429/503,нет validated body для304 | Сначала pause archive, затем explicit degraded/stop при невозможности priority; backoff соблюдён, latency miss не скрыт и gates не сняты |
 | Legacy retention | Сохранить existing103 real commits, generation103, retained4–103,100sync_runs,20s timeout; не ослаблять assertions |
 | HTTP/config/logging/truth/ambiguous-send | Старые501/404/405, HEAD/OPTIONS, production/inactive guards, safe logs, no admin route; existing uncertain_manual_review и no lease retry сохраняются |
 
@@ -438,7 +581,8 @@ cold B. Publish/candidate/approval/journal inspection — вне measurement.
 
 Для B сравнить указанные четыре workloads до/после и semantic rows. Для C
 измерить и worst single invocation, и total по полному snapshot при росте
-истории, time-to-complete и aborted overhead. Не фиксировать выдуманный процент
+истории, time-to-complete и aborted overhead, плюс priority inbox/overlay costs,
+p95 latency, sample/window/coverage, blocked age и starvation обоих потоков. Не фиксировать выдуманный процент
 ускорения или допустимый billedCPU из Miniflare. В будущем remote proof нужен
 для batch accounting, actual CPU, rows, quotas и storage до выбора cadence.
 
@@ -461,47 +605,42 @@ cold B. Publish/candidate/approval/journal inspection — вне measurement.
 
 Design docs — готовы после checks/review. Local implementation — **не назначена**.
 Remote active staging — **NO-GO**. Заполнение таблицы не является разрешением
-remote operations. Owner выбирает A/B/C; рекомендация C не owner approval.
+remote operations. Owner выбирает B-first/A/C; staged recommendation не owner approval.
+Proposed latency target, coverage и условия доставки до первого baseline
+также требуют отдельного решения, не утверждаются текущим review.
 
-## 9. Ровно следующий предлагаемый gate: local C implementation
+## 9. Следующий предлагаемый gate: выбор пути и local B
 
-Ниже reviewable текст будущего assignment; **не исполнять по этому документу**:
+Ниже reviewable текст **будущего** assignment; сейчас не исполнять:
 
-> Принимаю вариант C из docs/38, включая необходимые групповые prepared writes
-> внутри chunks, и отдельно разрешаю только локальную реализацию Stage6:
-> additive v3 schema/read protocol, manifests, bounded collect/build chunks,
-> fencing/CAS/finalization, local backfill и guards rollback по разделу6;
-> regression и measurement matrix раздела7, независимое review, отчёт и STOP.
-> Первая local test capacity: incoming≤1,000, preserved≤10,000/provider;
-> larger/oversize/expired/over-budget остаётся safe stop, история не удаляется.
-> Runtime opt-in только local/staging; supplied configs inactive, production
-> и HTTP guards, dry_run, NULL approvals, empty journals сохраняются.
-> Новые files/interfaces: src/storage/types.ts и d1.ts (либо отдельный
-> snapshot repository), src/services/ingest.ts, src/services/scheduled.ts,
-> provider adapters для resumable Claude и frozen Codex, tests/helpers/d1.ts,
-> tests/helpers/d1-metrics.ts, stage4/6 tests и отдельные manifest tests,
-> forward migration0003 после schema review, relevant docs.
-> Сохранить legacy retention103/generation103/4–103/100/20s и все прежние
-> truth/cache/backoff/ambiguous-send safeguards. Выполнить typecheck, lint,
-> full unit/integration, test:d1, test:workload, local migrations и offline
-> verify; opt-in HTTP simulation только loopback при затронутом transport.
-> Приложить SQL/calls/rows/metadata и total-manifest measurement, migration/
-> rollback evidence. Не обещать remoteCPU/cost. Config/dependency/CI/Postman
-> изменения вне необходимости не входят; уточнение schema bounds должно
-> оставаться reviewable локально, без remote. Commit/push/PR/merge, live reads,
-> Cloudflare account/API/login, DB creation/migrations/deploy/bindings/secrets,
-> Cron, Telegram, production и Stage7–11 не разрешены.
+> Выбираю B-first из §3 и отдельно разрешаю только local Stage6 repository
+> optimization §5 с сохранением нынешних caps, атомарности, baseline/evidence
+> и всех publication guards. Проверить семантический replay/material update,
+> cold/cache/304, errors/backoff, overlap/CAS rollback, сохранение truth/history,
+> legacy retention103/generation103/4–103/100/20s; выполнить typecheck/lint,
+> relevant unit/integration и real-D1/workload checks с metadata coverage.
+> Сопоставить measured SQL/calls/rows и время полного baseline на разрешённых
+> synthetic sizes; proposed freshness tests §6.6/7 не считать пройденными,
+> если B/текущая coupled ingestion их не выполняет. Независимое review, отчёт,
+> STOP. Runtime/schema/migrations/publisher, remote/live, deployment/Cron,
+> Git publication и Stage7 этим implementation assignment не разрешены.
 
-Это **один следующий local gate**, не просьба одновременно разрешить remote
-цепочку. Если владелец вместо C выбирает B — отдельное local assignment только
-раздела5+его tests, capacity NO-GO остаётся. Если выбирает A с выполненными
-prerequisites — ближайший remote запрос только на isolated staging D1 create,
-с безопасным target label/region и конкретным scope; migrations/deploy/reads
-не включать. В текущем задании никакого из этих approvals не получено.
+После B ограниченное A возможно **только** если его caps, full baseline,
+account/plan/budget и latency prerequisites подтверждены. Следующий remote
+gate тогда только isolated staging D1 create; migrations/deploy/live reads
+не включать. Не выполнять эту цепочку автоматически после local B.
+
+Если owner выбирает C вместо B, нужно отдельное local implementation assignment
+**включающее §6.5–6.6 и §7**, schema/read/rollback review для inbox/overlay и
+совместные bounded budgets. Прежний snapshot-only C assignment недостаточен:
+не копировать его как будто он уже решает свежесть. При невозможности совместить
+latency, first-baseline policy и source coverage сначала новый local design
+review, без реализации/remote. Все варианты остаются **owner choice pending**;
+выбор C/тарифа/нового baseline policy текущим документом не сделан.
 
 ## 10. Фактические проверки и независимое review
 
-Текущая сессия: diff-check PASS, Stage0 offline verify139PASS,111local links /
+Первоначальная design-сессия (до latency follow-up PR #8): diff-check PASS, Stage0 offline verify139PASS,111local links /
 0broken, protected paths unchanged, arithmetic PASS. Application tests не
 повторялись (docs-only); historical workload/preflight evidence сохранено.
 Независимый `stage6_capacity_review` (reviewer, gpt-6.1-sol, high) завершён:
@@ -511,3 +650,11 @@ Cloudflare sources, файлов не менял. Итог и точный сп�
 [handoff](39_STAGE6_CAPACITY_HANDOFF.md). После review добавлены только эти
 итоговые записи; docs checks повторены. Работа остановлена, не развёрнуто /
 не опубликовано, implementation/remote/Stage7 не начаты.
+
+
+Follow-up PR #8: §§3,6.5–6.6,7,9 пересмотрены по приоритету оперативных
+анонсов; актуальные checks/review и разрешённый commit/push текущей ветки
+зафиксированы в handoff. Diff-check PASS,82local links/0broken, offline139PASS;
+независимый pr8_latency_docs_review (reviewer,gpt-6.1-sol,high) — без существенных
+critical/high/medium findings. Изменены только6Markdown files. Application tests
+не повторялись. Runtime/schema/migrations/publisher не реализованы.

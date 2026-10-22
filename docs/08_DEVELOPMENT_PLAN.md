@@ -138,12 +138,15 @@ change set. Фактические проверки и review — [preflight rep
 **Capacity design назначен владельцем 2026-10-22** через
 [CONTINUE_STAGE6_CAPACITY](../prompts/CONTINUE_STAGE6_CAPACITY.md): только local
 design/decision, checks/review и STOP. [Decision proposal](38_STAGE6_CAPACITY_DECISION.md)
-сравнивает A/B/C; рекомендован C с grouped writes, owner choice pending.
-Новый bootstrap protocol не реализован. Следующий предлагаемый gate — отдельное
-local C implementation assignment; remote account/plan/budget/accounting остаются
+сравнивает A/B/C; после product review PR#8 предложен B-first → bounded A
+только после gates, C при measured capacity/latency need, owner choice pending.
+C дополнен priority detection отдельно от backfill и proposed latency target,
+без обхода первого полного baseline/evidence gates. Новый protocol не реализован.
+Следующий предлагаемый implementation gate — отдельное local B assignment; remote account/plan/budget/accounting остаются
 unknown и active staging NO-GO. [Текущий handoff](39_STAGE6_CAPACITY_HANDOFF.md).
-Stage7 — только после завершения Stage6 и отдельного назначения. Новые Git
-publication/remote действия не разрешены.
+Stage7 — только после завершения Stage6 и отдельного назначения.
+Сервисные remote действия не разрешены; текущий docs-only follow-up отдельно
+разрешает commit/push только в ветку PR#8, без merge.
 
 Owner-controlled D1/Secrets/Wrangler setup, staging Cron observation, dedup and upstream staleness monitoring; staging channel tests only after approval. Review quotas/logs.
 
