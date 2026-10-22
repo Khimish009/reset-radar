@@ -63,17 +63,50 @@ versions, независимые baseline и HTTP snapshot restore, typed normal
 прямой ingestion service и synthetic journal. Worker handlers и Cron инертны;
 publish approvals отсутствуют. Фактические проверки и ограничения:
 [Stage 4 report](30_STAGE4_REPORT.md), [current handoff](31_STAGE4_HANDOFF.md).
-Приёмка Stage 4 владельцем остаётся отдельным решением. Stage 5, runtime wiring,
-remote migrations, публикация, deployment и push/PR не разрешены. После проверок
-и консолидации владелец отдельно разрешил только локальный commit Stage 4.
+Владелец принял локальный результат Stage 4 из PR #4 и отдельным заданием
+разрешил только локальный Stage 5. Runtime wiring, remote migrations,
+публикация, deployment и новые Git operations этим не разрешены.
 
-## Stage 5 — Telegram publisher
+**Проверка handoff, 2026-10-22:** commit `7121756` сохранён и уже входит в main
+через [PR #4](https://github.com/Khimish009/reset-radar/pull/4), merge `2a0a958`;
+CI implementation SHA — successful run #11. Push/PR/merge выполнил владелец или
+внешний процесс, не агент этой подготовки. Это не production policy signoff.
 
-Format distinct announcement/confirmed/offer/correction messages, source+upstream attribution, accurate audience/times; `dry_run`; Telegram failure behavior. After explicit approval, ONE staging channel E2E publication.
+## Stage 5 — локальный Telegram publisher
 
-**Acceptance:** staged message looks correct and no prod channel touched.
+Локальный scope включает typed Telegram `sendMessage` client для loopback
+substitute, truth-preserving templates/previews и direct publisher service с
+отдельной simulation-only D1 journal. Тестовый transport фиксирован на
+synthetic token/chat и loopback URL; общего или production client endpoint нет.
+`dry_run` возвращает preview/skip без сетевого вызова и без journal claim.
+Worker handlers не импортируют publisher, `readConfig()` и окружения остаются в
+`dry_run`, Cron остаётся выключен.
+
+Локальная eligibility проверяет provider baseline-bound synthetic approval и
+переходную отметку review, привязанную к `transitionId` + `rawKey`; stale
+candidate/current revision, generation/observation race и три независимых
+freshness слоя закрывают публикацию. В локальной policy все значения freshness
+явно передаются, максимум 24 часа, HTTP checks — максимум 10 минут. Эти значения
+и все approvals относятся только к локальным тестам; production пороги, workflow
+и включение публикации остаются pending. Date-only target/offer, наступившие в
+текущий UTC день, консервативно подавляются. Retry ограничен валидированным 429,
+`retryAt` не более часа и максимум тремя попытками; ambiguous/claimed outcomes
+требуют ручной проверки без lease recovery.
+
+**Acceptance:** финальные проверки, local HTTP simulation и independent review
+записаны в [Stage 5 report](32_STAGE5_REPORT.md); текущий контекст —
+[Stage 5 handoff](33_STAGE5_HANDOFF.md). Не подменять результаты отчёта планом
+проверок в [test matrix](06_TEST_STRATEGY.md).
+
+Owner accepted local Stage 4 and assigned only this local Stage 5. Real Telegram
+requests/sends, runtime wiring, production approvals, commit/push/PR/merge,
+remote migrations, deployment and Stage 6 remain outside this authorization.
 
 ## Stage 6 — Staging Cloudflare
+
+**Не разрешён текущим заданием.** Начинается только по отдельному заданию
+владельца; он потребует отдельного решения по staging resources, migration,
+runtime wiring, credentials and any staging-channel publication.
 
 Owner-controlled D1/Secrets/Wrangler setup, staging Cron observation, dedup and upstream staleness monitoring; staging channel tests only after approval. Review quotas/logs.
 

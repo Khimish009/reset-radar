@@ -1,6 +1,6 @@
 # 03 — D1 schema, журнал и жизненный цикл состояния
 
-**Stage 4: локальная реализация.** SQL в `migrations/0001_stage4.sql` и код `src/storage/` описывают текущую локальную схему. Это не production migration, публичная проекция или утверждение окончательной production policy.
+**Stages 4–5: локальная реализация.** SQL в `migrations/0001_stage4.sql`, `migrations/0002_stage5.sql` и код `src/storage/` описывают текущую локальную схему. Это не production migration, публичная проекция или утверждение окончательной production policy.
 
 ## Таблицы и границы данных
 
@@ -14,6 +14,7 @@
 | `source_state` | HTTP representation/validator и backoff по паре `(provider, endpoint_key)`. Снимок хранится вместе с ETag и метаданными области; transport-wide backoff имеет отдельный `$transport` ключ. |
 | `sync_runs` | Ограниченный журнал попыток: максимум 100 строк на provider; хранит поколение, результат, критерий полного snapshot и счётчики, но не заменяет canonical events. |
 | `synthetic_deliveries` | Локальный журнал проверки claim/state machine с уникальностью `(event_id, transition_id, destination)`. Destination обязан начинаться с `synthetic:`; реального Telegram-клиента здесь нет. |
+| `telegram_simulation_deliveries` | Отдельный Stage 5 simulation-only журнал. Environment закреплён как `stage5_local_simulation`, destination — только `synthetic:…`; он не является production/general Telegram journal и не ослабляет ограничения `synthetic_deliveries`. |
 | `commit_guards` | Внутренняя таблица для CAS-проверки внутри атомарного D1 batch; это не event truth и не публичные данные. |
 
 Индексы обслуживают provider/date и provider/action/date выборки, версии события, кандидатов и состояния доставки. Foreign keys связывают версии и synthetic claims с событием/transition. Внутренние payload и журнал не являются будущим публичным API-контрактом; публичная проекция потребует отдельного allowlist.
@@ -61,15 +62,25 @@ Codex `codexreset.ai` сейчас задаёт непагинируемый fee
 
 Локальная интеграция использует закреплённый `miniflare@5.20261019.1-beta`, того же major/runtime поколения, что и установленный Wrangler, с `convertV4MiniflareOptions`. Harness загружает миграцию через `unstable_splitSqlQuery` из закреплённого Wrangler и выполняет её на настоящем локальном workerd D1 binding. SQL-вызовы не заменены mock-объектом. Тестовая конфигурация `wrangler.d1.local.json` содержит только local-only binding, выключенный Cron и `PUBLISH_MODE=dry_run`.
 
-## Synthetic delivery journal
+## Synthetic delivery journals
 
-Уникальный claim ограничен event + immutable transition + synthetic destination. Атомарный insert допускает начальный claim; повтор допускается только после явного `retryable`. `sent` требует synthetic message ID, `rejected` сохраняет отказ, а `uncertain_manual_review` фиксирует неоднозначный исход. Неоднозначный исход терминален для автоматического пути: автоматического retry и восстановления claim по lease после падения нет; нужна ручная проверка. Повторный claim не означает exactly-once доставку. Реальные Telegram destinations, client, `sendMessage`, publish mode и send операции находятся за границами Stage 4.
+Stage 4 `synthetic_deliveries` и Stage 5 `telegram_simulation_deliveries` — разные журналы. Stage 5 schema допускает только фиксированную simulation environment и synthetic destination; локальный client требует loopback `127.0.0.1`, заканчивающийся на `/telegram`, использует фиксированный token `000000:STAGE5_SYNTHETIC_ONLY`, затем обращается только к локальному `/sendMessage`. Publisher и mock ограничены synthetic chat ID `-1000000000005`; client отдельно валидирует числовой destination и совпадение ответа. Общего client endpoint, production destination или production journal adapter нет. Реальных Telegram requests/sends не выполняется.
+
+Simulation claim уникален по event + immutable transition + synthetic destination внутри simulation environment. Перед записью repository проверяет текущий transition и observation key, provider generation, baseline и pending candidate; эти сравнения образуют generation/observation CAS на момент claim. Candidate читается из immutable version, но дополнительно сверяется с текущим payload/transition, чтобы review или новая версия закрыли устаревшую отправку. Страницы кандидатов ограничены 50 строками и используют keyset по `(created_at, transition_id)`.
+
+Publisher требует явно переданную synthetic policy. Provider approval привязан к текущему baseline и включает `approvedAt`; локальное подтверждение каждого перехода привязано к `transitionId` и `rawKey` и включает `reviewedAt`. Проверяются отдельно: generation/baseline и актуальная редакционная запись; HTTP checks по source state; и успешное cached ingestion по `lastSuccessAt`. В локальном policy все четыре freshness limits явны и не больше 24 часов; HTTP limit не больше 10 минут. Это временные ограничения тестовой реализации, а production freshness thresholds и approval workflow остаются pending.
+
+Exact future target, уже наступивший к текущему времени, и date-only target, наступивший или равный текущей UTC date, не проходят eligibility. Для date-only target и offer expiry подавление начинается в тот же день; часовой пояс или точное время не придумываются. Date-only offer expiry на текущую UTC date также подавляется.
+
+Начальный claim атомарен; повтор разрешён только для валидированного retryable rate limit, с `retryAt` в будущем не более чем на час, и максимум до трёх попыток. Невалидный/неоднозначный ответ, timeout, disconnect или невозможность записать completion после вызова клиента оставляет claim заблокированным для автоматической отправки. У `claimed` нет lease recovery; дальнейшая проверка ручная. `dry_run` возвращает preview/причину пропуска до client/network и не читает/создаёт simulation journal claim. Simulation result никогда не означает реальную доставку. D1 и HTTP substitute не транзакционны; exactly-once delivery не обещается.
 
 ## Текущие пределы и нерешённые решения
 
 - В Worker `scheduled()`/`fetch()` ingestion не подключён; Stage 4 service вызывается локально с контролируемыми зависимостями.
-- HTTP public API, website, production freshness threshold и production publication eligibility здесь не определены.
+- HTTP public API, website, production freshness thresholds, production approval workflow and publication eligibility здесь не определены.
 - Полнота Codex feed остаётся локальным контрактным допущением; Claude критерий проверяет согласованность поверхностей, а не официальную полноту истории.
-- Production assessment workflow, корреляция Codex correction/delivery, retention policy за пределами ограниченного HTTP cache, publication activation и реальные delivery outcomes требуют отдельных решений владельца.
+- Production assessment/approval workflow, production freshness thresholds, корреляция Codex correction/delivery, retention policy за пределами ограниченного HTTP cache, publication activation и реальные delivery outcomes требуют отдельных решений владельца. Stage 5 ничего не подключает к Worker runtime и оставляет `readConfig()` в `dry_run`.
 
-**Stage 4 локально; не развёрнуто / не опубликовано.**
+Фактические проверки и результаты Stage 5 фиксируются в [отчёте](32_STAGE5_REPORT.md) и [handoff](33_STAGE5_HANDOFF.md); этот документ не заменяет их.
+
+**Stages 4–5 локально; не развёрнуто / не опубликовано.**

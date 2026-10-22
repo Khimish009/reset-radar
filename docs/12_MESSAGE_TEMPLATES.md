@@ -1,35 +1,37 @@
 # 12 — Messages and truth-preserving templates
 
-All texts here are **examples**, not live announcements. The posts are in Russian, compact, with `[CLAUDE]` or `[CODEX]` for instant recognition. Use real runtime values and quote only verified facts. Escape source data if HTML formatting is used.
+The renderer in `src/telegram/templates.ts` produces unformatted Russian plain text for local previews/simulation. It emits no message for `needs_review`, hinted, seeded or evidence-incomplete records. The examples below describe that local renderer and are **not live announcements**. Each accepted message includes the original evidence URL, provider tracker attribution and an independence disclaimer. Input URLs/text are validated; the renderer rejects unsafe or overlong output instead of truncating facts.
 
 ## A — Applied reset only when supported by evidence
 
 ```text
-✅ [CODEX] Подтверждена доставка сброса лимитов
+✅ [CODEX] Подтверждено применение сброса лимитов
 
 Кому: {VERIFIED_SCOPE}
-Подтверждено: {DELIVERED_AT_OR_SOURCE_DATE}
-Примечание: применение могло происходить поэтапно.
+Время применения: {VERIFIED_EXACT_TIME_UTC}
+Проверьте актуальные лимиты в своём аккаунте.
 
 Первоисточник: {ORIGINAL_URL}
-Данные: https://codexreset.ai/
+Данные трекера: https://codexreset.ai/
+Независимая сводка Reset Radar; проект не связан с провайдером.
 ```
 
-For Codex require explicitly verifiable delivery evidence (`delivered_at` + corroborating source). `kind=regular` alone is NOT sufficient.
+Codex requires reviewed corroborating delivery evidence matching the raw `delivered_at`; `kind=regular` alone is not sufficient. The same verified evidence gate applies to other provider actions.
 
 ```text
-✅ [CLAUDE] Подтверждён сброс лимитов
+✅ [CLAUDE] Подтверждено применение сброса лимитов
 
-Какие: {VERIFIED_WINDOW}
-Кому: {VERIFIED_ELIGIBILITY}
-Дата объявления: {ANNOUNCED_DATE_OR_TIME}
+Кому: {VERIFIED_SCOPE_OR_SOURCE_UNSPECIFIED}
+Какие лимиты: {VERIFIED_WINDOW_IF_PRESENT}
+Время применения: {VERIFIED_TIME_PRECISION}
 
 Проверьте актуальные лимиты в своём аккаунте.
 Первоисточник: {ORIGINAL_URL}
-Данные: https://clauderesets.com/
+Данные трекера: https://clauderesets.com/
+Независимая сводка Reset Radar; проект не связан с провайдером.
 ```
 
-Use only Claude confirmed, applied `usage_reset` with evidence. Don't overstate audience.
+For Claude the renderer accepts only evidence-backed confirmed `usage_reset` with subscription usage allocation. Announcement time is never substituted for application time. A window line appears only when the accepted record contains a supported window.
 
 ## B — Future *announced* reset, not yet confirmed
 
@@ -39,43 +41,64 @@ Use only Claude confirmed, applied `usage_reset` with evidence. Don't overstate 
 Когда: {EXACT_TIME_OR_DATE_OR_UNKNOWN}
 Кому: {VERIFIED_SCOPE}
 
-⚠️ Это анонс, а не подтверждение, что лимиты уже обновились.
+Это анонс, а не подтверждение применения; фактическое обновление может отличаться.
 Первоисточник: {ORIGINAL_URL}
-Данные: https://codexreset.ai/
+Данные трекера: https://codexreset.ai/
+Независимая сводка Reset Radar; проект не связан с провайдером.
 ```
 
 For Codex, require a current, explicit announcement and reviewed source evidence. `scheduled.certainty=hinted` is never a confirmed announcement. If the source gives no target time, render `Когда: дата и время источником не указаны.`; if it gives only a date, show only that date. The current `scheduled` contract requires a day, so an unknown-time announcement can only be represented from a separately reviewed `regular` row with `delivered_at=null`; do not invent a nullable scheduled day.
 
-The template expresses the owner's accepted product priority to notify on a reliable announcement before delivery. Whether and when Telegram sends such a notice remains a future publication-policy decision; Stage 3 has no scheduler or publisher. A possible policy is to make the first reviewed future announcement eligible after separate baseline and production gates. Deduplication and any later `confirmed_applied` notice need a separate Stage 4+ decision.
+The local renderer supports a reviewed early announcement before delivery, including unknown expected time. Local publisher eligibility additionally checks current immutable transition and freshness inputs. Whether production should publish this or any other action, and which freshness thresholds apply, remain pending production policy decisions.
 
 ## C — Banked / redeemable credit
 
 ```text
-🎁 [CLAUDE] Дополнительный сброс лимитов
+🎁 [CLAUDE] Предложение дополнительного сброса
 
-Кому: {VERIFIED_ELIGIBILITY}
-Активировать до: {DATE_OR_NOT_SPECIFIED}
-Нужно ли действие: {VERIFIED_INSTRUCTIONS_OR_UNCLEAR}
+Кому: {VERIFIED_SCOPE_OR_SOURCE_UNSPECIFIED}
+Срок предложения: {DATE_OR_SOURCE_UNSPECIFIED}.
 
-Это предложение, а не подтверждение автоматического сброса вашего аккаунта.
+Это предложение, а не подтверждение сброса или текущей доступности. Условия и необходимость действия проверьте в аккаунте.
 Первоисточник: {ORIGINAL_URL}
-Данные: https://clauderesets.com/
+Данные трекера: https://clauderesets.com/
+Независимая сводка Reset Radar; проект не связан с провайдером.
 ```
 
-For Codex adapt tag and data URL. Do not say “активировать” if mechanics are not verified; say “получателям может быть доступен дополнительный сброс — проверьте аккаунт”. No invented expiry time or timezone.
+For Codex adapt the tag and tracker URL. The expiry is date-only when that is all the source supplies; no expiry time, timezone, activation step or current availability is inferred. The local publisher suppresses a date-only offer on its expiry UTC date.
 
 ## D — Corrections
 
 ```text
-⚠️ [CLAUDE] Уточнение к предыдущему сообщению
+⚠️ [CLAUDE] Исправление сведений о событии
 
-{SPECIFIC_VERIFIED_CORRECTION}
-Предыдущий пост: {TELEGRAM_URL_IF_EXISTS}
-Источник: {ORIGINAL_URL}
-Данные: https://clauderesets.com/
+{VERIFIED_CHANGED_FACTS_OR_CURRENT_FACTS}
+Кому: {VERIFIED_SCOPE_OR_SOURCE_UNSPECIFIED}
+Первоисточник: {ORIGINAL_URL}
+Данные трекера: https://clauderesets.com/
+Независимая сводка Reset Radar; проект не связан с провайдером.
 ```
 
-No correction on mere disappearance of source from ordinary feed. Owner review if ambiguous.
+The local renderer requires an evidenced correction and the prior immutable version of the same upstream event. A missing source row does not create a correction. It does not invent a link to a previous Telegram post.
+
+Changed supported expiry dates and canonical effective times are shown explicitly,
+with their original precision. An effective time reported in a correction is
+labelled as source-reported, not verified delivery. Unsupported changes or invalid
+public facts are rejected rather than reduced to a generic correction. The current
+normalizer conservatively leaves Claude credit/offer corrections in `needs_review`;
+expiry-correction renderer fixtures do not override that guard.
+
+```text
+⚠️ [CODEX] Источник отозвал сведения о событии
+
+Это сообщение подтверждает отзыв сведений источником; оно не утверждает, что прежняя публикация была в Telegram.
+Кому: {VERIFIED_SCOPE_OR_SOURCE_UNSPECIFIED}
+Первоисточник: {ORIGINAL_URL}
+Данные трекера: https://codexreset.ai/
+Независимая сводка Reset Radar; проект не связан с провайдером.
+```
+
+Withdrawal also requires an evidence-backed transition with its prior immutable version; disappearance from a feed is insufficient.
 
 ## Editorial rules
 
@@ -83,9 +106,11 @@ No correction on mere disappearance of source from ordinary feed. Owner review i
 - Keep detection time, announcement time, and delivery time separate. `announced_future` never says limits have already arrived; `confirmed_applied` requires reviewed delivery evidence.
 - `time_precision=date` => date only, do not invent hour. Banked `expires_on` date does not imply time zone.
 - Unknown target time gets explicit unknown-time wording; never add a guessed date, timezone, countdown, or delivery statement.
-- `scope=all` requires source backing; if scope unknown say so or do not auto publish.
+- Audience comes from the accepted current record; when source did not specify it, the renderer says so. Rejected/stale review data cannot supply audience or URLs.
 - Provide both primary announcement and aggregator/source credit in channel posts, plus disclaimer in bio.
 - Don't use LLM to rewrite factual notices during MVP. No blind automatic posts on third-party social rumors.
+- Corrections/withdrawals can refer to the same event's prior version, but no prior Telegram URL is shown because no real-delivery journal exists.
+- Stage 5 previews and simulated outcomes are local artifacts. They do not establish that a real post was sent or authorize a production message.
 
 ## Website crosslinks (after live launch)
 

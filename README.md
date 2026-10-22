@@ -4,7 +4,7 @@
 
 An independent, open-source tracker for **Claude Code** and **OpenAI Codex** public reset announcements, verified applications, extra/banked quota offers and meaningful usage-limit changes. **Telegram delivers alerts; the website displays history, change details and a transparent, source-linked dashboard.**
 
-**Status: Stage 4 local D1 and normalization — not a running service.** Claude Resets and the owner-selected **codexreset.ai** adapters now have a locally callable ingestion service, durable facts/versions, independent provider baselines, scoped HTTP cache and a synthetic delivery journal. Worker `scheduled()`/`fetch()` remain inert. Telegram publishing, public data endpoints and website are not implemented. **Not deployed / not published.** Last documentation update: **2026-10-22**.
+**Status: local Stage 5 publisher implementation — not a running service.** Claude Resets and the owner-selected **codexreset.ai** adapters have a locally callable ingestion service, durable facts/versions, independent provider baselines, scoped HTTP cache and publication candidates. Stage 5 adds truth-preserving Telegram previews and a separate loopback-only simulation journal with a fixed synthetic destination and credential. `dry_run` produces previews without a client request or journal claim. Worker `scheduled()`/`fetch()` and `readConfig()` remain inert/dry-run; no production Telegram client, public data endpoints or website are implemented. **Not deployed / not published.** Last documentation update: **2026-10-22**.
 
 Local setup (Node version in `.nvmrc`):
 
@@ -13,19 +13,21 @@ npm ci
 npm run typecheck
 npm run lint
 npm test
+npm run test:d1
+npm run d1:migrate:local
 python3 docs/evidence/stage0-2026-10-21/verify.py
 ```
 
-`typecheck` generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` retains isolated dry-run targets with no bindings, routes or active Cron triggers. The Worker handlers remain inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. The separate local ingestion service uses injected clock/fetch and D1; tests use synthetic source data. Codex uses only `codexreset.ai`, with no fallback or union with `codex-resets.com`. CORS and real public endpoints belong to Stage 9. See the [Stage 4 report](docs/30_STAGE4_REPORT.md) and [current handoff](docs/31_STAGE4_HANDOFF.md).
+`typecheck` generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` retains isolated dry-run targets with no bindings, routes or active Cron triggers. The Worker handlers remain inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. Local ingestion and publisher services use injected clock/fetch and D1; Stage 5 simulation is constrained to a loopback HTTP substitute and a separate simulation-only journal. No test or preview sends to Telegram. Codex uses only `codexreset.ai`, with no fallback or union with `codex-resets.com`. CORS and real public endpoints belong to Stage 9. See the [Stage 4 report](docs/30_STAGE4_REPORT.md), [Stage 5 report](docs/32_STAGE5_REPORT.md) and [current handoff](docs/33_STAGE5_HANDOFF.md).
 
-Stage 4 local D1 checks (Miniflare/workerd needs loopback access):
+Local D1 checks (Miniflare/workerd needs loopback access):
 
 ```sh
 npm run d1:migrate:local
 npm run test:d1
 ```
 
-The migration command uses the separate `wrangler.d1.local.json` with a local-only database ID and explicit `--local`; state stays under ignored `.wrangler/stage4-d1/`. It does not configure staging or production resources. Publication approval remains absent for both providers.
+The migration command uses the separate `wrangler.d1.local.json` with a local-only database ID and explicit `--local`; state stays under ignored local `.wrangler/` storage. It does not configure staging or production resources. `test:d1` covers local Stage 4 and Stage 5 D1 tests. Synthetic Stage 5 approvals and freshness settings exist only in test inputs; production publication approvals and thresholds remain pending for both providers. See the Stage 5 report for the commands actually run and their results.
 
 | Surface | Role | Planned link |
 |---|---|---|
@@ -70,13 +72,13 @@ Codex reset API ┘                                           │
 
 ## Start with Codex CLI (recommended workflow)
 
-1. Read `AGENTS.md`, this README, the [current handoff](docs/31_STAGE4_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
+1. Read `AGENTS.md`, this README, the [current handoff](docs/33_STAGE5_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
 2. Run Codex from the repository root and inspect `git status`, including staged and unstaged changes; preserve existing work.
-3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage. The owner accepted Stage 3 and explicitly assigned only local Stage 4. Stage 5 requires a new assignment.
+3. Follow the **latest explicitly owner-approved task**. Prepared prompts and completed reviews do not authorize a later stage. The owner accepted the local Stage 4 result and assigned only local Stage 5. Stage 6 requires a new assignment.
 4. Report actual changes/checks and stop before the next stage. See `prompts/STAGE_REVIEW.md`.
 5. For a new project beginning with source research, `prompts/START_CODEX.md` describes Stage 0. When resuming this repository, use the current handoff rather than repeating completed stages.
-6. [PR #3](https://github.com/Khimish009/reset-radar/pull/3), including both P2 fixes in `06a90a9`, was verified merged as `2190622`; CI run #9 passed. Stage 4 was implemented in an isolated worktree, then consolidated into the main project directory on `feat/stage4-d1-policy` after separate owner approval. Local `main` is now fast-forwarded to `2190622`. The owner subsequently authorized a local Stage 4 commit; obtain its SHA from Git history. The stash, temporary worktree and verified recovery backup are preserved; see the current handoff.
-7. [START_STAGE4](prompts/START_STAGE4.md) records the local implementation assignment. Only the subsequent local commit was separately authorized. Push/PR, merging Stage 4 into `main`, remote migrations, deployment, Telegram sends and Stage 5 remain unauthorized.
+6. Stage 4 commit `7121756` is merged through [PR #4](https://github.com/Khimish009/reset-radar/pull/4) as `2a0a958`; its CI run #11 passed. At handoff preparation, local `main` and `origin/main` matched `2a0a958`. The owner/external process performed the push/PR/merge; the agent created only the separately authorized local commit. The old stash, detached fallback worktree and recovery backup remain preserved; do not apply the old stash again. See the current handoff for exact SHAs and limits of this verification.
+7. [START_STAGE5](prompts/START_STAGE5.md) is the assigned local Telegram client/templates/publisher scope with synthetic HTTP/D1 tests. The report and handoff record the completed checks and remaining decisions. Commit/push/PR/merge, remote migrations/deployment, real Telegram requests and Stage 6 require separate permission.
 
 ## Documents
 
@@ -91,9 +93,11 @@ Codex reset API ┘                                           │
 - `docs/24_STAGE1_REPORT.md`, `docs/25_STAGE1_HANDOFF.md` — historical Stage 1 result and handoff.
 - `docs/26_STAGE2_REPORT.md`, `docs/27_STAGE2_HANDOFF.md` — historical Stage 2 result and handoff.
 - [Stage 3 report](docs/28_STAGE3_REPORT.md), [historical handoff](docs/29_STAGE3_HANDOFF.md) — accepted local Codex adapter and PR #3 fixes.
-- [Stage 4 report](docs/30_STAGE4_REPORT.md), [current handoff](docs/31_STAGE4_HANDOFF.md) — local D1, normalization, ingestion, checks and pending production decisions.
+- [Stage 4 report](docs/30_STAGE4_REPORT.md), [historical handoff](docs/31_STAGE4_HANDOFF.md) — local D1, normalization, ingestion, checks and pending production decisions.
+- [Stage 5 report](docs/32_STAGE5_REPORT.md), [current handoff](docs/33_STAGE5_HANDOFF.md) — local Telegram rendering, publisher and loopback simulation; production decisions remain pending.
 - `prompts/START_STAGE3.md` — local Codex adapter assignment with explicit source/base gates.
 - `prompts/START_STAGE4.md` — explicitly assigned local D1/policy scope; reading or preparing the prompt alone grants no permission.
+- `prompts/START_STAGE5.md` — owner-assigned local Telegram publisher scope; does not authorize production publication or Stage 6.
 - `manual/OWNER_CHECKLIST.md` — actions that require the owner, **no secrets**.
 - `prompts/START_CODEX.md` — exact Stage 0 assignment; `prompts/STAGE_REVIEW.md` — stage acceptance report.
 - `brand/channel-avatar.png`, `brand/bot-avatar.png` — distinct matching brand assets.
