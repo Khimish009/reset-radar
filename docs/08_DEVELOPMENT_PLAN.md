@@ -111,7 +111,7 @@ Details and exact SHAs: [current handoff](33_STAGE5_HANDOFF.md).
 [START_STAGE6](../prompts/START_STAGE6.md), с принятием Stage 5 из merged PR #5.
 Scope: dry-run runtime integration, настоящий local D1, offline/loopback HTTP
 tests, независимое review и конкретный remote plan. Фактические результаты:
-[original local report](34_STAGE6_LOCAL_REPORT.md), [current handoff](39_STAGE6_CAPACITY_HANDOFF.md).
+[original local report](34_STAGE6_LOCAL_REPORT.md), [current handoff](41_STAGE6_REPOSITORY_B_HANDOFF.md).
 Полный acceptance ниже остаётся pending до отдельно разрешённого remote наблюдения.
 
 Scheduled подключает ingestion только при явных local/staging настройках и DB.
@@ -145,8 +145,28 @@ C дополнен priority detection отдельно от backfill и proposed
 Следующий предлагаемый implementation gate — отдельное local B assignment; remote account/plan/budget/accounting остаются
 unknown и active staging NO-GO. [Текущий handoff](39_STAGE6_CAPACITY_HANDOFF.md).
 Stage7 — только после завершения Stage6 и отдельного назначения.
-Сервисные remote действия не разрешены; текущий docs-only follow-up отдельно
+Сервисные remote действия не разрешены; тот docs-only follow-up отдельно
 разрешает commit/push только в ветку PR#8, без merge.
+
+**Подготовка новой сессии:** follow-up PR#8 сохранён и отправлен как b283ccf.
+Тогда владелец поручил только сохранить контекст и подготовить
+[CONTINUE_STAGE6_REPOSITORY_B](../prompts/CONTINUE_STAGE6_REPOSITORY_B.md).
+Prompt потребует отдельного явного назначения local B; подготовка не выбирает
+B/C/тариф/SLA и не начинает implementation. Предыдущее permission commit/push
+на follow-up использовано; новые Git publication/service remote действия не
+разрешены. Точные refs/PR/CI/checks — в текущем handoff. Stage7 не назначен.
+
+**Локальная B-first фаза назначена и выполнена 2026-10-22.** Owner явно
+назначил CONTINUE_STAGE6_REPOSITORY_B: только repository optimization, tests,
+measurement, independent review и report. Prepared grouping сохраняет один
+atomic provider batch/CAS, freshness/history/evidence/baseline gates и caps100.
+Measured cold SQL C12/X62:249→52, C100/X100:630→98, execution calls12→12;
+20durable state digests совпали. Full332PASS/5skipped, D183PASS, workload10PASS;
+актуальные детали/проверки — [report40](40_STAGE6_REPOSITORY_B_REPORT.md),
+[current handoff41](41_STAGE6_REPOSITORY_B_HANDOFF.md). C/plan/SLA/new baseline
+policy не выбраны. Coupled full-snapshot/partial-history gap и union101 safe
+stop остаются. Active staging NO-GO; stable acceptance pending. Commit/push/
+PR/merge, remote staging/deploy и Stage7 не разрешены. После отчёта STOP.
 
 Owner-controlled D1/Secrets/Wrangler setup, staging Cron observation, dedup and upstream staleness monitoring; staging channel tests only after approval. Review quotas/logs.
 

@@ -18,6 +18,10 @@ export interface D1WorkloadMetrics {
     batchStatements: number;
     batchSqlBytes: number;
     batchEstimatedInputBytes: number;
+    batchBindBytes: number;
+    maxStatementBindCount: number;
+    maxStatementSqlBytes: number;
+    maxStatementEstimatedInputBytes: number;
   };
   readonly localElapsedMs: number;
   readonly metadata: {
@@ -134,7 +138,8 @@ function wrapStatement(
 export function measureD1(db: D1Database): { db: D1Database; snapshot: () => D1WorkloadMetrics } {
   const metrics: MutableMetrics = {
     bindingCalls: { prepare: 0, bind: 0, batch: 0, run: 0, all: 0, first: 0, raw: 0, exec: 0 },
-    sqlStatements: { total: 0, byMethod: {}, batchStatements: 0, batchSqlBytes: 0, batchEstimatedInputBytes: 0 },
+    sqlStatements: { total: 0, byMethod: {}, batchStatements: 0, batchSqlBytes: 0, batchEstimatedInputBytes: 0,
+      batchBindBytes: 0, maxStatementBindCount: 0, maxStatementSqlBytes: 0, maxStatementEstimatedInputBytes: 0 },
     localElapsedMs: 0,
     metadata: { availableResults: 0, unavailableFirstResults: 0, unavailableRawResults: 0,
       rowsRead: 0, rowsReadMax: 0, rowsWritten: 0, durationMs: 0, sizeAfterBytesMax: null },
@@ -152,6 +157,14 @@ export function measureD1(db: D1Database): { db: D1Database; snapshot: () => D1W
       metrics.sqlStatements.batchStatements += statements.length;
       metrics.sqlStatements.byMethod.batch = (metrics.sqlStatements.byMethod.batch ?? 0) + statements.length;
       const prepared = statements.map((statement) => references.get(statement));
+      for (const item of prepared) {
+        const sqlBytes = byteLength(item?.sql ?? '');
+        const bindBytes = item?.values.reduce<number>((bytes, value) => bytes + estimateValueBytes(value), 0) ?? 0;
+        metrics.sqlStatements.batchBindBytes += bindBytes;
+        metrics.sqlStatements.maxStatementBindCount = Math.max(metrics.sqlStatements.maxStatementBindCount, item?.values.length ?? 0);
+        metrics.sqlStatements.maxStatementSqlBytes = Math.max(metrics.sqlStatements.maxStatementSqlBytes, sqlBytes);
+        metrics.sqlStatements.maxStatementEstimatedInputBytes = Math.max(metrics.sqlStatements.maxStatementEstimatedInputBytes, sqlBytes + bindBytes);
+      }
       metrics.sqlStatements.batchSqlBytes += prepared.reduce((total, item) => total + byteLength(item?.sql ?? ''), 0);
       metrics.sqlStatements.batchEstimatedInputBytes += prepared.reduce((total, item) => total +
         byteLength(item?.sql ?? '') + (item?.values.reduce<number>((bytes, value) => bytes + estimateValueBytes(value), 0) ?? 0), 0);

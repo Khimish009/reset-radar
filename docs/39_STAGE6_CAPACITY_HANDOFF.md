@@ -1,9 +1,21 @@
 # 39 — Handoff: локальная Stage 6 capacity decision
 
+**Исторический capacity handoff.** Следующее явно назначенное B-first
+выполнено локально: [report40](40_STAGE6_REPOSITORY_B_REPORT.md),
+[current handoff41](41_STAGE6_REPOSITORY_B_HANDOFF.md). Старые permission и
+статусы ниже относятся к своим сессиям; новый runtime B не закоммичен,
+remote/Stage7 не разрешены.
+
 **2026-10-22.** Владелец явно поручил
 [CONTINUE_STAGE6_CAPACITY](../prompts/CONTINUE_STAGE6_CAPACITY.md), принял PR #7
 как базу и разрешил только local design/decision, checks, independent review,
 report и STOP. [Основной decision document](38_STAGE6_CAPACITY_DECISION.md).
+
+**Последнее задание — только сохранить контекст и подготовить новую сессию.**
+Сохранён [CONTINUE_STAGE6_REPOSITORY_B](../prompts/CONTINUE_STAGE6_REPOSITORY_B.md):
+local B scope, tests/measurement и STOP только после отдельного явного назначения.
+Подготовка не запускает B и не делает owner choice C/тариф/SLA. Актуальные
+Git/CI/checks и границы разрешений — в финальном блоке ниже.
 
 **Результат proposed; owner choice pending.** Follow-up PR#8 уточняет
 первоначальную рекомендацию C: предложены B-first measurements, затем bounded
@@ -147,3 +159,70 @@ diff-check, offline139 и path scope; прочитал текущий ingestion 
 Разрешённый Git scope: commit/push только feat/stage6-capacity-decision в PR#8,
 без force/merge/нового PR; итоговый SHA/push result сообщаются в ответе владельцу.
 После отчёта STOP. **Не развёрнуто / не опубликовано. Real staging E2E pending.**
+
+
+## Подготовка следующей сессии после commit/push follow-up PR#8
+
+Владелец отдельно попросил сохранить нужную информацию и дать prompt следующей
+фазы. **Реализация не назначена; текущая работа только docs/prompt preparation.**
+
+Подтверждённые Git facts:
+
+- Агент создал и успешно отправил **b283ccf02f3973c080b6c23cea5811a866a34ec5**,
+  `docs: prioritize fresh announcements during historical imports`,6Markdown
+  files, только в `feat/stage6-capacity-decision` для существующего
+  [PR#8](https://github.com/Khimish009/reset-radar/pull/8). Merge не выполнял.
+- Read-only API при этой подготовке: PR#8 **open, merged=false**, head=b283ccf,
+  base SHA1bfbe98. `merge_commit_sha=5ea7fcde…` при open/unmerged — не merge
+  evidence и не основание выбрать этот SHA как base.
+- [CI#21](https://github.com/Khimish009/reset-radar/actions/runs/39795699521)
+  на08fab9d — completed/success. [CI#22](https://github.com/Khimish009/reset-radar/actions/runs/39799318210)
+  наb283ccf при первом чтении был in_progress/conclusion=null; финальный
+  read-only recheck подтвердил **completed/success** на том же SHA. В новой
+  сессии перепроверить actual PR/main/CI; workflow не rerun. Никаких claims
+  об application tests новой B реализации или real staging из этого нет.
+- Local branch/HEAD=b283ccf, local main22ebefe, origin/main1bfbe98. Feature
+  продолжает tracking origin/main (ahead2), несмотря на подтверждённый push.
+  В этой подготовке fetch/switch/reset/rebase/merge/stash не выполнялись.
+- На старте этой подготовки дерево чистое. После неё остаются README/docs08/
+  docs39/owner checklist и новый prompt. Staged diff пуст; нового commit/push
+  не выполнялось. Permission на отправку b283ccf использовано, не переносится.
+  Recovery artifacts сохраняются, старый stash повторно не применять.
+
+Новый prompt содержит конкретный следующий local B scope: prepared grouping,
+100bind/100KB/row-byte bounds, один atomic provider batch и guard/CAS, immutable
+history/observations/versions, clocks/freshness, before/after real-D1 measurement,
+legacy retention103/generation103/4–103/100/20s, cold/cache/304/update/backoff/
+partial/capacity/restart/overlap checks, existing loopback simulation и shutdown.
+Runtime wiring/schema/migrations/config/publisher/deps/CI/Postman artifacts
+сохранить; C/inbox/overlay не реализовать под видом B.
+
+Продуктовый gap сохранён: B не снимает coupled full-snapshot/cap>100 stop.
+До первого полного baseline нет send candidates/approval/history blast.
+Proposed p95≤6min detection/≤30s automatic assessment — не SLA/delivery target;
+priority C tests/operational baseline policy требуют отдельного assignment.
+Owner account/plan/headroom/target/region/max spend/stop budgets unknown;
+active staging NO-GO, Stage6 acceptance pending, Stage7 после завершения Stage6.
+
+Следующая сессия по явному назначению prompt может создать новую local
+`feat/stage6-repository-b`, сохранив pending preparation. Если PR#8 merged,
+проверить main содержит b283ccf; если открыт — разрешённая local base содержит
+08fab9d+b283ccf, без изменения docs PR runtime commits. Новые commit/push/PR/
+merge, service remote/upstream/Telegram/deploy и Stage7 не разрешены.
+
+Проверки этой prompt-подготовки: `git diff --check` PASS;
+`python3 docs/evidence/stage0-2026-10-21/verify.py` —139offline assertions PASS;
+local link check —72targets/0broken, balanced fences. Inventory: ровно5Markdown
+paths (README/docs08/docs39/owner checklist/новый prompt), protected paths без
+изменений, staged diff пуст. Runtime/typecheck/lint/application suites не
+повторялись, потому что executable code не менялся.
+
+Независимый `stage6_b_prompt_review` | reviewer | gpt-6.1-sol | reasoning high —
+завершён, critical/high/medium findings нет. Reviewer самостоятельно подтвердил
+diff-check, links72/0, fences,5Markdown paths и protected paths; файлов не менял; runtime/
+remote/offline verifier не запускал (139 — проверка главного агента).
+Проверены conditional future assignment, current vs historical facts, Git scope,
+CAS/history/caps/retention, baseline/latency boundaries и отсутствие C/remote/
+Stage7 authorization. После review добавлены только итоговые check/review записи,
+проверки документации повторены. **Работа остановлена.**
+**Не развёрнуто / не опубликовано. Real staging E2E pending.**

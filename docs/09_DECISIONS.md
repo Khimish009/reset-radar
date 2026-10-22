@@ -195,6 +195,17 @@ B-first и затем bounded A при выполнении gates; C — при 
 после завершения Stage6 и отдельного назначения. Текущий результат/checks/review:
 [handoff39](39_STAGE6_CAPACITY_HANDOFF.md).
 
+**Следующее явное owner decision, 2026-10-22: B-first выбран только локально.**
+Реализован repository B с prepared grouping и сохранёнными atomic batch/CAS,
+clocks/freshness/immutable history/baseline/evidence gates. Measured SQL
+249→52/630→98 cold,175→42/430→72 cache,12execution calls остаются12;
+20durable state digests совпали. [Report40](40_STAGE6_REPOSITORY_B_REPORT.md),
+[handoff41](41_STAGE6_REPOSITORY_B_HANDOFF.md). Частичная история не становится
+canonical snapshot, union101 safe stop сохранён. C/A/тариф/SLA/new baseline
+policy не утверждены; active staging NO-GO. Новое решение нужно после отчёта;
+первый возможный remote gate только isolated staging D1 create после inputs
+и отдельного разрешения. Stage6 acceptance pending, Stage7 не назначен.
+
 ## Items for owner to confirm later (not blockers for Stage 0)
 
 1. Actual GitHub `owner`/repo URL and verified Telegram handles (`@resetradarai`, `@resetradaraibot` suggested).

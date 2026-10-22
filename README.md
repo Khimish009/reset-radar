@@ -4,7 +4,7 @@
 
 An independent, open-source tracker for **Claude Code** and **OpenAI Codex** public reset announcements, verified applications, extra/banked quota offers and meaningful usage-limit changes. **Telegram delivers alerts; the website displays history, change details and a transparent, source-linked dashboard.**
 
-**Status: local Stage 6 dry-run preparation — not a running service.** Claude Resets and the owner-selected **codexreset.ai** adapters share durable D1 facts/versions, independent provider baselines and scoped HTTP cache. Worker `scheduled()` now connects ingestion to D1 only with explicit local/staging `INGEST_MODE=dry_run`, `APP_ENV` and `PUBLISH_MODE=dry_run`; all supplied configs stay inactive, and production cannot activate ingestion. Scheduled results explicitly block publication: no real Telegram publisher or approval workflow exists. Stage 5 previews and sending remain separate synthetic-only tools. No public data endpoints or website are implemented. **Not deployed / not published. Real staging E2E not performed.** Last documentation update: **2026-10-22**.
+**Status: local Stage 6 repository B implemented and measured — not a running service.** Claude Resets and the owner-selected **codexreset.ai** adapters share durable D1 facts/versions, independent provider baselines and scoped HTTP cache. Worker `scheduled()` now connects ingestion to D1 only with explicit local/staging `INGEST_MODE=dry_run`, `APP_ENV` and `PUBLISH_MODE=dry_run`; all supplied configs stay inactive, and production cannot activate ingestion. Scheduled results explicitly block publication: no real Telegram publisher or approval workflow exists. Stage 5 previews and sending remain separate synthetic-only tools. No public data endpoints or website are implemented. **Not deployed / not published. Real staging E2E not performed.** Last documentation update: **2026-10-22**.
 
 Local setup (Node version in `.nvmrc`):
 
@@ -18,7 +18,7 @@ npm run d1:migrate:local
 python3 docs/evidence/stage0-2026-10-21/verify.py
 ```
 
-`typecheck` generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` retains isolated dry-run targets with no bindings, routes or active Cron triggers. HTTP remains inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. Scheduled ingestion requires explicit opt-in and DB; default/missing/invalid settings cannot start polling. Local tests inject clock/fetch and real Miniflare D1; opt-in HTTP tests route only to a loopback Postman substitute. No test or preview sends to Telegram. Codex uses only `codexreset.ai`, with no fallback or union with `codex-resets.com`. CORS and real public endpoints belong to Stage 9. See the [Stage 6 preflight report](docs/36_STAGE6_PREFLIGHT_REPORT.md) and [current handoff](docs/39_STAGE6_CAPACITY_HANDOFF.md).
+`typecheck` generates local Worker runtime types in ignored `.wrangler/`. No Cloudflare login or resources are needed. `wrangler.json` retains isolated dry-run targets with no bindings, routes or active Cron triggers. HTTP remains inert: reserved API paths return `501 not_implemented`; other read paths return `404`, and write methods return `405`. Scheduled ingestion requires explicit opt-in and DB; default/missing/invalid settings cannot start polling. Local tests inject clock/fetch and real Miniflare D1; opt-in HTTP tests route only to a loopback Postman substitute. No test or preview sends to Telegram. Codex uses only `codexreset.ai`, with no fallback or union with `codex-resets.com`. CORS and real public endpoints belong to Stage 9. See the [Stage 6 preflight report](docs/36_STAGE6_PREFLIGHT_REPORT.md) and [current handoff](docs/41_STAGE6_REPOSITORY_B_HANDOFF.md).
 
 Local D1 checks (Miniflare/workerd needs loopback access):
 
@@ -27,7 +27,7 @@ npm run d1:migrate:local
 npm run test:d1
 ```
 
-The migration command uses the separate `wrangler.d1.local.json` with a local-only database ID and explicit `--local`; state stays under ignored local `.wrangler/` storage. It does not configure staging or production resources. `test:d1` covers local Stage 4–6 D1 tests, including the workload harness. Synthetic Stage 5 approvals and freshness settings exist only in test inputs; production publication approvals and thresholds remain pending for both providers. See the [preflight report](docs/36_STAGE6_PREFLIGHT_REPORT.md) for actual checks and the [current handoff](docs/39_STAGE6_CAPACITY_HANDOFF.md) for limits and reproduction.
+The migration command uses the separate `wrangler.d1.local.json` with a local-only database ID and explicit `--local`; state stays under ignored local `.wrangler/` storage. It does not configure staging or production resources. `test:d1` covers local Stage 4–6 D1 tests, including the workload harness. Synthetic Stage 5 approvals and freshness settings exist only in test inputs; production publication approvals and thresholds remain pending for both providers. See the [preflight report](docs/36_STAGE6_PREFLIGHT_REPORT.md) for actual checks and the [current handoff](docs/41_STAGE6_REPOSITORY_B_HANDOFF.md) for limits and reproduction.
 
 | Surface | Role | Planned link |
 |---|---|---|
@@ -72,13 +72,13 @@ Codex reset API ┘                                           │
 
 ## Start with Codex CLI (recommended workflow)
 
-1. Read `AGENTS.md`, this README, the [current handoff](docs/39_STAGE6_CAPACITY_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
+1. Read `AGENTS.md`, this README, the [current handoff](docs/41_STAGE6_REPOSITORY_B_HANDOFF.md), and specifications relevant to the owner's task. Consult other documents and `manual/OWNER_CHECKLIST.md` when needed.
 2. Run Codex from the repository root and inspect `git status`, including staged and unstaged changes; preserve existing work.
-3. Follow the **latest explicitly owner-approved task**. The owner assigned [CONTINUE_STAGE6_CAPACITY](prompts/CONTINUE_STAGE6_CAPACITY.md) for local design/decision only, accepting preflight PR #7 as the base. The [capacity proposal](docs/38_STAGE6_CAPACITY_DECISION.md) compares A/B/C and now proposes B-first measurements, bounded A only after its gates, and C when capacity/latency evidence justifies it. PR #8 follow-up separates priority announcement detection from historical backfill; owner choice, latency target, implementation and account/plan/budget remain pending. The PR #8 documentation follow-up authorizes only docs/checks/review and commit/push to its existing branch; no protocol implementation or service remote operation.
+3. Follow the **latest explicitly owner-approved task**. The owner selected B-first through [CONTINUE_STAGE6_REPOSITORY_B](prompts/CONTINUE_STAGE6_REPOSITORY_B.md). Local prepared grouping is implemented and measured: C12/X62 cold SQL249→52, C100/X100 cold630→98, still12 D1 execution calls; durable state matches before/after. See the [B report](docs/40_STAGE6_REPOSITORY_B_REPORT.md). B preserves full-snapshot/cap100 and partial-history limitations; C, a tariff, SLA and new baseline policy are not approved. This uncommitted local work grants no Git publication or remote permission.
 4. Report actual changes/checks and stop before the next stage. See `prompts/STAGE_REVIEW.md`.
 5. For a new project beginning with source research, `prompts/START_CODEX.md` describes Stage 0. When resuming this repository, use the current handoff rather than repeating completed stages.
-6. Preflight `7a9eedf` is in remote main `1bfbe98` through [PR #7](https://github.com/Khimish009/reset-radar/pull/7); read-only recheck confirmed CI #19/#20 success. The original design session fetched origin and created local `feat/stage6-capacity-decision` from `origin/main`, preserving pending docs. Local main remains `22ebefe`; no reset/merge/stash recovery was performed. Current refs, checks and review are in the [handoff](docs/39_STAGE6_CAPACITY_HANDOFF.md).
-7. Active staging remains **NO-GO**. The next proposed implementation gate is a **separate local assignment for B** in [docs/38](docs/38_STAGE6_CAPACITY_DECISION.md), not a paid-plan selection or remote permission. If the owner chooses A instead, only isolated staging D1 creation can be the next remote gate after prerequisites. Full Stage 6 acceptance remains pending; Stage 7 follows its completion and a separate assignment. **Not deployed / not published.**
+6. Preflight `7a9eedf` is in remote main `1bfbe98` through [PR #7](https://github.com/Khimish009/reset-radar/pull/7); read-only recheck confirmed CI #19/#20 success. The original design session fetched origin and created local `feat/stage6-capacity-decision` from `origin/main`, preserving pending docs. Local main was `22ebefe` then; the B session verified local main/origin/main `25b6851`. No reset/merge/stash recovery was performed. Current refs, checks and review are in the [handoff](docs/39_STAGE6_CAPACITY_HANDOFF.md).
+7. Active staging remains **NO-GO**. B's local checks and independent review do not establish effective account/plan/query/CPU/budget or latency acceptance. The next owner decision is a separate scope after the B report: local C if capacity/freshness needs it, or bounded A only after prerequisites. The first possible remote gate remains isolated staging D1 creation with separate permission. Full Stage 6 acceptance is pending; Stage 7 needs its completion and a separate assignment. **Not deployed / not published.**
 
 ## Documents
 
@@ -97,13 +97,15 @@ Codex reset API ┘                                           │
 - [Stage 5 report](docs/32_STAGE5_REPORT.md), [historical handoff](docs/33_STAGE5_HANDOFF.md) — accepted local Telegram rendering, publisher and loopback simulation; production decisions remain pending.
 - [Stage 6 local report](docs/34_STAGE6_LOCAL_REPORT.md), [historical handoff](docs/35_STAGE6_LOCAL_HANDOFF.md) — original scheduled dry-run integration and merge/CI context.
 - [Stage 6 preflight report](docs/36_STAGE6_PREFLIGHT_REPORT.md), [preflight handoff](docs/37_STAGE6_PREFLIGHT_HANDOFF.md) — historical CI fix and real-D1 workload evidence.
-- [Stage 6 capacity decision](docs/38_STAGE6_CAPACITY_DECISION.md), [current handoff](docs/39_STAGE6_CAPACITY_HANDOFF.md) — proposed A/B/C design, budget unknowns and next local gate; stable staging remains pending.
+- [Stage 6 capacity decision](docs/38_STAGE6_CAPACITY_DECISION.md), [historical capacity handoff](docs/39_STAGE6_CAPACITY_HANDOFF.md) — A/B/C design and budget unknowns.
+- [Stage 6 B report](docs/40_STAGE6_REPOSITORY_B_REPORT.md), [current handoff](docs/41_STAGE6_REPOSITORY_B_HANDOFF.md) — local B implementation, measurements and preserved gaps; stable staging remains pending.
 - `prompts/START_STAGE3.md` — local Codex adapter assignment with explicit source/base gates.
 - `prompts/START_STAGE4.md` — explicitly assigned local D1/policy scope; reading or preparing the prompt alone grants no permission.
 - `prompts/START_STAGE5.md` — owner-assigned local Telegram publisher scope; does not authorize production publication or Stage 6.
 - [START_STAGE6](prompts/START_STAGE6.md) — assigned local staging preparation; remote operations and real sends remain excluded.
 - [CONTINUE_STAGE6](prompts/CONTINUE_STAGE6.md) — owner-assigned local continuation scope; future remote gates remain separately authorized. The prompt alone grants no new assignment.
 - [CONTINUE_STAGE6_CAPACITY](prompts/CONTINUE_STAGE6_CAPACITY.md) — owner-assigned local capacity/budget design and owner-decision scope, without protocol implementation or remote operations.
+- [CONTINUE_STAGE6_REPOSITORY_B](prompts/CONTINUE_STAGE6_REPOSITORY_B.md) — owner-assigned local B optimization, measurement, review and report; no Git publication or remote authorization.
 - `manual/OWNER_CHECKLIST.md` — actions that require the owner, **no secrets**.
 - `prompts/START_CODEX.md` — exact Stage 0 assignment; `prompts/STAGE_REVIEW.md` — stage acceptance report.
 - `brand/channel-avatar.png`, `brand/bot-avatar.png` — distinct matching brand assets.

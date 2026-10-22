@@ -1,0 +1,82 @@
+{
+  "label": "synthetic local Miniflare D1; no real upstream/Telegram/remote accounting",
+  "date": "2026-10-22",
+  "base": "25b6851bff772b02c08758c32bb9391d2ed5a1dd",
+  "branch": "feat/stage6-repository-b",
+  "change": "uncommitted local B; no commit/push/PR/merge",
+  "node": "v22.22.2",
+  "versions": {
+    "wrangler": "4.151.3",
+    "miniflare": "5.20261019.1-beta",
+    "vitest": "5.0.5",
+    "postman": "1.75.0"
+  },
+  "baselineRoot": "temporary copy of tracked HEAD src/migrations, identical expanded harness/fixtures; shared pinned node_modules via symlink",
+  "metadataCoverage": "4 first() SELECTs unavailable per measured invocation before/after; rows read lower bound; inspection after metrics uses original DB binding",
+  "hashes": {
+    "src/storage/d1.ts": {
+      "afterSha256": "8990e8ac70bf3202c88426f8e0d42e21554c9fc54f207568c469e8c7f4425356",
+      "beforeSha256": "b1c66337e738c90e2d6b0693f85999c9ec1ee06b648dbb02ab1cb87a5c398c36"
+    },
+    "tests/stage6-workload.test.ts": {
+      "afterSha256": "bbe36c60e4fb2572dc28f409ae255403c8f37140bc8faee767c889d42ae3d2d3",
+      "sameBeforeAfterHarness": true
+    },
+    "tests/helpers/d1-metrics.ts": {
+      "afterSha256": "7c55d51e6f5bf53201df3ac465f9e49eaa29544e9648393a3f4b2ce4e565a464",
+      "sameBeforeAfterHarness": true
+    },
+    "tests/fixtures/claude.ts": {
+      "afterSha256": "9bb8bb24bc707353110b8df01b5649e551e673ddfb6fc079c726ab31fc5fe69b",
+      "sameBeforeAfterHarness": true
+    },
+    "tests/fixtures/codex.ts": {
+      "afterSha256": "5d8174db2a80f131cb615b223d8c69a22bebbb37fd929709125fcf4f69b727e6",
+      "sameBeforeAfterHarness": true
+    },
+    "migrations/0001_stage4.sql": {
+      "afterSha256": "1f1f5054a69c0bfc8129ff448a189f268c517a0a15f43853d710abbd15b0f3fd",
+      "sameBeforeAfterHarness": true
+    },
+    "package-lock.json": {
+      "afterSha256": "72380f7615802d61da85f63f69e556088e510305a3e16b7cd3724bc2f41a5120",
+      "sameBeforeAfterHarness": true
+    },
+    "vitest.config.ts": {
+      "afterSha256": "9feba4198b8c08a494c8515342ea88234d568a1af01308c9b4ced7f9dcdae132",
+      "sameBeforeAfterHarness": true
+    },
+    "migrations/0002_stage5.sql": {
+      "afterSha256": "964009d912e51479222ee01dd71134381ba554cca34243a1d00a8d2253a83f90",
+      "sameBeforeAfterHarness": true
+    },
+    "package.json": {
+      "afterSha256": "e243bd5dbfc4712d36d16184ea24bd9660331cff4aa502a58999ce5b466211c0",
+      "sameBeforeAfterHarness": true
+    },
+    "wrangler.json": {
+      "afterSha256": "437fcf388da4f55b0ff74e49c944798a5cad4e069fc0fe1914dabb18e6bc2629",
+      "sameBeforeAfterHarness": true
+    },
+    "wrangler.d1.local.json": {
+      "afterSha256": "42bae29a195259228039311c0d6ab9cf944cc2f15ec0c381c91a4b5e92f6cfab",
+      "sameBeforeAfterHarness": true
+    },
+    "tests/helpers/d1.ts": {
+      "afterSha256": "a9baccd793b6836178dc756b8329f1ee02aa5e1a7839a85fcfcd725efb01f26e",
+      "sameBeforeAfterHarness": true
+    },
+    "tests/setup.ts": {
+      "afterSha256": "6a38d5dd339e067fb7ee0fd393e1d4707f15ce0e68095bec3399beefa2ca1b74",
+      "sameBeforeAfterHarness": true
+    },
+    "tests/stage4-ingest.test.ts": {
+      "afterSha256": "294405ef3421f0ff421e691c7bf1a0d1136e8f4dc794cc9a8ee36cc6e60f9956",
+      "purpose": "final regression tests; not part of measured workload"
+    },
+    "tests/stage4-storage.test.ts": {
+      "afterSha256": "3cfe9822fe68de8cbfe117a095fb3f30d3d38c7bae91363822b0888c0872bb34",
+      "purpose": "final regression tests; not part of measured workload"
+    }
+  }
+}

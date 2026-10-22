@@ -131,6 +131,57 @@ async function assessment(provider: Provider, raw: Parameters<typeof rawAssessme
 }
 
 describe('Stage 4 ingestion against local D1', () => {
+  it('characterizes B future bootstrap, changed announcement and evidence-gated new reset without baseline history candidates', async () => {
+    const { db: binding } = await db();
+    const repository = createD1Repository(binding);
+    const time = clock();
+    const future = codexEvent({ id: 'synthetic-b-future', date: '2026-10-24', ts: '2026-10-24T12:00:00Z',
+      announced_at: INITIAL, delivered_at: null });
+    const futureAssessment = await assessment('codex', future, { assertion: 'future_announcement' });
+    const ingest = async (events: ReturnType<typeof codexEvent>[], assessments: LocalAssessment[]) => {
+      const run = harness(binding, codexFetch(codexFeed({ events })), time);
+      return run.service.ingestProvider('codex', { assessments, maxRecords: 100 });
+    };
+    expect(await ingest([future], [futureAssessment])).toMatchObject({ complete: true, baselineCompleted: true });
+    const first = (await repository.loadEvents('codex'))[0]!;
+    expect(first).toMatchObject({ action: 'announced_future', candidate: false, detectedAt: INITIAL });
+    expect(readPayload(first.payload).verifiedDelivery).toEqual({ precision: 'unknown' });
+    expect(await binding.prepare('SELECT COUNT(*) AS n FROM publication_candidates').first('n')).toBe(0);
+
+    time.advance(301_000);
+    const updated = { ...future, summary: 'SYNTHETIC materially changed future announcement' };
+    await ingest([updated], [futureAssessment]);
+    const staleAssessment = (await repository.loadEvents('codex'))[0]!;
+    expect(staleAssessment.action).toBe('needs_review');
+    expect(readPayload(staleAssessment.payload).reviewedEvidence).toBeNull();
+    expect(staleAssessment.transitionId).not.toBe(first.transitionId);
+
+    time.advance(301_000);
+    const updatedAssessment = await assessment('codex', updated, { assertion: 'future_announcement' });
+    const delivered = codexEvent({ id: 'synthetic-b-new-confirmed', date: '2026-10-22',
+      delivered_at: '2026-10-22T12:06:00Z', delivered_source_url: 'https://example.invalid/b-confirmation' });
+    await ingest([updated, delivered], [updatedAssessment]);
+    const unreviewed = (await repository.loadEvents('codex')).find((row) => row.externalId !== first.externalId)!;
+    expect(unreviewed).toMatchObject({ action: 'needs_review', candidate: false });
+    expect(readPayload(unreviewed.payload).verifiedDelivery).toEqual({ precision: 'unknown' });
+
+    time.advance(301_000);
+    const deliveryAssessment = await assessment('codex', delivered, {
+      primarySourceUrl: delivered.delivered_source_url!, evidenceUrls: [delivered.delivered_source_url!],
+    });
+    await ingest([updated, delivered], [updatedAssessment, deliveryAssessment]);
+    const rows = await repository.loadEvents('codex');
+    expect(rows.find((row) => row.externalId === first.externalId)).toMatchObject({ action: 'announced_future', candidate: true });
+    const confirmed = rows.find((row) => row.id === unreviewed.id)!;
+    expect(confirmed).toMatchObject({ action: 'confirmed_applied', candidate: true });
+    expect(readPayload(confirmed.payload).verifiedDelivery).toEqual({ precision: 'exact', at: delivered.delivered_at });
+    expect(await binding.prepare('SELECT COUNT(*) AS n FROM event_versions').first('n')).toBe(5);
+    expect(await binding.prepare('SELECT COUNT(*) AS n FROM publication_candidates').first('n')).toBe(2);
+    expect(await binding.prepare('SELECT COUNT(*) AS n FROM provider_activation WHERE publish_approved_at IS NOT NULL').first('n')).toBe(0);
+    expect(await binding.prepare('SELECT COUNT(*) AS n FROM synthetic_deliveries').first('n')).toBe(0);
+    expect(await binding.prepare('SELECT COUNT(*) AS n FROM telegram_simulation_deliveries').first('n')).toBe(0);
+  });
+
   it('keeps an event ID equal to a scheduled URL in independent durable namespaces on replay', async () => {
     const { db: binding } = await db();
     const sharedKey = 'https://example.invalid/posts/same-upstream-identity';

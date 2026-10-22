@@ -104,6 +104,22 @@
 - [ ] Review priority detection vs first-full-baseline publication limits, source coverage and proposed latency target in docs38 §6.5–6.6; if C is chosen, include inbox/overlay/reconciliation in a separate local assignment.
 - [ ] Complete Stage 6 stable-staging acceptance before a separate Stage 7 assignment.
 
+## Next-session preparation — local repository B not assigned
+
+- [x] Save [CONTINUE_STAGE6_REPOSITORY_B](../prompts/CONTINUE_STAGE6_REPOSITORY_B.md) and handoff with PR#8 b283ccf, verified CI21/22 success, caps, latency/baseline limits, tests and permission boundaries.
+- [x] Owner explicitly assigned the prompt and chose B-first only for local repository optimization/measurement/review/report; C, tariff, SLA and new baseline policy remain unapproved.
+- [ ] After the B report, separately choose the next local design or bounded staging gate; no automatic C, remote action or Stage7.
+
+## Stage 6 repository B — local result; staging NO-GO
+
+- [x] Owner selected B-first and authorized only local repository optimization/tests/measurements/review/report, then STOP.
+- [x] Grouped prepared writes implemented; real local D1 tests preserve atomic CAS/rollback/history/freshness, baseline/evidence/capacity gates and retention103/20s.
+- [x] Compare before/after on the same synthetic harness:20matching durable digests, cold SQL249→52/630→98, still12execution calls; full332PASS/5skipped, D183PASS, workload10PASS, loopback HTTP1PASS/15GET receipts.
+- [ ] Review [report40](../docs/40_STAGE6_REPOSITORY_B_REPORT.md) and [handoff41](../docs/41_STAGE6_REPOSITORY_B_HANDOFF.md), including independent review and partial-history/union101 gaps; owner acceptance is separate.
+- [ ] Supply account/plan/headroom/target/region, remote accounting/CPU and numeric cost/stop budgets before any active staging decision. B local metrics do not prove Free-fit or proposed p95.
+- [ ] Separately choose local C with priority design if caps/freshness are insufficient, or bounded A after prerequisites. No automatic C/Paid/remote/Stage7. First possible remote gate remains isolated staging D1 creation only.
+- [ ] Separately authorize any new commit/push/PR/merge. Current B is uncommitted and not deployed/published.
+
 ## Worker/D1 staging (later; separate authorization)
 
 - [ ] Create Cloudflare account and login via Wrangler *interactively* when authorized.

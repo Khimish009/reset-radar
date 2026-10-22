@@ -65,6 +65,73 @@ interface DeliveryRow {
   updated_at: string;
 }
 
+type SqlValue = string | number | null;
+
+const MAX_STATEMENT_BINDS = 100;
+const MAX_STATEMENT_SQL_BYTES = 100_000;
+const MAX_STATEMENT_INPUT_BYTES = 2_000_000;
+const utf8 = new TextEncoder();
+
+function statementInputBytes(sql: string, values: readonly SqlValue[]): number {
+  // D1's documented request accounting is not exposed here. Count SQL and the
+  // UTF-8 bind payload, with fixed per-bind and per-row allowance for encoding
+  // and request framing. The decimal ceilings also stay below 100 KiB / 2 MiB;
+  // they bound each row as well as each statement, not the whole provider batch.
+  return utf8.encode(sql).byteLength + values.reduce<number>((total, value) => {
+    const valueBytes = typeof value === 'string' ? utf8.encode(value).byteLength : value === null ? 1 : 8;
+    return total + valueBytes + 16;
+  }, 0);
+}
+
+function groupedInsertStatements(
+  db: D1Database,
+  table: string,
+  columns: readonly string[],
+  rows: readonly (readonly SqlValue[])[],
+  suffix: string,
+): D1PreparedStatement[] {
+  if (rows.length === 0) return [];
+  const statements: D1PreparedStatement[] = [];
+  let chunk: (readonly SqlValue[])[] = [];
+
+  const build = (group: readonly (readonly SqlValue[])[]) => {
+    const values: SqlValue[] = [];
+    const tuples = group.map((row) => {
+      const placeholders = row.map((value) => `?${values.push(value)}`).join(', ');
+      return `(${placeholders})`;
+    });
+    const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES ${tuples.join(', ')} ${suffix}`.trim();
+    return { sql, values };
+  };
+
+  const flush = () => {
+    if (chunk.length === 0) return;
+    const { sql, values } = build(chunk);
+    statements.push(db.prepare(sql).bind(...values));
+    chunk = [];
+  };
+
+  for (const row of rows) {
+    if (row.length !== columns.length) throw new Error(`Invalid grouped row for ${table}`);
+    const tentative = [...chunk, row];
+    const { sql, values } = build(tentative);
+    if (values.length > MAX_STATEMENT_BINDS || utf8.encode(sql).byteLength > MAX_STATEMENT_SQL_BYTES ||
+        statementInputBytes(sql, values) > MAX_STATEMENT_INPUT_BYTES) {
+      flush();
+      const single = build([row]);
+      if (single.values.length > MAX_STATEMENT_BINDS || utf8.encode(single.sql).byteLength > MAX_STATEMENT_SQL_BYTES ||
+          statementInputBytes(single.sql, single.values) > MAX_STATEMENT_INPUT_BYTES) {
+        throw new Error(`Stored ${table} row exceeds D1 statement input limits`);
+      }
+      chunk = [row];
+    } else {
+      chunk = tentative;
+    }
+  }
+  flush();
+  return statements;
+}
+
 const ACTIONS = new Set<EventAction>([
   'announced_future',
   'confirmed_applied',
@@ -245,6 +312,10 @@ export function createD1Repository(db: D1Database): D1Repository {
       const events = shouldStoreEvents ? input.events : [];
       const ids = new Set<string>();
       const observations = new Set<string>();
+      const eventRows: SqlValue[][] = [];
+      const observationRows: SqlValue[][] = [];
+      const versionRows: SqlValue[][] = [];
+      const candidateRows: SqlValue[][] = [];
       for (const event of events) {
         assertStoredEvent(event, input.provider);
         if (ids.has(event.id)) throw new Error('Snapshot contains duplicate event ids');
@@ -293,74 +364,81 @@ export function createD1Repository(db: D1Database): D1Repository {
         const transitionId = `${event.id}#${sequence}`;
         const firstDetectedAt = previous?.first_detected_at ?? event.detectedAt;
 
-        statements.push(db.prepare(
-          `INSERT INTO events (
-             id, provider, upstream, external_id, material_hash, transition_id,
-             observation_key, assessment_key, upstream_revision, action, event_date,
-             detected_at, first_detected_at, last_observed_at, payload
-           ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?15, ?14)
-           ON CONFLICT(id) DO UPDATE SET
-             material_hash = excluded.material_hash,
-             transition_id = excluded.transition_id,
-             observation_key = excluded.observation_key,
-             assessment_key = excluded.assessment_key,
-             upstream_revision = excluded.upstream_revision,
-             action = excluded.action,
-             event_date = excluded.event_date,
-             detected_at = excluded.detected_at,
-             last_observed_at = excluded.last_observed_at,
-             payload = excluded.payload`,
-        ).bind(
+        eventRows.push([
           event.id, event.provider, event.upstream, event.externalId, event.materialHash,
           transitionId, event.observationKey, event.assessmentKey, event.upstreamRevision,
-          event.action, event.eventDate, event.detectedAt, firstDetectedAt, event.payload, input.at,
-        ));
-
-        statements.push(db.prepare(
-          `INSERT OR IGNORE INTO observations
-             (event_id, observation_key, detected_at, assessment_key, upstream_revision, payload)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
-        ).bind(event.id, event.observationKey, event.detectedAt, event.assessmentKey, event.upstreamRevision, event.payload));
+          event.action, event.eventDate, event.detectedAt, firstDetectedAt, input.at, event.payload,
+        ]);
+        observationRows.push([
+          event.id, event.observationKey, event.detectedAt, event.assessmentKey, event.upstreamRevision, event.payload,
+        ]);
 
         if (isTransition) {
           const candidate = !completingBaseline && before.baselineCompletedAt !== null && event.candidate;
-          statements.push(db.prepare(
-            `INSERT INTO event_versions (
-               event_id, sequence, transition_id, material_hash, observation_key,
-               assessment_key, upstream_revision, action, event_date, detected_at, payload, candidate
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
-          ).bind(
+          versionRows.push([
             event.id, sequence, transitionId, event.materialHash, event.observationKey,
             event.assessmentKey, event.upstreamRevision, event.action, event.eventDate,
             event.detectedAt, event.payload, candidate ? 1 : 0,
-          ));
+          ]);
           if (candidate) {
-            statements.push(db.prepare(
-              `INSERT INTO publication_candidates (transition_id, event_id, provider, created_at)
-               VALUES (?1, ?2, ?3, ?4)`,
-            ).bind(transitionId, event.id, event.provider, input.at));
+            candidateRows.push([transitionId, event.id, event.provider, input.at]);
           }
         }
       }
-      for (const source of input.sources) {
-        statements.push(db.prepare(
-          `INSERT INTO source_state (
-             provider, endpoint_key, snapshot, etag, checked_at, expires_at,
-             retry_until, failure_count, retained_until
-           ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
-           ON CONFLICT(provider, endpoint_key) DO UPDATE SET
-             snapshot = excluded.snapshot,
-             etag = excluded.etag,
-             checked_at = excluded.checked_at,
-             expires_at = excluded.expires_at,
-             retry_until = excluded.retry_until,
-             failure_count = excluded.failure_count,
-             retained_until = excluded.retained_until`,
-        ).bind(
-          input.provider, source.endpointKey, source.snapshot, source.etag, source.checkedAt,
-          source.expiresAt, source.retryUntil, source.failureCount, source.retainedUntil,
-        ));
-      }
+      statements.push(...groupedInsertStatements(
+        db, 'events',
+        ['id', 'provider', 'upstream', 'external_id', 'material_hash', 'transition_id', 'observation_key',
+          'assessment_key', 'upstream_revision', 'action', 'event_date', 'detected_at', 'first_detected_at',
+          'last_observed_at', 'payload'],
+        eventRows,
+        `ON CONFLICT(id) DO UPDATE SET
+           material_hash = excluded.material_hash,
+           transition_id = excluded.transition_id,
+           observation_key = excluded.observation_key,
+           assessment_key = excluded.assessment_key,
+           upstream_revision = excluded.upstream_revision,
+           action = excluded.action,
+           event_date = excluded.event_date,
+           detected_at = excluded.detected_at,
+           last_observed_at = excluded.last_observed_at,
+           payload = excluded.payload`,
+      ));
+      statements.push(...groupedInsertStatements(
+        db, 'observations',
+        ['event_id', 'observation_key', 'detected_at', 'assessment_key', 'upstream_revision', 'payload'],
+        observationRows,
+        'ON CONFLICT(event_id, observation_key) DO NOTHING',
+      ));
+      statements.push(...groupedInsertStatements(
+        db, 'event_versions',
+        ['event_id', 'sequence', 'transition_id', 'material_hash', 'observation_key', 'assessment_key',
+          'upstream_revision', 'action', 'event_date', 'detected_at', 'payload', 'candidate'],
+        versionRows,
+        '',
+      ));
+      statements.push(...groupedInsertStatements(
+        db, 'publication_candidates',
+        ['transition_id', 'event_id', 'provider', 'created_at'],
+        candidateRows,
+        '',
+      ));
+      const sourceRows: SqlValue[][] = input.sources.map((source) => [
+        input.provider, source.endpointKey, source.snapshot, source.etag, source.checkedAt,
+        source.expiresAt, source.retryUntil, source.failureCount, source.retainedUntil,
+      ]);
+      statements.push(...groupedInsertStatements(
+        db, 'source_state',
+        ['provider', 'endpoint_key', 'snapshot', 'etag', 'checked_at', 'expires_at', 'retry_until', 'failure_count', 'retained_until'],
+        sourceRows,
+        `ON CONFLICT(provider, endpoint_key) DO UPDATE SET
+           snapshot = excluded.snapshot,
+           etag = excluded.etag,
+           checked_at = excluded.checked_at,
+           expires_at = excluded.expires_at,
+           retry_until = excluded.retry_until,
+           failure_count = excluded.failure_count,
+           retained_until = excluded.retained_until`,
+      ));
       statements.push(db.prepare(
         `DELETE FROM source_state
           WHERE provider = ?1 AND endpoint_key <> '$transport'

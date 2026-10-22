@@ -1,6 +1,6 @@
 # 38 — Stage 6: capacity/budget decision перед remote staging
 
-Дата: **2026-10-22**. Статус: **proposed, owner choice pending**. Назначение:
+Дата: **2026-10-22**. Ниже — исторический design proposal; актуальное owner decision — в следующем блоке. Назначение:
 [CONTINUE_STAGE6_CAPACITY](../prompts/CONTINUE_STAGE6_CAPACITY.md). Владелец
 принял preflight PR #7 как базу и разрешил только локальный design/decision,
 проверки, независимое review и отчёт. Этот документ — конкретное предложение,
@@ -18,6 +18,18 @@ PR #8: **предлагается сначала локальная оптими
 Owner decision и account/plan/budget отсутствуют: **active staging NO-GO**.
 Stage 6 не завершён; Stage 7 начинается только после его завершения и отдельного
 назначения. **Не развёрнуто / не опубликовано. Real staging E2E pending.**
+
+**Обновление после явного назначения B-first:** локальный B реализован и
+измерен, [report40](40_STAGE6_REPOSITORY_B_REPORT.md),
+[current handoff41](41_STAGE6_REPOSITORY_B_HANDOFF.md). SQL C12/X62 cold249→52,
+C100/X100 cold630→98; cache175→42/430→72; execution calls12→12. Все20durable
+state digests совпали. Estimates §5 не заменяются measured claims задним числом.
+Уточнение §5.3: observation key не означает равенство всего mutable canonical
+payload (source timestamps/temporal classification); первая observation остаётся
+immutable DO NOTHING, canonical freshness обновляется. Новый payload-conflict
+protocol не вводили. Full-snapshot/cap100/union101 safe stop и baseline/evidence
+gates сохранены. C/plan/SLA/новая baseline policy остаются proposed; A и remote
+NO-GO без inputs/acceptance/отдельных разрешений. Полный Stage6 pending.
 
 ## 1. Проверенная база и границы доказательств
 

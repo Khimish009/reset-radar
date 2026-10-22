@@ -1,4 +1,5 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
@@ -140,7 +141,28 @@ async function measureInvocation(db: D1Database, run: ReturnType<typeof schedule
   await run.worker.scheduled(invocation, {
     APP_ENV: 'local', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'dry_run', DB: measured.db,
   });
-  return { metrics: measured.snapshot(), handlerElapsedMs: performance.now() - started };
+  const handlerElapsedMs = performance.now() - started;
+  const metrics = measured.snapshot();
+  // Inspect via the original binding after measurement. Surrogate row IDs are
+  // outside the domain projection; provider generation/history/clocks are in it.
+  const state: Record<string, unknown> = {};
+  for (const [table, order] of [
+    ['provider_activation', 'provider'], ['events', 'id'], ['observations', 'event_id, observation_key'],
+    ['event_versions', 'event_id, sequence'], ['publication_candidates', 'transition_id'],
+    ['source_state', 'provider, endpoint_key'], ['sync_runs', 'provider, generation'],
+    ['commit_guards', 'guard_id'], ['synthetic_deliveries', 'event_id'], ['telegram_simulation_deliveries', 'event_id'],
+  ]) {
+    const rows = await db.prepare(`SELECT * FROM ${table} ORDER BY ${order}`).all<Record<string, unknown>>();
+    state[table!] = rows.results.map((row) => {
+      const copy = { ...row };
+      delete copy.observation_id;
+      delete copy.version_id;
+      delete copy.run_id;
+      return copy;
+    });
+  }
+  const durableStateSha256 = createHash('sha256').update(JSON.stringify(state)).digest('hex');
+  return { metrics, handlerElapsedMs, durableStateSha256 };
 }
 
 async function expectNoPublicationOrApprovals(db: D1Database) {
@@ -150,7 +172,8 @@ async function expectNoPublicationOrApprovals(db: D1Database) {
 }
 
 function record(name: string, measured: Awaited<ReturnType<typeof measureInvocation>>, data: Record<string, unknown> = {}) {
-  evidence.push({ scenario: name, handlerElapsedMs: measured.handlerElapsedMs, ...data, metrics: measured.metrics });
+  evidence.push({ scenario: name, handlerElapsedMs: measured.handlerElapsedMs,
+    durableStateSha256: measured.durableStateSha256, ...data, metrics: measured.metrics });
 }
 
 describe('Stage 6 D1 workload against real Miniflare binding', () => {
@@ -180,15 +203,15 @@ describe('Stage 6 D1 workload against real Miniflare binding', () => {
     await expectNoPublicationOrApprovals(db);
   }, 30_000);
 
-  it('measures persistent D1 restart and conditional 304 responses', async () => {
+  it.each([[12, 62], [100, 100]])('measures persistent D1 restart and conditional 304 responses C%i/X%i', async (claudeSize, codexSize) => {
     const persist = await mkdtemp(join(tmpdir(), 'reset-radar-stage6-workload-restart-'));
     tempPaths.push(persist);
     let runtime = await localD1({ persist });
     let now = Date.parse('2026-10-22T12:00:00Z');
-    const plan = planFor(claudeEvents(12), codexEvents(62));
+    const plan = planFor(claudeEvents(claudeSize), codexEvents(codexSize));
     const firstRun = schedule(plan, () => now);
     const first = await measureInvocation(runtime.db, firstRun, () => now);
-    record('restart-seed-C12-X62', first, { records: { claude: 12, codex: 62 } });
+    record(`restart-seed-C${claudeSize}-X${codexSize}`, first, { records: { claude: claudeSize, codex: codexSize } });
     await runtime.dispose();
     runtime = await localD1({ persist, migrate: false });
     now += 301_000;
@@ -196,10 +219,41 @@ describe('Stage 6 D1 workload against real Miniflare binding', () => {
     const second = await measureInvocation(runtime.db, restarted, () => now);
     expect(restarted.requests.length).toBeGreaterThan(0);
     expect(restarted.requests.every(({ headers }) => headers.get('if-none-match') !== null)).toBe(true);
-    expect(await runtime.db.prepare('SELECT COUNT(*) AS n FROM event_versions').first<number>('n')).toBe(74);
-    record('persistent-restart-304-C12-X62', second, { requests: restarted.requests.length,
+    expect(await runtime.db.prepare('SELECT COUNT(*) AS n FROM event_versions').first<number>('n')).toBe(claudeSize + codexSize);
+    record(`persistent-restart-304-C${claudeSize}-X${codexSize}`, second, { requests: restarted.requests.length,
       conditionalRequests: restarted.requests.filter(({ headers }) => headers.get('if-none-match') !== null).length });
     await expectNoPublicationOrApprovals(runtime.db);
+  }, 30_000);
+
+  it('characterizes a fresh future announcement during complete and partial bootstrap without automatic evidence approval', async () => {
+    const visibleAt = Date.parse('2026-10-22T12:00:00Z');
+    const future = syntheticEvent({ id: 'synthetic-fresh-future', event_status: 'announced', effective_at: null,
+      announced_at: '2026-10-22T12:00:00Z', utc_day: '2026-10-22',
+      first_published_at: '2026-10-22T12:00:00Z', revised_at: '2026-10-22T12:00:00Z' });
+    for (const partial of [false, true]) {
+      const { db } = await localD1();
+      const events = [future, ...claudeEvents(partial ? 99 : 11)];
+      const run = schedule(planFor(events, codexEvents(62), { forceClaudePages: partial }), () => visibleAt);
+      const measured = await measureInvocation(db, run, () => visibleAt);
+      const rows = await db.prepare('SELECT action, detected_at, payload FROM events WHERE provider = ?1 AND external_id = ?2')
+        .bind('claude', future.id).all<{ action: string; detected_at: string; payload: string }>();
+      expect(rows.results).toHaveLength(partial ? 0 : 1);
+      if (!partial) {
+        expect(rows.results[0]?.action).toBe('needs_review');
+        expect(rows.results[0]?.detected_at).toBe(new Date(visibleAt).toISOString());
+        expect(JSON.parse(rows.results[0]!.payload)).toMatchObject({ verifiedDelivery: { precision: 'unknown' } });
+      }
+      expect(await db.prepare("SELECT baseline_completed_at FROM provider_activation WHERE provider = 'claude'").first('baseline_completed_at'))
+        .toBe(partial ? null : new Date(visibleAt).toISOString());
+      expect(await db.prepare('SELECT COUNT(*) AS n FROM publication_candidates').first('n')).toBe(0);
+      await expectNoPublicationOrApprovals(db);
+      record(partial ? 'fresh-future-partial-history-gap' : 'fresh-future-complete-bootstrap', measured, {
+        syntheticSourceVisibleAt: new Date(visibleAt).toISOString(),
+        canonicalDetectedAt: rows.results[0]?.detected_at ?? null,
+        classification: partial ? 'no partial canonical write' : 'needs_review: no runtime assessment input',
+        sourceRelativeLatency: 'not inferred from injected clock or local wall time; no SLA sample',
+      });
+    }
   }, 30_000);
 
   it('measures material updates while retaining one immutable version per observed change', async () => {
