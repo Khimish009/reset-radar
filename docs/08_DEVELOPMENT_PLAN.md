@@ -101,12 +101,25 @@ freshness слоя закрывают публикацию. В локально�
 Owner accepted local Stage 4 and assigned only this local Stage 5. Real Telegram
 requests/sends, runtime wiring, production approvals, commit/push/PR/merge,
 remote migrations, deployment and Stage 6 remain outside this authorization.
+Subsequent PR #5 review/CI fixes received separate commit/push authorization and
+are merged as `ba8bd58`; CI #15 (PR head `bb2cd25`) and #16 (merge) passed.
+Details and exact SHAs: [current handoff](33_STAGE5_HANDOFF.md).
 
 ## Stage 6 — Staging Cloudflare
 
-**Не разрешён текущим заданием.** Начинается только по отдельному заданию
-владельца; он потребует отдельного решения по staging resources, migration,
-runtime wiring, credentials and any staging-channel publication.
+**Локальная часть назначена владельцем 2026-10-22** через
+[START_STAGE6](../prompts/START_STAGE6.md), с принятием Stage 5 из merged PR #5.
+Scope: dry-run runtime integration, настоящий local D1, offline/loopback HTTP
+tests, независимое review и конкретный remote plan. Фактические результаты:
+[local report](34_STAGE6_LOCAL_REPORT.md), [current handoff](35_STAGE6_LOCAL_HANDOFF.md).
+Полный acceptance ниже остаётся pending до отдельно разрешённого remote наблюдения.
+
+Scheduled подключает ingestion только при явных local/staging настройках и DB.
+Default/missing config и production не начинают polling; supplied configs
+сохраняют dry_run/Cron off. Invocation ограничен страницами/записями/requests;
+partial history не завершает baseline. HTTP guards и оба synthetic send journals
+сохранены, real publisher отсутствует. Remote deploy/migrations/secrets, Cron,
+реальные upstream/Telegram requests, commit/push/PR/merge и Stage 7–11 не разрешены.
 
 Owner-controlled D1/Secrets/Wrangler setup, staging Cron observation, dedup and upstream staleness monitoring; staging channel tests only after approval. Review quotas/logs.
 

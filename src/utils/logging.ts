@@ -1,5 +1,15 @@
 /** The complete set of event identifiers that may appear in logs. */
-export type LogEvent = "scheduled_noop" | "configuration_rejected";
+export type LogEvent =
+  | "scheduled_noop"
+  | "scheduled_missing_database"
+  | "scheduled_run_failure"
+  | "configuration_rejected"
+  | "provider_sync_success"
+  | "provider_sync_incomplete"
+  | "provider_sync_failure"
+  | "provider_sync_concurrent"
+  | "scheduled_run_complete"
+  | "publish_unavailable";
 
 export type LogLevel = "info" | "error";
 export type LogEnvironment = "local" | "staging" | "production";
@@ -28,7 +38,15 @@ export type LogSink = (line: string) => void;
 
 const EVENTS: ReadonlySet<string> = new Set([
   "scheduled_noop",
+  "scheduled_missing_database",
+  "scheduled_run_failure",
   "configuration_rejected",
+  "provider_sync_success",
+  "provider_sync_incomplete",
+  "provider_sync_failure",
+  "provider_sync_concurrent",
+  "scheduled_run_complete",
+  "publish_unavailable",
 ]);
 
 const ENVIRONMENTS: ReadonlySet<string> = new Set([

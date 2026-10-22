@@ -84,7 +84,7 @@ export interface DeliveryRecord {
 
 export interface D1Repository {
   loadProvider(provider: Provider): Promise<ProviderActivation>;
-  loadEvents(provider: Provider): Promise<LoadedEvent[]>;
+  loadEvents(provider: Provider, limit?: number): Promise<LoadedEvent[]>;
   loadVersion(eventId: string, transitionId: string): Promise<LoadedEvent | null>;
   loadSources(provider: Provider): Promise<SourceState[]>;
   commitSnapshot(input: CommitSnapshotInput): Promise<CommitSnapshotResult>;

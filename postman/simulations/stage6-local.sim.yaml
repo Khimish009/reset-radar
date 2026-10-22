@@ -1,0 +1,7 @@
+simulation: stage6-local-runtime
+routing: path
+mocks:
+  - routeKey: claude
+    path: ../mocks/claude/default.js
+  - routeKey: codex
+    path: ../mocks/codex/codex.js

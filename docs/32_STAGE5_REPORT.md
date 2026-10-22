@@ -277,7 +277,20 @@ parallelism, production source и зависимости не менялись; 
 существенных замечаний. Reviewer проверил diff и реальный retention SQL;
 дублирующий targeted run после трёх full и D1 не потребовался.
 
-Проверка нового remote CI обязательна после commit/push и до итогового сообщения.
-Его фактические SHA/run/result фиксируются в итоговом отчёте владельцу и GitHub;
-их нельзя утверждать до запуска CI. Commit/push разрешены только в существующую
-ветку PR #5, без merge, deployment, remote D1 и real Telegram.
+Исправление отправлено только в существующую ветку PR #5: commit
+**`bb2cd25de54175f2c8518529862f8d1ce308c51a`**, `test: stabilize D1 retention checks on CI`.
+GitHub Actions [run #15](https://github.com/Khimish009/reset-radar/actions/runs/39744232678)
+— **completed/success**, typecheck/lint PASS, **299 passed / 4 skipped**, verify139
+PASS. Retention test прошёл за **5346ms**: прежнего бюджета 5s действительно
+недостаточно, новый per-test timeout оставил проверку целостности исполняемой.
+
+При подготовке следующей сессии 2026-10-22 read-only проверено:
+[PR #5](https://github.com/Khimish009/reset-radar/pull/5) merged владельцем/внешним
+процессом в `2026-10-22T08:06:57Z`, merge SHA
+**`ba8bd58d959e1716ab41ff1339c7ddf44877ff22`**. На merge-коммите
+[run #16](https://github.com/Khimish009/reset-radar/actions/runs/39745365708)
+— **completed/success**, все steps зелёные. Агент подготовки merge не выполнял.
+Актуальная база, pending решения и подготовленный локальный Stage 6 prompt
+сохранены в [handoff](33_STAGE5_HANDOFF.md). Подготовка следующего prompt не
+означает начало Stage 6 или новую авторизацию Git/remote действий.
+**Не развёрнуто / не опубликовано.**

@@ -28,7 +28,7 @@ http.createServer((req, res) => {
   if (mode === 'hang') return;
   if (mode === 'bad-schema') return send(200, { data: [], unknown: 'SYNTHETIC' });
   if (req.headers['if-none-match'] === '"synthetic-v1"') return send(304, null);
-  if (req.url === '/api/v1/resets?limit=100') {
+  if (req.url === '/api/v1/resets?limit=25' || req.url === '/api/v1/resets?limit=100') {
     return send(200, { data: [event], pagination: { has_more: false, next_cursor: null, revision_changed: false }, meta }, { ETag: '"synthetic-v1"' });
   }
   if (req.url === '/api/v1/status') {

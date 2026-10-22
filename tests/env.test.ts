@@ -2,15 +2,31 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from '../src/env';
 
-describe('Stage 1 configuration', () => {
+describe('runtime configuration', () => {
   it('defaults to local dry_run and keeps each explicit environment', () => {
-    expect(readConfig({})).toEqual({ environment: 'local', publishMode: 'dry_run' });
+    expect(readConfig({})).toEqual({
+      environment: 'local', publishMode: 'dry_run', ingestMode: 'off', ingestionEnabled: false,
+    });
     for (const environment of ['local', 'staging', 'production']) {
       expect(readConfig({ APP_ENV: environment })).toEqual({
         environment,
         publishMode: 'dry_run',
+        ingestMode: 'off',
+        ingestionEnabled: false,
       });
     }
+  });
+
+  it('requires explicit safe environment and publish mode for ingestion opt-in', () => {
+    expect(readConfig({ APP_ENV: 'local', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'dry_run' }))
+      .toMatchObject({ ingestionEnabled: true, ingestMode: 'dry_run' });
+    expect(readConfig({ APP_ENV: 'staging', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'dry_run' }))
+      .toMatchObject({ ingestionEnabled: true, ingestMode: 'dry_run' });
+    expect(() => readConfig({ INGEST_MODE: 'dry_run' })).toThrowError(/^Unsupported runtime configuration$/);
+    expect(() => readConfig({ APP_ENV: 'local', INGEST_MODE: 'dry_run' }))
+      .toThrowError(/^Unsupported runtime configuration$/);
+    expect(() => readConfig({ APP_ENV: 'production', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'dry_run' }))
+      .toThrowError(/^Unsupported runtime configuration$/);
   });
 
   it.each([
@@ -18,8 +34,10 @@ describe('Stage 1 configuration', () => {
     { APP_ENV: '' },
     { APP_ENV: 'staging', PUBLISH_MODE: 'publish' },
     { APP_ENV: 'production', PUBLISH_MODE: '' },
+    { APP_ENV: 'local', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'publish' },
+    { APP_ENV: 'local', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'unknown-secret' },
   ])('rejects unsupported settings without exposing input: %j', (env) => {
-    expect(() => readConfig(env)).toThrowError(/^Unsupported Stage 1 configuration$/);
+    expect(() => readConfig(env)).toThrowError(/^Unsupported runtime configuration$/);
   });
 
   it('defines independent dry-run targets without configured resources or secrets', () => {

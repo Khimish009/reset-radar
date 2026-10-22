@@ -63,22 +63,33 @@
 - [ ] Check actual outputs for `npm run typecheck`, `npm run lint`, `npm test`, local-only D1 migration/integration, Stage 0 evidence verification, and `git diff --check`; do not treat this checklist as evidence that a command passed.
 - [x] Owner separately authorized a local Stage 4 commit, including the preserved preparation and workspace consolidation documentation.
 - [x] Read-only verification found Stage 4 commit `7121756` in merged PR #4 (`2a0a958`), CI head run #11 success. The owner/external process performed push/PR/merge; the agent did not perform them.
-- [ ] Separately authorize future commit/push/PR/merge, remote migration, deployment, Telegram send or Stage 6. Previous Git operations do not grant continuing permissions.
+- [ ] Separately authorize future commit/push/PR/merge, remote migration, deployment or Telegram send. The later local Stage 6 assignment grants none of these permissions.
 
 ## Stage 5 — assigned local publisher
 
 - [x] Save `prompts/START_STAGE5.md` and current handoff with the Stage 4 base, results, pending policy and Git recovery context.
 - [x] Owner accepted local Stage 4 and explicitly assigned only the local Stage 5 scope: Telegram client/templates/publisher, D1 seams and synthetic tests.
-- [ ] Review the Stage 5 report, synthetic previews, dry_run zero-journal behavior, local D1/HTTP simulation and independent review before accepting Stage 5.
+- [x] Owner accepted the local Stage 5 result from merged PR #5, including review/CI fixes, by assigning START_STAGE6 on 2026-10-22.
 - [ ] Keep production truth/eligibility, freshness thresholds, approval workflow, activation, Codex correlation and real Telegram outcomes pending separate decisions.
-- [ ] Separately authorize any live staging E2E, real token/channel setup, runtime wiring, remote migration/deploy or Stage 6. This Stage 5 assignment grants none of them.
+- [ ] Separately authorize any live staging E2E, real token/channel setup or remote migration/deploy. Local runtime wiring was authorized later through START_STAGE6; that assignment grants no remote/live permissions.
+- [x] Complete separately authorized PR #5 review fixes and CI timeout fix; last PR head `bb2cd25`, CI #15 success. Read-only verification found PR #5 merged by owner/external process as `ba8bd58`, merge CI #16 success.
+
+## Stage 6 — assigned local preparation; remote acceptance pending
+
+- [x] Save `prompts/START_STAGE6.md` and update Stage 5 handoff/report with exact merge/fix SHAs, CI results, regression guards, recovery context and remaining integration gaps.
+- [x] Owner explicitly assigned START_STAGE6 and accepted local Stage 5; only local dry-run runtime integration, tests, independent review and staging planning are authorized.
+- [ ] Review [Stage 6 local report](../docs/34_STAGE6_LOCAL_REPORT.md) and independent review; local preparation does not satisfy the full stable-staging acceptance.
+- [x] After the local Stage 6 report, owner separately authorized its local commit, including preserved documentation preparation.
+- [ ] Separately authorize any push/PR/merge; prior permission for the existing PR #5 branch does not carry forward.
 
 ## Worker/D1 staging (later; separate authorization)
 
 - [ ] Create Cloudflare account and login via Wrangler *interactively* when authorized.
-- [ ] Approve staging D1, test channel configuration and staging Worker deploy (never production accidentally).
-- [ ] Enter Telegram token into Cloudflare Secret securely; don't paste token into Codex messages.
-- [ ] Verify both provider baselines in dry-run and one owner-approved **staging** publication.
+- [ ] Separately authorize isolated staging D1 creation and remote migrations after exact account/database/target review.
+- [ ] Separately authorize staging bindings and inactive dry-run deployment; no production activation.
+- [ ] Separately authorize upstream polling and Cron observation, two independent complete baselines, safe logs and quota measurements; full stable-staging acceptance remains pending.
+- [ ] Separately design/approve the real Telegram publisher/journal, token/channel setup and eligibility policy. Current synthetic journals/client cannot substitute for them.
+- [ ] Separately authorize any real Telegram requests/sends, including a staging test. Owner enters a token securely only when that later design needs it; never paste into chat.
 
 ## Production (separate approval!)
 

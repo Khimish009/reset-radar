@@ -67,6 +67,22 @@ describe("createLogger", () => {
     expect(sink).not.toHaveBeenCalled();
   });
 
+  it("emits only fixed scheduled/provider codes and allowlisted provider scalars", () => {
+    const lines: string[] = [];
+    const logger = createLogger((line) => lines.push(line));
+    logger.info("provider_sync_incomplete", { provider: "claude" });
+    logger.error("provider_sync_failure", { provider: "codex", reason: "https://private.invalid/raw" } as never);
+    logger.info("publish_unavailable");
+
+    expect(lines.map((line) => JSON.parse(line))).toEqual([
+      { level: "info", event: "provider_sync_incomplete", fields: { provider: "claude" } },
+      { level: "error", event: "provider_sync_failure", fields: { provider: "codex" } },
+      { level: "info", event: "publish_unavailable" },
+    ]);
+    expect(lines.join("\n")).not.toContain("private.invalid");
+    expect(lines.join("\n")).not.toContain("raw");
+  });
+
   it("does not evaluate getters on fields objects", () => {
     const sink = vi.fn();
     const logger = createLogger(sink);
