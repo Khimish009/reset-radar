@@ -310,10 +310,10 @@ describe('Stage 4 ingestion against local D1', () => {
     expect(readPayload(eventRows[0]!.payload).rawKey).toBe(await rawAssessmentKey('codex', raw));
   });
 
-  it('does not send validators for corrupt, expired, or representation-free cache; unsolicited 304 cannot complete baseline', async () => {
-    const feed = codexFeed();
-    const scenarios: Array<'corrupt' | 'expired' | 'missing'> = ['corrupt', 'expired', 'missing'];
-    for (const scenario of scenarios) {
+  it.each(['corrupt', 'expired', 'missing'] as const)(
+    'does not send validators for %s cache; unsolicited 304 preserves the completed baseline',
+    async (scenario) => {
+      const feed = codexFeed();
       const { db: binding } = await db();
       const repo = createD1Repository(binding);
       const sourceKey = 'https://codexreset.ai/api/v1/resets.json';
@@ -329,6 +329,7 @@ describe('Stage 4 ingestion against local D1', () => {
         await binding.prepare('UPDATE source_state SET snapshot = NULL WHERE provider = ?1 AND endpoint_key = ?2')
           .bind('codex', sourceKey).run();
       }
+
       const time = clock('2026-10-22T12:05:01.000Z');
       const result = await harness(binding, (_url, init) => {
         expect(new Headers(init.headers).has('if-none-match'), scenario).toBe(false);
@@ -336,14 +337,18 @@ describe('Stage 4 ingestion against local D1', () => {
       }, time).service.ingestProvider('codex');
       expect(result).toMatchObject({ complete: false, reason: 'not_modified_without_snapshot' });
       expect(await repo.loadProvider('codex')).toMatchObject({ baselineCompletedAt: INITIAL });
-    }
+    },
+  );
 
+  it('does not complete a baseline from an unsolicited 304 when the D1 database is empty', async () => {
     const { db: empty } = await db();
+    const repo = createD1Repository(empty);
     const none = harness(empty, (_url, init) => {
       expect(new Headers(init.headers).has('if-none-match')).toBe(false);
       return { status: 304 };
     });
     expect(await none.service.ingestProvider('codex')).toMatchObject({ complete: false, reason: 'not_modified_without_snapshot' });
+    expect(await repo.loadProvider('codex')).toMatchObject({ baselineCompletedAt: null });
   });
 
   it('isolates endpoint/query validators and persists Retry-After state across a service restart', async () => {

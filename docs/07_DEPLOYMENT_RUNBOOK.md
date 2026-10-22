@@ -13,6 +13,13 @@ This runbook describes future owner-controlled operations. **Stage 6 local prepa
 
 Treat each step as a separate owner decision. A previous approval, successful local test, merged PR, or deployed dry-run does not imply the next permission.
 
+**Continuation preflight, 2026-10-22:** current local evidence and conditional
+plan comparison are in [Cloudflare preflight](evidence/stage6-2026-10-22/cloudflare-preflight.md).
+Account/plan/target and owner stop budget remain unresolved. SQL statements and
+D1 binding executions are different counters; neither local elapsed time nor
+a small HTTP request count establishes remote readiness. Active staging is
+**NO-GO until these questions and capacity acceptance are resolved**.
+
 1. **Create staging D1:** explicit authorization to create a named remote staging database. No production database. Use the owner-approved Cloudflare account and region/jurisdiction.
 2. **Migrate staging D1:** separately authorize applying the reviewed migrations to the confirmed staging database. Confirm the database name and returned ID against the target configuration first. Never infer a target from a default or placeholder.
 3. **Stage Worker deploy and D1 binding:** separately authorize editing/using the staging binding and deploying the reviewed SHA with `PUBLISH_MODE=dry_run`, `INGEST_MODE` absent or `off`, no routes, and `crons: []`. This keeps the first deploy inactive. A later staging observation needs a distinct approval and a reviewed config with `INGEST_MODE=dry_run`; upstream polling then makes real provider requests.
@@ -75,6 +82,73 @@ Record a baseline before scheduled observation, then compare actual Cloudflare W
 Cloudflare's current D1 pricing page lists Workers Free allowances of **5 million rows read/day, 100,000 rows written/day, and 5 GB account storage**; limits can change and Free daily read/write limits are enforced, causing D1 queries to fail until reset. The D1 limits page currently lists a **500 MB per-database maximum on Free and 10 GB on Paid**, and a maximum of **50 D1 queries per Worker invocation on Free or 1,000 on Paid**. Before remote staging, count and measure the actual D1 queries per scheduled invocation against the selected plan; do not assume batching hides multiple statements or that the local operation budget fits a plan. These are provider limits, not a cost forecast or a claim that this service will remain free. Track observed totals with a conservative owner-set alert/stop budget below account limits. Recheck official pricing/limits before any owner decision. Sources, checked 2026-10-22: [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [Free-tier enforcement notice](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/).
 
 The five-minute target implies 288 scheduled runs/day (8,640 per 30 days) if enabled continuously; it is a planning count, not a guarantee of actual invocations. Measure event/page counts and D1 reads/writes per run locally and in authorized staging before choosing a cadence. Public API traffic does not exist in this stage; estimate it separately before Stage 9.
+
+The official Workers limits page now lists internal-service subrequests at
+1,000 on Free and a default 10,000 on Paid, while the D1 limits page still
+lists queries at 50/1,000. A batch contains multiple SQL statements in a single
+request. Do not equate SQL count with enforced subrequest count, or assume
+batching exempts all SQL from D1 limits. Preserve both counters and verify
+the effective account limits and accounting before active staging.
+The [dated primary-source comparison](evidence/stage6-2026-10-22/cloudflare-preflight.md)
+also records five-minute Cron CPU limits (Free 10 ms / Paid 30 seconds), metadata
+coverage and the difference between local elapsed time and billed CPU.
+
+## Reviewable inactive staging change set — documentation only
+
+This is an **intentionally invalid template**, not a deploy config. It has no
+real account/database ID and must not be copied into working deploy configs
+until the matching owner gate. The first change set would add only the staging
+account/binding and explicit inactive flag; base/local/production stay unchanged.
+
+```json
+{
+  "account_id": "__INVALID_OWNER_ACCOUNT_ID_REQUIRED__",
+  "env": {
+    "staging": {
+      "name": "reset-radar-staging",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [],
+      "triggers": { "crons": [] },
+      "vars": {
+        "APP_ENV": "staging",
+        "PUBLISH_MODE": "dry_run",
+        "INGEST_MODE": "off"
+      },
+      "d1_databases": [{
+        "binding": "DB",
+        "database_name": "reset-radar-staging-db",
+        "database_id": "__INVALID_STAGING_D1_UUID_REQUIRED__",
+        "migrations_dir": "migrations"
+      }]
+    }
+  }
+}
+```
+
+Resolve and review these facts before executing **each** separate gate:
+
+| Gate | Concrete review inputs | Required evidence / stop condition |
+|---|---|---|
+| Account/budget and D1 creation | Owner-confirmed account/profile, Workers plan/effective limits, free shared quotas, region/jurisdiction, unique staging DB name; written maximum spend and usage stop thresholds | Create only staging D1 after explicit permission. Stop if plan/account/budget unresolved; no automatic paid upgrade. |
+| Remote migrations | Returned staging DB ID, resolved binding and exact target account; migration inventory `0001_stage4.sql`, `0002_stage5.sql`, hashes from current report, remote migration list | Separate permission to apply only this list; verify both migrations and seeded provider rows. Unexpected existing schema/target → stop and preserve evidence. |
+| Inactive deploy | Reviewed code revision/diff, resolved staging-only config above, `DB`, no secrets/routes/Cron, opt-in off; rollback version | Separate binding/deploy permission. Verify version, resolved vars/binding and zero triggers; no real polling. |
+| Future active observation | Accepted capacity/query-accounting design, explicit upstream-read/Cron permission, approved duration/cadence/max invocations, CPU/rows/storage/error stop budget and responsible operator | Independent complete baselines for both providers, fresh `last_success_at` and scoped health/cache; no partial baseline, approvals NULL, journals unchanged. Measure actual CPU/subrequests/rows/storage; stop on incomplete/over-budget/failure or at window end. |
+
+For the future observation, agree numeric thresholds **before** enabling it;
+this template supplies no default spending approval. A possible review window
+is 15 minutes at the five-minute cadence (at most four observed starts including
+boundary uncertainty), only if the owner accepts it and all earlier gates pass.
+This is a proposed window, not authorization or an automatic configuration.
+Record UTC start/end, invocation/provider outcomes, row counters, CPU, query
+duration, database size and account totals. Existing safe logger does not expose
+all D1 metadata; arrange approved platform telemetry before activation.
+
+At the agreed end or first stop condition, disable Cron with explicit `[]` and
+set ingestion off under the approved rollback procedure; verify removal remotely.
+No public HTTP trigger is added. Keep baseline/versions/evidence, select the
+reviewed inactive Worker version if rollback is needed, and never reverse/delete
+D1 history automatically. Telegram design/setup/API traffic is a separate gate.
 
 ## Rollback and safe disable
 
