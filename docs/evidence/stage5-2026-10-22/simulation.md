@@ -67,3 +67,10 @@ Mock основан на первичном Telegram контракте, см.
 неописанные операции дают 501. Postman workspace не создавался/не привязывался,
 mock/simulation не push/deploy. Owner-mock discovery пропущен из-за отсутствия
 CLI sign-in; новый login или credential не требовались.
+
+PR #5 review follow-up, 2026-10-22: тот же opt-in HTTP+D1 сценарий повторён с
+исправленными client/templates/publisher и новым explicit event-age policy.
+Результат **1 PASS**, прежние 11 send receipts и 11 completed Postman events
+(9 sends + 2 diagnostic GET). Процесс остановлен. Зависший именно underlying
+cancel hook дополнительно проверен unit ReadableStream fixtures: настоящий
+HTTP hang не доказывает поведение произвольного stream cancel implementation.

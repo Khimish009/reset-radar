@@ -99,6 +99,15 @@ by Worker handlers; `readConfig()` remains `dry_run`.
   transition to its `rawKey`; tests distinguish current generation/editorial
   truth, HTTP freshness and successful cached-ingestion freshness. Explicit
   freshness settings are bounded to 24 hours, with HTTP at most 10 minutes.
+- [ ] Event age is separate from candidate/import age: late historical delivery
+  is retained in D1 without an operational send. Fresh verified Codex delivery
+  qualifies even after an old announcement; unknown Claude action time requires
+  a separate accepted current confirmation. Every offer requires current-offer
+  evidence; stale/mismatched confirmations fail closed. Reviewed future
+  announcements with exact/date/unknown targets retain their own gates.
+- [ ] A hanging underlying `reader.cancel()` does not hold response
+  classification or reader lock indefinitely; timeout/caller abort stay
+  uncertain and late cancellation failures are handled without changing outcome.
 - [ ] Candidate paging is bounded to 50 and uses a stable keyset. Stale/current
   transition races, generation/observation CAS, concurrent claims, replay and
   restart do not create duplicate automatic sends.

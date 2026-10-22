@@ -211,7 +211,7 @@ function correctedFacts(current: DurableEventPayload, previous: DurableEventPayl
   }
   const currentDelivery = formatTime(current.verifiedDelivery);
   if (!sameTime(current.verifiedDelivery, previous.verifiedDelivery) && currentDelivery !== null) {
-    details.push(`Подтверждённое применение: ${currentDelivery}.`);
+    details.push(`Время доставки/подтверждения по данным источника: ${currentDelivery}.`);
   }
   const currentExpiry = canonicalExpiry(current);
   const previousExpiry = canonicalExpiry(previous);
@@ -322,7 +322,7 @@ function compose(payload: DurableEventPayload, evidence: LocalAssessment, contex
       if (!delivery) return null;
       lines = [
         `✅ [${provider}] Подтверждено применение сброса лимитов`, '',
-        ...facts, `Время применения: ${delivery}.`, '',
+        ...facts, `Время доставки/подтверждения по данным источника: ${delivery}.`, '',
         'Проверьте актуальные лимиты в своём аккаунте.',
       ];
       break;

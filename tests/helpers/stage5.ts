@@ -109,9 +109,7 @@ export function stage5Payload(action: EventAction = 'announced_future', options:
       deliveredSourceUrl: action === 'confirmed_applied' ? PRIMARY : null,
       deliveryReportedDelay: false,
     }, expectedTime,
-    verifiedFutureTarget: action === 'announced_future'
-      ? options.actionTime as {precision: 'exact'; at: string} | {precision: 'date'; on: string} | undefined ?? { precision: 'date', on: '2026-10-24' }
-      : null,
+    verifiedFutureTarget: action === 'announced_future' && expectedTime.precision !== 'unknown' ? expectedTime : null,
     reviewedEvidence: assessment, reviewReasons: [],
     upstreamReportedDelivery: action === 'confirmed_applied' ? verifiedDelivery : { precision: 'unknown' }, verifiedDelivery,
     attribution: ATTRIBUTION,
@@ -211,7 +209,7 @@ export async function createStage5Harness(options: Stage5SeedOptions = {}): Prom
         transitions: [{ transitionId: item.transitionId, rawKey: JSON.parse(item.payload).rawKey, reviewedAt: STAGE5_NOW }],
       },
     },
-    freshness: { maxHttpAgeMs: 300_000, maxSourceAgeMs: 300_000, maxCandidateAgeMs: 300_000, maxReviewAgeMs: 300_000 },
+    freshness: { maxHttpAgeMs: 300_000, maxSourceAgeMs: 300_000, maxCandidateAgeMs: 300_000, maxReviewAgeMs: 300_000, maxEventAgeMs: 300_000 },
     ...overrides,
   });
   return {

@@ -8,7 +8,7 @@ The renderer in `src/telegram/templates.ts` produces unformatted Russian plain t
 ✅ [CODEX] Подтверждено применение сброса лимитов
 
 Кому: {VERIFIED_SCOPE}
-Время применения: {VERIFIED_EXACT_TIME_UTC}
+Время доставки/подтверждения по данным источника: {VERIFIED_SOURCE_REPORTED_DELIVERY_TIME_UTC}
 Проверьте актуальные лимиты в своём аккаунте.
 
 Первоисточник: {ORIGINAL_URL}
@@ -23,7 +23,7 @@ Codex requires reviewed corroborating delivery evidence matching the raw `delive
 
 Кому: {VERIFIED_SCOPE_OR_SOURCE_UNSPECIFIED}
 Какие лимиты: {VERIFIED_WINDOW_IF_PRESENT}
-Время применения: {VERIFIED_TIME_PRECISION}
+Время доставки/подтверждения по данным источника: {SOURCE_REPORTED_TIME_OR_EXPLICITLY_UNKNOWN}
 
 Проверьте актуальные лимиты в своём аккаунте.
 Первоисточник: {ORIGINAL_URL}
@@ -31,7 +31,7 @@ Codex requires reviewed corroborating delivery evidence matching the raw `delive
 Независимая сводка Reset Radar; проект не связан с провайдером.
 ```
 
-For Claude the renderer accepts only evidence-backed confirmed `usage_reset` with subscription usage allocation. Announcement time is never substituted for application time. A window line appears only when the accepted record contains a supported window.
+For Claude the renderer accepts only evidence-backed confirmed `usage_reset` with subscription usage allocation. The timestamp line is explicitly source-reported delivery/confirmation time; it does not claim the precise moment each account's quota changed. If that time is unknown, the template says so explicitly. Announcement, source-reported delivery/confirmation, effective time, and local detection time remain separate; announcement or detection time is never substituted for delivery or effective time. A window line appears only when the accepted record contains a supported window.
 
 ## B — Future *announced* reset, not yet confirmed
 
@@ -102,8 +102,8 @@ Withdrawal also requires an evidence-backed transition with its prior immutable 
 
 ## Editorial rules
 
-- `announced_at` is time of announcement, not delivery; `delivered_at=null` means unknown.
-- Keep detection time, announcement time, and delivery time separate. `announced_future` never says limits have already arrived; `confirmed_applied` requires reviewed delivery evidence.
+- `announced_at` is time of announcement, not delivery; `delivered_at=null` means unknown. A verified delivery/confirmation timestamp is source-reported and does not establish the exact time every account's quota became effective.
+- Keep detection time, announcement time, source-reported delivery time, and effective time separate. `announced_future` never says limits have already arrived; `confirmed_applied` requires reviewed delivery evidence, and its timestamp label does not promise per-account application timing.
 - `time_precision=date` => date only, do not invent hour. Banked `expires_on` date does not imply time zone.
 - Unknown target time gets explicit unknown-time wording; never add a guessed date, timezone, countdown, or delivery statement.
 - Audience comes from the accepted current record; when source did not specify it, the renderer says so. Rejected/stale review data cannot supply audience or URLs.

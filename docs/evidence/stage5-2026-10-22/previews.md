@@ -58,14 +58,14 @@ rationale, raw feed text, and previous Telegram post links are omitted.
 
 ## Confirmed applied
 
-### Claude — application time unknown
+### Claude — source-reported delivery/confirmation time unknown
 
 ```text
 ✅ [CLAUDE] Подтверждено применение сброса лимитов
 
 Кому: synthetic subscribers
 Какие лимиты: пятичасовое окно, недельный лимит
-Время применения: дата и время источником не указаны.
+Время доставки/подтверждения по данным источника: дата и время источником не указаны.
 
 Проверьте актуальные лимиты в своём аккаунте.
 
@@ -80,7 +80,7 @@ rationale, raw feed text, and previous Telegram post links are omitted.
 ✅ [CODEX] Подтверждено применение сброса лимитов
 
 Кому: synthetic subscribers
-Время применения: 2026-10-20T12:00:00Z (UTC).
+Время доставки/подтверждения по данным источника: 2026-10-20T12:00:00Z (UTC).
 
 Проверьте актуальные лимиты в своём аккаунте.
 

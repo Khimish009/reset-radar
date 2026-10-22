@@ -1,15 +1,105 @@
 import { describe, expect, it, vi } from 'vitest';
-import { normalizeClaude, rawAssessmentKey, type DurableEventPayload, type LocalAssessment } from '../src/domain/normalization';
+import { normalizeClaude, normalizeCodexEvent, rawAssessmentKey, type DurableEventPayload, type LocalAssessment } from '../src/domain/normalization';
 import { createPublisherService, type SyntheticPublishPolicy } from '../src/services/publish';
 import { createD1Repository } from '../src/storage/d1';
 import { createPublisherRepository } from '../src/storage/publisher';
 import type { SourceStateInput } from '../src/storage/types';
 import type { PublisherRepository } from '../src/storage/publisher';
 import { STAGE5_DESTINATION, STAGE5_NOW, createStage5Harness, outcomeClient } from './helpers/stage5';
+
+function relevancePolicy(h: Awaited<ReturnType<typeof createStage5Harness>>, candidate: Parameters<typeof h.policy>[0],
+  assertion: 'current_offer' | 'current_reset_confirmation', confirmedAt = STAGE5_NOW,
+  evidenceUrl = 'https://example.invalid/source/synthetic-primary'): SyntheticPublishPolicy {
+  const policy = h.policy(candidate);
+  const approval = policy.providers.codex!;
+  return {...policy, providers: {codex: {...approval, transitions: approval.transitions.map((transition) => ({
+    ...transition, currentRelevance: {assertion, confirmedAt, evidenceUrl},
+  }))}}};
+}
 import { syntheticEvent } from './fixtures/claude';
 import { createTestD1 } from './helpers/d1';
+import { codexEvent, codexFeed } from './fixtures/codex';
 
 describe('Stage 5 publisher service on local D1', () => {
+  it.each([
+    ['historic', '2026-01-02T10:00:00Z', 'event_time_not_current'],
+    ['recent delivery after an old announcement', '2026-10-22T11:59:00Z', null],
+  ] as const)('uses normalized Codex delivery time on a late import: %s', async (_name, deliveredAt, reason) => {
+    const h = await createStage5Harness({baseline: false});
+    const raw = codexEvent({id: 'synthetic-late-import', date: '2026-01-01', ts: '2026-01-01T10:00:00Z',
+      announced_at: '2026-01-01T10:00:00Z', delivered_at: deliveredAt,
+      delivered_source_url: 'https://example.invalid/posts/delivery-evidence'});
+    const assessment: LocalAssessment = {recordKey: await rawAssessmentKey('codex', raw), assertion: 'applied',
+      primarySourceUrl: raw.delivered_source_url!, evidenceUrls: [raw.url, raw.delivered_source_url!], rationale: 'SYNTHETIC verified delivery'};
+    const normalized = await normalizeCodexEvent(raw, codexFeed(), {now: h.clock.now(), detectedAt: STAGE5_NOW, assessment});
+    expect(normalized.action).toBe('confirmed_applied');
+    await h.facts.commitSnapshot({provider: 'codex', expectedGeneration: 1, at: STAGE5_NOW, complete: true,
+      status: 'success', reason: null, sources: await h.facts.loadSources('codex'),
+      events: [{...normalized, payload: JSON.stringify({...JSON.parse(normalized.payload), sourceGeneratedAt: STAGE5_NOW})}]});
+    const candidate = await h.candidate();
+    const page = await h.service.runPage({provider: 'codex', limit: 10, mode: 'simulate', policy: h.policy(candidate)});
+    if (reason) expect(page.items[0]).toMatchObject({result: 'skipped', reason});
+    else expect(page.items[0]?.result).toBe('simulated_sent');
+    expect((await h.facts.loadEvents('codex')).find((event) => event.id === normalized.id)?.detectedAt).toBe(STAGE5_NOW);
+    expect(await h.facts.loadVersion(candidate.eventId, candidate.transitionId)).not.toBeNull();
+  });
+  it('keeps a late historical applied import in D1 without an operational send', async () => {
+    const h = await createStage5Harness({action: 'confirmed_applied',
+      actionTime: {precision: 'exact', at: '2026-01-02T10:00:00.000Z'}});
+    const candidate = await h.candidate();
+    const send = vi.fn(async () => ({kind: 'simulated_sent' as const, messageId: 97, chatId: -1000000000005}));
+    const service = h.makeService({simulationOnly: true, sendMessage: send});
+    const page = await service.runPage({provider: 'codex', limit: 10, mode: 'simulate', policy: h.policy(candidate)});
+    expect(page.items[0]).toMatchObject({result: 'skipped', reason: 'event_time_not_current'});
+    expect(send).not.toHaveBeenCalled();
+    expect(await h.facts.loadVersion(candidate.eventId, candidate.transitionId)).not.toBeNull();
+    expect(await h.facts.loadEvents('codex')).toHaveLength(1);
+    expect(await h.db.prepare('SELECT COUNT(*) AS n FROM telegram_simulation_deliveries').first('n')).toBe(0);
+    // A newly written review must not refresh a known historical delivery time.
+    const overridden = await service.runPage({provider: 'codex', limit: 10, mode: 'simulate',
+      policy: relevancePolicy(h, candidate, 'current_reset_confirmation')});
+    expect(overridden.items[0]?.reason).toBe('event_time_not_current');
+  });
+
+  it('allows a fresh verified source delivery without replacing it with announcement/detection time', async () => {
+    const h = await createStage5Harness({action: 'confirmed_applied',
+      actionTime: {precision: 'exact', at: '2026-10-22T11:59:00.000Z'}});
+    const candidate = await h.candidate();
+    const page = await h.service.runPage({provider: 'codex', limit: 10, mode: 'simulate', policy: h.policy(candidate)});
+    expect(page.items[0]?.result).toBe('simulated_sent');
+  });
+
+  it('requires separate current-availability evidence for an offer even after fresh detection and feed review', async () => {
+    const h = await createStage5Harness({action: 'banked_offer', expiresOn: '2026-10-25'});
+    const candidate = await h.candidate();
+    const run = (policy: SyntheticPublishPolicy) => h.service.runPage({provider: 'codex', limit: 10, mode: 'simulate', policy});
+    expect((await run(h.policy(candidate))).items[0]?.reason).toBe('current_relevance_unconfirmed');
+    expect((await run(relevancePolicy(h, candidate, 'current_offer'))).items[0]?.result).toBe('simulated_sent');
+    expect(await h.facts.loadEvents('codex')).toHaveLength(1);
+  });
+
+  it.each([
+    ['stale confirmation', 'current_offer', '2026-10-22T10:00:00.000Z', 'https://example.invalid/source/synthetic-primary'],
+    ['wrong assertion', 'current_reset_confirmation', STAGE5_NOW, 'https://example.invalid/source/synthetic-primary'],
+    ['unreviewed evidence', 'current_offer', STAGE5_NOW, 'https://example.invalid/unreviewed'],
+    ['future confirmation', 'current_offer', '2026-10-23T12:00:00.000Z', 'https://example.invalid/source/synthetic-primary'],
+  ] as const)('blocks an old/unsupported offer: %s', async (_name, assertion, confirmedAt, url) => {
+    const h = await createStage5Harness({action: 'banked_offer', expiresOn: '2026-10-25'});
+    const candidate = await h.candidate();
+    const page = await h.service.runPage({provider: 'codex', limit: 10, mode: 'simulate',
+      policy: relevancePolicy(h, candidate, assertion, confirmedAt, url)});
+    expect(page.items[0]).toMatchObject({result: 'skipped', reason: 'current_relevance_unconfirmed'});
+    expect(await h.db.prepare('SELECT COUNT(*) AS n FROM telegram_simulation_deliveries').first('n')).toBe(0);
+  });
+
+  it.each([
+    {precision: 'unknown'}, {precision: 'date', on: '2026-10-25'}, {precision: 'exact', at: '2026-10-25T14:00:00Z'},
+  ] as const)('preserves a fresh reviewed announcement with $precision target and no availability confirmation', async (actionTime) => {
+    const h = await createStage5Harness({actionTime});
+    const candidate = await h.candidate();
+    const page = await h.service.runPage({provider: 'codex', limit: 10, mode: 'simulate', policy: h.policy(candidate)});
+    expect(page.items[0]?.result).toBe('simulated_sent');
+  });
   it('rejects a candidate snapshot when ingestion changes only freshness metadata before evaluation', async () => {
     const h = await createStage5Harness();
     const candidate = await h.candidate();
@@ -97,8 +187,11 @@ describe('Stage 5 publisher service on local D1', () => {
 
     const staleReview = await createStage5Harness();
     candidate = await staleReview.candidate();
-    const staleReviewPolicy = staleReview.policy(candidate);
-    staleReviewPolicy.providers.codex!.transitions[0]!.reviewedAt = old;
+    const reviewPolicy = staleReview.policy(candidate);
+    const codexApproval = reviewPolicy.providers.codex!;
+    const staleReviewPolicy: SyntheticPublishPolicy = {...reviewPolicy, providers: {codex: {...codexApproval,
+      transitions: codexApproval.transitions.map((transition) => ({...transition, reviewedAt: old})),
+    }}};
     expect((await staleReview.service.runPage({ provider: 'codex', limit: 10, mode: 'dry_run', policy: staleReviewPolicy })).items[0])
       .toMatchObject({ result: 'skipped', reason: 'transition_not_reviewed' });
 
@@ -300,16 +393,23 @@ describe('Stage 5 publisher service on local D1', () => {
           baselineCompletedAt: STAGE5_NOW, approvedAt: STAGE5_NOW,
           transitions: [{ transitionId: candidate!.transitionId, rawKey: JSON.parse(candidate!.payload).rawKey, reviewedAt: STAGE5_NOW }],
         } },
-        freshness: { maxHttpAgeMs: 300_000, maxSourceAgeMs: 300_000, maxCandidateAgeMs: 300_000, maxReviewAgeMs: 300_000 },
+        freshness: { maxHttpAgeMs: 300_000, maxSourceAgeMs: 300_000, maxCandidateAgeMs: 300_000, maxReviewAgeMs: 300_000, maxEventAgeMs: 300_000 },
       };
       const service = createPublisherService(repository, facts, { clock });
       const run = (approvedPolicy: typeof policy = policy) => service.runPage({
         provider: 'claude', limit: 10, mode: 'dry_run', policy: approvedPolicy,
       });
 
-      const preview = await run();
+      expect((await run()).items[0]).toMatchObject({result: 'skipped', reason: 'current_relevance_unconfirmed'});
+      const claudeReview = policy.providers.claude!;
+      const currentConfirmation: SyntheticPublishPolicy = {...policy, providers: {claude: {...claudeReview,
+        transitions: claudeReview.transitions.map((transition) => ({...transition,
+          currentRelevance: {assertion: 'current_reset_confirmation', confirmedAt: STAGE5_NOW, evidenceUrl: sourceUrl},
+        })),
+      }}};
+      const preview = await run(currentConfirmation);
       expect(preview.items[0]).toMatchObject({ result: 'preview' });
-      expect(preview.items[0]?.text).toContain('Время применения: дата и время источником не указаны.');
+      expect(preview.items[0]?.text).toContain('Время доставки/подтверждения по данным источника: дата и время источником не указаны.');
       expect(preview.items[0]?.text).toContain('https://clauderesets.com/');
 
       const codexOnlyPolicy: SyntheticPublishPolicy = {

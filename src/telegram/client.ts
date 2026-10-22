@@ -171,21 +171,31 @@ async function readBoundedJson(response: Response, signal: AbortSignal): Promise
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  let cancellationStarted = false;
+  const cancelReader = (): void => {
+    if (cancellationStarted) return;
+    cancellationStarted = true;
+    try {
+      // A stream's underlying cancel hook may never settle. Start cancellation
+      // without making response classification depend on that promise.
+      void reader.cancel().catch(() => undefined);
+    } catch { /* Cancellation is best effort. */ }
+  };
   const cancelOnAbort = (): void => {
-    try { void reader.cancel().catch(() => undefined); } catch { /* Cancellation is best effort. */ }
+    cancelReader();
   };
   signal.addEventListener("abort", cancelOnAbort, { once: true });
   try {
     while (true) {
       if (signal.aborted) {
-        await reader.cancel();
+        cancelReader();
         return { ok: false };
       }
       const next = await reader.read();
       if (next.done) break;
       total += next.value.byteLength;
       if (total > MAX_RESPONSE_BYTES) {
-        await reader.cancel();
+        cancelReader();
         return { ok: false };
       }
       chunks.push(next.value);
@@ -198,11 +208,11 @@ async function readBoundedJson(response: Response, signal: AbortSignal): Promise
     }
     return { ok: true, text: new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes) };
   } catch {
-    try { await reader.cancel(); } catch { /* Response body is already closed. */ }
+    cancelReader();
     return { ok: false };
   } finally {
     signal.removeEventListener("abort", cancelOnAbort);
-    reader.releaseLock();
+    try { reader.releaseLock(); } catch { /* A pending read may prevent release. */ }
   }
 }
 

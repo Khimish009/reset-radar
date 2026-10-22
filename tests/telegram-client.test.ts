@@ -193,4 +193,90 @@ describe("local Telegram client", () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
+
+  it("releases an oversized body reader without waiting for a hanging cancellation", async () => {
+    let rejectCancel: ((reason?: unknown) => void) | undefined;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(32 * 1024 + 1));
+      },
+      cancel() {
+        return new Promise<void>((_resolve, reject) => { rejectCancel = reject; });
+      },
+    });
+    const responseWithHangingCancel = new Response(body, {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+    const { client } = harness(responseWithHangingCancel, 20);
+    const sending = client.sendMessage({ chatId: CHAT_ID, text: "x" });
+    let lateOutcomeCount = 0;
+    void sending.then(() => { lateOutcomeCount++; });
+
+    const result = await sending;
+    expect(result).toEqual({ kind: "uncertain_manual_review", code: "invalid_response" });
+    expect(responseWithHangingCancel.body?.locked).toBe(false);
+
+    rejectCancel?.(new Error("SYNTHETIC late cancellation failure"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(lateOutcomeCount).toBe(1);
+  });
+
+  it("releases an aborted pending body read while cancellation remains unresolved", async () => {
+    let rejectCancel: ((reason?: unknown) => void) | undefined;
+    let startedPull: (() => void) | undefined;
+    const pullStarted = new Promise<void>((resolve) => { startedPull = resolve; });
+    const body = new ReadableStream<Uint8Array>({
+      pull() {
+        startedPull?.();
+        return new Promise<void>(() => undefined);
+      },
+      cancel() {
+        return new Promise<void>((_resolve, reject) => { rejectCancel = reject; });
+      },
+    }, { highWaterMark: 0 });
+    const responseWithHangingCancel = new Response(body, {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+    const { client } = harness(responseWithHangingCancel, 1_000);
+    const controller = new AbortController();
+    const sending = client.sendMessage({ chatId: CHAT_ID, text: "x", signal: controller.signal });
+    await pullStarted;
+    controller.abort();
+
+    expect(await sending).toEqual({ kind: "uncertain_manual_review", code: "cancelled" });
+    expect(responseWithHangingCancel.body?.locked).toBe(false);
+    rejectCancel?.(new Error("SYNTHETIC late cancellation failure"));
+  });
+
+  it("returns the timeout outcome for a pending body read with hanging cancellation", async () => {
+    let rejectCancel: ((reason?: unknown) => void) | undefined;
+    let startedPull: (() => void) | undefined;
+    const pullStarted = new Promise<void>((resolve) => { startedPull = resolve; });
+    const body = new ReadableStream<Uint8Array>({
+      pull() {
+        startedPull?.();
+        return new Promise<void>(() => undefined);
+      },
+      cancel() {
+        return new Promise<void>((_resolve, reject) => { rejectCancel = reject; });
+      },
+    }, { highWaterMark: 0 });
+    const responseWithHangingCancel = new Response(body, {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+    const { client } = harness(responseWithHangingCancel, 20);
+    const sending = client.sendMessage({ chatId: CHAT_ID, text: "x" });
+    let lateOutcomeCount = 0;
+    void sending.then(() => { lateOutcomeCount++; });
+    await pullStarted;
+
+    expect(await sending).toEqual({ kind: "uncertain_manual_review", code: "timeout" });
+    expect(responseWithHangingCancel.body?.locked).toBe(false);
+    rejectCancel?.(new Error("SYNTHETIC late cancellation failure"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(lateOutcomeCount).toBe(1);
+  });
 });

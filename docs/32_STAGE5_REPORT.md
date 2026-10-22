@@ -4,6 +4,9 @@
 выполнить `prompts/START_STAGE5.md`, затем tests, независимое review и остановку.
 Production truth/publication policy этим не утверждена.
 
+Ниже сохранён первоначальный отчёт Stage 5. Актуальная доработка внешнего review
+PR #5 и её проверки описаны в последнем разделе этого документа.
+
 ## Выполнено и границы
 
 - Отдельный типизированный `sendMessage` client: injected fetch/clock,
@@ -155,3 +158,71 @@ Stage 5 с сохранённой подготовкой документаци�
 не распространяется на push/PR/merge, remote/live операции или Stage 6.
 SHA локального commit доступен в Git history; результаты проверок выше относятся
 к проверенной реализации до commit, код при сохранении не менялся.
+
+## Доработка внешнего review PR #5 — 2026-10-22
+
+Владелец отдельно разрешил исправить два P2 и один P3, выполнить проверки и
+независимое review, затем commit/push только в существующую ветку
+`feat/stage5-telegram-publisher`. PR #5 открыт, не merged; локальный и remote head
+при старте совпали с `b9ab639918ad64b6cf92a28c32772aa2ec5ff591`, дерево было чистым.
+Новый PR, force push, merge, Stage 6, remote D1/Cloudflare и real Telegram
+не входят в разрешение. Исходный PR создан владельцем/внешним процессом.
+
+- P2 timestamp: `verifiedDelivery` в confirmed/correction подписан как время
+  доставки/подтверждения по данным источника, не точное применение квоты аккаунта.
+  Unknown Claude time остаётся неизвестным; announced/effective/detected его
+  не заменяют. Обновлены templates, previews и message documentation.
+- P2 late import: добавлен обязательный `maxEventAgeMs`, отдельно от возраста
+  candidate. Codex проверяет verified delivery/raw deliveredAt; Claude —
+  canonical effective/raw effectiveAt. Известное старое exact time не может
+  быть «освежено» approval. При неизвестном времени нужна отдельная
+  `current_reset_confirmation`; любое offer требует `current_offer` proof.
+  Source confirmation time и evidence URL привязаны к accepted transition/rawKey.
+  Future exact/date/unknown announcements сохраняют прежний путь. Пропуск
+  отправки не изменяет D1 history, event versions или candidates.
+- P3 cancellation: `reader.cancel()` запускается один раз без await;
+  asynchronous rejection обработан, lock освобождается по возможности в finally.
+  Deadline/caller abort/invalid response остаются uncertain, late cancellation
+  не меняет уже возвращённый результат и не создаёт retry.
+
+Регрессии сначала воспроизведены на старом коде: три timestamp expectations,
+late imported reset/offer без current proof и locked response при hanging cancel.
+Затем исправлены; source-aware late import дополнительно проверен через настоящий
+Codex normalizer и локальный workerd D1. Для актуальных случаев synthetic current
+proof задаётся явно; helper не выдаёт его всем событиям автоматически.
+
+Изменены `src/services/publish.ts`, `src/telegram/{client,templates}.ts`, их три
+test files, `tests/helpers/stage5.ts`, docs03/06/09/12, previews и Stage 5
+report/handoff. Схема, journal/claim, runtime handlers, Cron/config и зависимости
+не изменены. ADR-037/038 описывают local-only choices и не утверждают production.
+
+Проверки follow-up на текущем коде:
+
+| Команда | Результат |
+|---|---|
+| `npm run typecheck` | PASS |
+| `npm run lint` | PASS |
+| `npm test` | **299 passed / 4 opt-in skipped** |
+| `npm run test:d1` | **55 PASS** |
+| `python3 docs/evidence/stage0-2026-10-21/verify.py` | **139 PASS** |
+| `git diff --check` | PASS |
+| opt-in `TELEGRAM_SIMULATION_URL=… npm test -- --run tests/stage5-telegram-simulation.test.ts` | **1 PASS**, 11 synthetic send receipts |
+
+Postman substitute повторно запущен локально на 4903 без proxy/pass-through,
+проверен его NDJSON (9 completed sends + 2 receipt GET), затем SIGINT и exit 0.
+Hang/disconnect получены mock и отдельно учтены тестом. Реальные Telegram и
+Cloudflare не вызывались. Website build неприменим; migrations не менялись и
+в этом follow-up не запускались. Нефатальный DEP0040 остаётся dependency warning.
+Независимое `pr5_followup_review` (reviewer, gpt-6.1-sol, high) завершено:
+существенных замечаний нет. Reviewer отдельно выполнил **42 PASS** client/templates
+tests и diff-check. Root проверил полный tracked diff, отсутствие untracked
+файлов/token-key patterns и сохранение 11 runtime/schema/dependency guards.
+После проверок разрешены commit и обычный push только в существующую ветку
+PR #5; SHA follow-up определяется Git history и итоговым сообщением владельцу.
+
+Риски: current relevance — явный доверенный semantic assessment; код не читает
+primary evidence сам и не гарантирует его достоверность. Пять локальных freshness
+limits (в tests 5min, максимум 24h; HTTP максимум 10min) не являются production
+policy. Historic records продолжают храниться; backward policy без нового limit
+fail closed. Exactly-once и real live E2E не заявляются.
+**Не развёрнуто / не опубликовано. Stage 6 не начат.**

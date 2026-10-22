@@ -7,6 +7,19 @@ import type { CandidateCursor, PublicationCandidate, PublisherRepository, Simula
 import type { TelegramClient, TelegramOutcome } from '../telegram/client';
 import { renderTelegramMessage } from '../telegram/templates';
 
+export interface CurrentRelevanceConfirmation {
+  readonly assertion: 'current_reset_confirmation' | 'current_offer';
+  /** Time of the source's current confirmation, not the local discovery/review. */
+  readonly confirmedAt: string;
+  readonly evidenceUrl: string;
+}
+export interface SyntheticTransitionReview {
+  readonly transitionId: string;
+  readonly rawKey: string;
+  readonly reviewedAt: string;
+  readonly currentRelevance?: CurrentRelevanceConfirmation;
+}
+
 /** Explicit synthetic test policy; never consumes or grants production approval. */
 export interface SyntheticPublishPolicy {
   readonly kind: 'synthetic_stage5';
@@ -16,13 +29,14 @@ export interface SyntheticPublishPolicy {
   readonly providers: Partial<Record<Provider, {
     readonly baselineCompletedAt: string;
     readonly approvedAt: string;
-    readonly transitions: readonly {transitionId: string; rawKey: string; reviewedAt: string}[];
+    readonly transitions: readonly SyntheticTransitionReview[];
   }>>;
   readonly freshness: {
     readonly maxHttpAgeMs: number;
     readonly maxSourceAgeMs: number;
     readonly maxCandidateAgeMs: number;
     readonly maxReviewAgeMs: number;
+    readonly maxEventAgeMs: number;
   };
 }
 export interface PublishPageInput {
@@ -49,8 +63,42 @@ function validPolicy(policy: SyntheticPublishPolicy | undefined): policy is Synt
   if (!policy || policy.kind !== 'synthetic_stage5' || policy.environment !== 'local_test' ||
       policy.chatId !== SYNTHETIC_CHAT_ID || !validSyntheticDestination(policy.destination) || !policy.freshness || !policy.providers) return false;
   const f = policy.freshness;
-  return Object.values(f).length === 4 && [f.maxHttpAgeMs, f.maxSourceAgeMs, f.maxCandidateAgeMs, f.maxReviewAgeMs]
+  return Object.values(f).length === 5 && [f.maxHttpAgeMs, f.maxSourceAgeMs, f.maxCandidateAgeMs, f.maxReviewAgeMs, f.maxEventAgeMs]
     .every((n) => Number.isSafeInteger(n) && n > 0 && n <= 86_400_000) && f.maxHttpAgeMs <= 600_000;
+}
+
+function recentSourceInstant(value: string | undefined, now: number, maximum: number): boolean {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) && recent(value, now, maximum);
+}
+
+/** Does not use announcement, detection, candidate or HTTP timestamps as action time. */
+function eventRecencyReason(payload: Payload, review: SyntheticTransitionReview, now: number, maximum: number): string | null {
+  const action = payload.record.action;
+  if (action !== 'confirmed_applied' && action !== 'banked_offer') return null;
+  if (action === 'confirmed_applied') {
+    const facts = payload.rawFacts as Record<string, unknown>;
+    const time = payload.record.provider === 'codex' ? payload.verifiedDelivery : payload.record.effective;
+    const rawTime = payload.record.provider === 'codex' ? facts.deliveredAt : facts.effectiveAt;
+    if (time.precision === 'exact') {
+      // Known historic or conflicting action time cannot be refreshed by a new review.
+      return rawTime === time.at && recentSourceInstant(time.at, now, maximum) ? null : 'event_time_not_current';
+    }
+  }
+  // Offers need current availability evidence even when their announcement,
+  // original grant or date-only deadline looks recent. Unknown action time also
+  // requires an explicit current reset confirmation. Neither grants prod approval.
+  const confirmation = review.currentRelevance;
+  const assertion = action === 'banked_offer' ? 'current_offer' : 'current_reset_confirmation';
+  if (!confirmation || confirmation.assertion !== assertion ||
+      !recentSourceInstant(confirmation.confirmedAt, now, maximum) ||
+      Date.parse(confirmation.confirmedAt) > Date.parse(review.reviewedAt) ||
+      !payload.reviewedEvidence?.evidenceUrls.includes(confirmation.evidenceUrl) ||
+      !payload.record.provenance.evidenceUrls.includes(confirmation.evidenceUrl)) return 'current_relevance_unconfirmed';
+  try {
+    const url = new URL(confirmation.evidenceUrl);
+    if (url.protocol !== 'https:' || url.username || url.password) return 'current_relevance_unconfirmed';
+  } catch { return 'current_relevance_unconfirmed'; }
+  return null;
 }
 function targetExpired(payload: Payload, now: Date): boolean {
   const time = payload.expectedTime;
@@ -108,6 +156,8 @@ export function createPublisherService(
       !recent(source.checkedAt, timestamp, policy.freshness.maxHttpAgeMs))) return skip('http_check_stale');
     if (!recent(current.sourceGeneratedAt, timestamp, policy.freshness.maxSourceAgeMs) ||
         (candidate.provider === 'claude' && !recent(current.sourceReviewedAt, timestamp, policy.freshness.maxSourceAgeMs))) return skip('upstream_metadata_stale');
+    const recencyReason = eventRecencyReason(payload, reviewed, timestamp, policy.freshness.maxEventAgeMs);
+    if (recencyReason) return skip(recencyReason);
     let previousVersion: Payload | undefined;
     if (payload.record.action === 'correction' || payload.record.action === 'withdrawal') {
       const previousId = payload.reviewedEvidence?.previousTransitionId;

@@ -145,8 +145,15 @@ describe('renderTelegramMessage', () => {
       ...current, record: { ...current.record, delivered: { precision: 'exact', at: '2035-01-01T00:00:00Z' } },
       upstreamReportedDelivery: { precision: 'exact', at: '2035-01-01T00:00:00Z' },
     });
-    expect(result.ok && result.text).toContain('Время применения: дата и время источником не указаны.');
+    expect(result.ok && result.text).toContain('Время доставки/подтверждения по данным источника: дата и время источником не указаны.');
     expect(result.ok && result.text).not.toContain('2035-01-01');
+  });
+
+  it('labels Codex delivered_at as source-reported delivery, not account application time', () => {
+    const current = payload('codex', 'confirmed_applied');
+    const result = renderTelegramMessage(current);
+    expect(result.ok && result.text).toContain('Время доставки/подтверждения по данным источника: 2026-10-20T12:00:00Z (UTC).');
+    expect(result.ok && result.text).not.toContain('Время применения:');
   });
 
   it('requires Codex exact verified delivery aligned with raw facts and applied evidence', () => {
@@ -237,6 +244,20 @@ describe('renderTelegramMessage', () => {
     const result = renderTelegramMessage(current, { previousVersion: prior(current) });
     expect(result.ok && result.text).toContain('Ожидаемое время: 2026-10-25.');
     expect(result.ok && result.text).not.toContain('Предыдущий пост');
+  });
+
+  it('labels verified delivery changes as source-reported in corrections', () => {
+    const current = payload('codex', 'correction');
+    const previous = prior(current, {
+      verifiedDelivery: { precision: 'exact', at: '2026-10-19T12:00:00Z' },
+    });
+    const revised = {
+      ...current,
+      verifiedDelivery: { precision: 'exact' as const, at: '2026-10-20T12:00:00Z' },
+    };
+    const result = renderTelegramMessage(revised, { previousVersion: previous });
+    expect(result.ok && result.text).toContain('Время доставки/подтверждения по данным источника: 2026-10-20T12:00:00Z (UTC).');
+    expect(result.ok && result.text).not.toContain('Подтверждённое применение:');
   });
 
   it('renders a real normalized expiry-only Claude offer correction with its changed date', async () => {

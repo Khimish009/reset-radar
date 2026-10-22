@@ -68,7 +68,30 @@ Stage 4 `synthetic_deliveries` и Stage 5 `telegram_simulation_deliveries` — �
 
 Simulation claim уникален по event + immutable transition + synthetic destination внутри simulation environment. Перед записью repository проверяет текущий transition и observation key, provider generation, baseline и pending candidate; эти сравнения образуют generation/observation CAS на момент claim. Candidate читается из immutable version, но дополнительно сверяется с текущим payload/transition, чтобы review или новая версия закрыли устаревшую отправку. Страницы кандидатов ограничены 50 строками и используют keyset по `(created_at, transition_id)`.
 
-Publisher требует явно переданную synthetic policy. Provider approval привязан к текущему baseline и включает `approvedAt`; локальное подтверждение каждого перехода привязано к `transitionId` и `rawKey` и включает `reviewedAt`. Проверяются отдельно: generation/baseline и актуальная редакционная запись; HTTP checks по source state; и успешное cached ingestion по `lastSuccessAt`. В локальном policy все четыре freshness limits явны и не больше 24 часов; HTTP limit не больше 10 минут. Это временные ограничения тестовой реализации, а production freshness thresholds и approval workflow остаются pending.
+Publisher требует явно переданную synthetic policy. Provider approval привязан к текущему baseline и включает `approvedAt`; локальное подтверждение каждого перехода привязано к `transitionId` и `rawKey` и включает `reviewedAt`. Проверяются отдельно: generation/baseline и актуальная редакционная запись; HTTP checks по source state; и успешное cached ingestion по `lastSuccessAt`. В локальном policy все пять freshness limits явны и не больше 24 часов; HTTP limit не больше 10 минут. Это временные ограничения тестовой реализации, а production freshness thresholds и approval workflow остаются pending.
+
+После внешнего review PR #5 добавлен отдельный `maxEventAgeMs`: возраст нового
+candidate не доказывает актуальность самого события. Для Codex confirmed проверяется
+verified delivery time, согласованное с raw `deliveredAt`; это время доставки по
+источнику, не точное изменение квоты каждого аккаунта. Для Claude используется
+canonical effective time только при совпадении с raw `effectiveAt`. Известный
+старый/будущий/конфликтующий exact timestamp не становится свежим из-за нового
+review. Announced/detected/HTTP времена его не заменяют.
+
+Если достоверного exact action time нет, требуется дополнительное
+`currentRelevance` в rawKey/transition-bound review. Для reset это assertion
+`current_reset_confirmation`; для любого offer — `current_offer`. `confirmedAt`
+обозначает время подтверждения актуальности самим источником, а не локального
+импорта или нажатия approval. Оно должно попадать в `maxEventAgeMs`, не быть
+позже now/reviewedAt, а `evidenceUrl` — входить в принятое evidence этой версии.
+Это явный доверенный локальный assessment, код не читает первоисточник сам.
+Одного свежего HTTP, будущего offer expiry или недавнего обнаружения недостаточно.
+
+Будущие проверенные анонсы exact/date/unknown используют прежний evidence/review
+gate; `maxEventAgeMs` не превращает их announcement time в срок истечения.
+Correction/withdrawal используют собственные evidence+lineage gates. Пропуск
+оперативной отправки не меняет D1 event/version/candidate и не удаляет историю
+для будущего сайта.
 
 Exact future target, уже наступивший к текущему времени, и date-only target, наступивший или равный текущей UTC date, не проходят eligibility. Для date-only target и offer expiry подавление начинается в тот же день; часовой пояс или точное время не придумываются. Date-only offer expiry на текущую UTC date также подавляется.
 

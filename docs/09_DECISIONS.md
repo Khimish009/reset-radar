@@ -130,6 +130,21 @@ Cursor-page SQL имеет прямой tuple range predicate; D1 `EXPLAIN QUERY
 Текущий Stage 4 guard оставляет Claude credit/offer correction/withdrawal в
 `needs_review`: renderer support сам по себе не расширяет domain eligibility.
 
+PR #5 follow-up adds local ADR-037: `maxEventAgeMs` separately bounds an existing
+source-aware action time (Codex verified delivery, Claude canonical effective).
+An exact historic time cannot be refreshed by candidate creation or review.
+Unknown action time and all offers need an explicit transition/rawKey-bound
+`currentRelevance` source confirmation with accepted evidence and its own time.
+Known future announcements retain exact/date/unknown evidence gates. This
+eligibility check never deletes D1 history; thresholds remain local/test-only,
+with no production approval or activation. Delivery timestamps in message copy
+are labelled source-reported and do not establish per-account effective time.
+
+Local ADR-038: cancellation is best effort and started once; the client never
+awaits the underlying cancel hook. Response parsing releases the reader lock in
+`finally` where possible, and catches asynchronous cancellation rejections.
+Timeout/abort/parse failure remain uncertain and never allow automatic retry.
+
 ## Items for owner to confirm later (not blockers for Stage 0)
 
 1. Actual GitHub `owner`/repo URL and verified Telegram handles (`@resetradarai`, `@resetradaraibot` suggested).
