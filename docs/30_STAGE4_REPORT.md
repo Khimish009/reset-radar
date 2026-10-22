@@ -221,3 +221,36 @@ whitespace, conflict markers и credential signatures. Stash и backup сохр�
 
 Push/PR/слияние Stage 4 в main, remote migrations/deployment, Telegram sends
 и Stage 5 не разрешены. **Не развёрнуто / не опубликовано.**
+
+## Следующий handoff — проверка PR #4, 2026-10-22
+
+Локальный commit фактически создан: **`712175673485360479a0141a771d7f0519781b23`**,
+`feat: add local D1 ingestion and policy storage`, 24 файла. Затем владелец/внешний
+процесс выполнил push/PR/merge. Read-only connector подтвердил
+[PR #4](https://github.com/Khimish009/reset-radar/pull/4) merged
+`2026-10-21T21:53:45Z`, merge SHA **`2a0a958941220dd1f9e8daf65e6ff666bcf52aed`**,
+head `7121756`, [CI run #11](https://github.com/Khimish009/reset-radar/actions/runs/39681931234)
+completed/success. При проверке основная папка чистая, main/origin/main/HEAD на
+`2a0a958`. Агент этой подготовки Git write/remote операций не выполнял.
+
+Владелец запросил только prompt для новой сессии и сохранение контекста:
+[START_STAGE5](../prompts/START_STAGE5.md) и [актуальный handoff](31_STAGE4_HANDOFF.md).
+Эта подготовка не начинает Stage 5; дальнейший local publisher запускается только
+явным назначением нового файла. Новый commit/push/PR/merge, реальные Telegram
+requests, remote migrations/deployment и Stage 6 не разрешены. Новые docs/prompt
+сохраняются локально без автоматического commit.
+
+Проверки этой подготовки:
+
+- `python3 docs/evidence/stage0-2026-10-21/verify.py` — **139 PASS**, offline.
+- `git diff --check` — PASS. Дополнительно проверены все шесть изменённых/новых
+  документов: 35 локальных Markdown-ссылок, final newline/whitespace,
+  conflict markers и credential signatures — PASS.
+- Индекс пуст; HEAD и stash не изменены. `7121756` — ancestor main, дерево merge
+  совпадает с implementation commit. Изменений кода, tests или migrations нет.
+- `stage5_prompt_review` (docs, gpt-6-luna, high) независимо проверил scope и
+  согласованность prompt/handoff/roadmap/checklist: существенных замечаний нет.
+
+Typecheck, lint и application/D1 tests в этой подготовке заново не запускались:
+приведённые выше результаты относятся к финальному коду Stage 4.
+**Не развёрнуто / не опубликовано.**

@@ -1,5 +1,30 @@
 # 10 — Production monitoring, errors and rollbacks
 
+## Stage 5 local simulation boundary
+
+Stage 5 publisher is a direct local service and is not connected to Worker
+handlers. Runtime configuration continues to require `PUBLISH_MODE=dry_run`;
+Cron remains disabled. Preview mode stops before the client and creates no row
+in the simulation journal. The only implemented HTTP client path is a local
+loopback substitute using the fixed synthetic chat/token. It cannot address a
+real Telegram endpoint or destination; a simulated response is not delivery
+evidence.
+
+The separate `telegram_simulation_deliveries` journal is restricted to the
+`stage5_local_simulation` environment and `synthetic:` destinations. Inspect
+only its simulated state when checking local tests. A `claimed` row has no lease
+recovery and must remain blocked for manual review after a crash. A retryable
+row is eligible only after validated HTTP/API 429 data supplies a future
+`retryAt` within one hour; the publisher allows at most three attempts. A timeout,
+disconnect, malformed response or failed completion write after the mock call
+may have occurred remains ambiguous and must not trigger automatic retry.
+
+Freshness and approvals in simulation are explicit synthetic test inputs. They
+are baseline-bound and transition/rawKey-bound; tests keep current generation
+and editorial review, HTTP source checks and successful cached-ingestion times
+distinct. Local maximums are 24 hours, with HTTP at most 10 minutes. None of
+these values establish production thresholds or grant publication approval.
+
 ## Periodic checks (operator)
 
 - Confirm both providers' `last_success_at`, last HTTP status, `stale` flag and latest accepted event revision.
@@ -29,4 +54,4 @@ Cloudflare Free is an aspiration, not a promise of zero cost under indefinite tr
 
 ## Launch log template
 
-Record date, git SHA, Stage, environment, exact approved action, reviewer, staging/prod D1 names, Telegram destination verified (handle only), CI build URL, smoke results, rollback instructions. Never record secrets or raw sensitive environment dumps.
+Record date, git SHA, Stage, environment, exact approved action, reviewer, staging/prod D1 names, Telegram destination verified (handle only), CI build URL, smoke results, rollback instructions. For local Stage 5, record the loopback simulation and synthetic destination only; never record credentials or raw sensitive environment dumps. Real Telegram publication, runtime wiring, remote migration or deployment requires a separate owner authorization.

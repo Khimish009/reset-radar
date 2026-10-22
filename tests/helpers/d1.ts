@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { convertV4MiniflareOptions, Miniflare } from 'miniflare';
 import { unstable_splitSqlQuery } from 'wrangler';
 
@@ -15,8 +15,11 @@ export async function createTestD1(options: { persist?: string; migrate?: boolea
   try {
     const db = await runtime.getD1Database('DB') as unknown as D1Database;
     if (options.migrate !== false) {
-      const sql = await readFile(new URL('../../migrations/0001_stage4.sql', import.meta.url), 'utf8');
-      await db.batch(unstable_splitSqlQuery(sql).map((statement) => db.prepare(statement)));
+      const directory = new URL('../../migrations/', import.meta.url);
+      for (const file of (await readdir(directory)).filter((name) => /^\d+.*\.sql$/.test(name)).sort()) {
+        const sql = await readFile(new URL(file, directory), 'utf8');
+        await db.batch(unstable_splitSqlQuery(sql).map((statement) => db.prepare(statement)));
+      }
     }
     return { db, dispose: () => runtime.dispose() };
   } catch (error) {

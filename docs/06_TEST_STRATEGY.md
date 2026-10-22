@@ -81,13 +81,70 @@ assertion сама является значимым изменением и в�
 future target без delivery evidence также консервативно переводится в review,
 с сохранением прежней immutable версии (ADR-031).
 
+### Stage 5 — локальный Telegram renderer, publisher и simulation
+
+Stage 5 tests use synthetic event/policy data, local workerd D1 and a loopback
+HTTP substitute. They do not call `api.telegram.org`, use real credentials, or
+establish production eligibility. The direct publisher service is not imported
+by Worker handlers; `readConfig()` remains `dry_run`.
+
+- [ ] Renderer tests cover both providers and announcement, applied, offer,
+  correction and withdrawal truth cases; review/hinted/seeded events, invalid or
+  missing evidence, unknown audience, date/unknown precision, unsafe URL/text,
+  Unicode and length rejection are covered.
+- [ ] `dry_run` returns truthful preview/skip results without a client call or
+  row in `telegram_simulation_deliveries`; local simulation uses only the fixed
+  synthetic chat/token and loopback substitute.
+- [ ] Eligibility checks bind local approval to provider baseline and each
+  transition to its `rawKey`; tests distinguish current generation/editorial
+  truth, HTTP freshness and successful cached-ingestion freshness. Explicit
+  freshness settings are bounded to 24 hours, with HTTP at most 10 minutes.
+- [ ] Event age is separate from candidate/import age: late historical delivery
+  is retained in D1 without an operational send. Fresh verified Codex delivery
+  qualifies even after an old announcement; unknown Claude action time requires
+  a separate accepted current confirmation. Every offer requires current-offer
+  evidence; stale/mismatched confirmations fail closed. Reviewed future
+  announcements with exact/date/unknown targets retain their own gates.
+- [ ] A hanging underlying `reader.cancel()` does not hold response
+  classification or reader lock indefinitely; timeout/caller abort stay
+  uncertain and late cancellation failures are handled without changing outcome.
+- [ ] Candidate paging is bounded to 50 and uses a stable keyset. Stale/current
+  transition races, generation/observation CAS, concurrent claims, replay and
+  restart do not create duplicate automatic sends.
+- [ ] Same-day date-only future targets and offer expiry are conservatively
+  suppressed. Only validated 429 retry timing (no more than one hour) is
+  retryable, with at most three attempts; timeout, malformed response, ambiguous
+  5xx and completion-write failure remain blocked for manual review without
+  lease recovery.
+- [ ] The local HTTP simulation exercises client + publisher + D1 and records
+  the mock request; no internet pass-through or real Telegram request occurs.
+- [ ] Independent review and final local verification are recorded in the
+  [Stage 5 report](32_STAGE5_REPORT.md); exact results belong there, not in this
+  planned acceptance matrix. The current handoff is [33_STAGE5_HANDOFF.md](33_STAGE5_HANDOFF.md).
+
+Run the Stage 5 suite with the normal checks and local migration:
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run test:d1
+npm run d1:migrate:local
+python3 docs/evidence/stage0-2026-10-21/verify.py
+git diff --check
+```
+
+The `test:d1` script includes the Stage 5 storage tests. Record only commands
+actually run and their observed outputs in the Stage 5 report. Website build
+does not apply to this stage.
+
 - [ ] Claude: confirmed reset, future announcement, active/redeemable banked offer, expired offer, revision and explicit withdrawal, unexpected enum.
 - [ ] Codex: announcement with `delivered_at=null` **never** labeled complete; delivered later creates correct state change; `scheduled.certainty=hinted` not auto-published.
 - [ ] `304` preserves cached snapshot; bad JSON, partial pagination and 429/503 do not delete records or trigger retractions.
 - [ ] Mixed-source outage: Claude failing doesn't prevent Codex; independent staleness timestamps.
 - [ ] Source switch and historical `seeded` records don't replay old Telegram posts.
-- [ ] Concurrent Cron two runs create at most one committed publishing claim; ambiguous Telegram timeout marked for manual review.
-- [ ] `dry_run` never makes Telegram network send; staging chat ID not equal to production.
+- [ ] Concurrent local publisher calls create at most one simulation claim; ambiguous loopback outcome remains for manual review without lease recovery.
+- [ ] `dry_run` makes no client call and creates no simulation journal row; local simulation uses only the fixed synthetic chat ID/token. Live staging/production destinations remain untested and require separate authorization.
 - [ ] Timezone conversions and date-only expiry avoid invented clock precision.
 
 ## D1 and API

@@ -1,0 +1,5 @@
+simulation: telegram-stage5-local
+routing: path
+mocks:
+  - routeKey: telegram
+    path: ../mocks/telegram/default.js

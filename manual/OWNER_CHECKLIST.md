@@ -56,13 +56,22 @@
 
 ## Stage 4 — local D1, normalization and ingestion
 
-- [ ] Review the final local Stage 4 report and independent review before accepting the stage.
+- [x] Owner accepted the local Stage 4 result from PR #4 and assigned only local Stage 5.
 - [ ] Confirm D1 schema/constraints, immutable observations and material versions, CAS + batch rollback, per-provider baseline, recoverable scoped HTTP cache, and synthetic journal outcomes against actual test results.
 - [ ] Confirm assumptions remain labeled: Codex's unpaginated feed is treated as complete locally; Claude's count/revision/status-union check establishes client consistency, not official upstream completeness.
 - [ ] Keep production truth/eligibility, staleness threshold, Codex correction correlation, retention beyond the bounded HTTP cache, and provider activation policy pending until separately decided.
 - [ ] Check actual outputs for `npm run typecheck`, `npm run lint`, `npm test`, local-only D1 migration/integration, Stage 0 evidence verification, and `git diff --check`; do not treat this checklist as evidence that a command passed.
 - [x] Owner separately authorized a local Stage 4 commit, including the preserved preparation and workspace consolidation documentation.
-- [ ] Separately authorize push, PR, merging Stage 4, remote migration, deployment, Telegram send or Stage 5. The local commit does not grant these permissions.
+- [x] Read-only verification found Stage 4 commit `7121756` in merged PR #4 (`2a0a958`), CI head run #11 success. The owner/external process performed push/PR/merge; the agent did not perform them.
+- [ ] Separately authorize future commit/push/PR/merge, remote migration, deployment, Telegram send or Stage 6. Previous Git operations do not grant continuing permissions.
+
+## Stage 5 — assigned local publisher
+
+- [x] Save `prompts/START_STAGE5.md` and current handoff with the Stage 4 base, results, pending policy and Git recovery context.
+- [x] Owner accepted local Stage 4 and explicitly assigned only the local Stage 5 scope: Telegram client/templates/publisher, D1 seams and synthetic tests.
+- [ ] Review the Stage 5 report, synthetic previews, dry_run zero-journal behavior, local D1/HTTP simulation and independent review before accepting Stage 5.
+- [ ] Keep production truth/eligibility, freshness thresholds, approval workflow, activation, Codex correlation and real Telegram outcomes pending separate decisions.
+- [ ] Separately authorize any live staging E2E, real token/channel setup, runtime wiring, remote migration/deploy or Stage 6. This Stage 5 assignment grants none of them.
 
 ## Worker/D1 staging (later; separate authorization)
 

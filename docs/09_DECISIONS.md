@@ -94,10 +94,56 @@ production policy и не разрешает publisher.
 Реализацию и границы Stage 4 фиксирует [D1 blueprint](03_DATA_AND_STATE.md).
 Production truth/eligibility, stale threshold, окончательная полнота источников,
 Codex correlation, срок хранения audit данных, publication activation и delivery
-остаются открытыми. Stage 4 не меняет Worker runtime wiring, public API, website
-или Stage 5.
+остаются открытыми. Stage 4 не менял Worker runtime wiring, public API или
+website.
+
+### Локальные решения Stage 5 — 2026-10-22
+
+Владелец принял локальный результат Stage 4 и отдельно назначил только локальный
+Stage 5. Следующее решение фиксирует фактически реализуемую simulation boundary,
+но не является production policy signoff:
+
+| ID | Локальное решение | Статус и основание |
+|---|---|---|
+| ADR-032 | Использовать отдельную `telegram_simulation_deliveries` таблицу и `stage5_local_simulation` environment; сохранить Stage 4 `synthetic_deliveries` schema и CHECK. Simulation принимает только `synthetic:` destination, фиксированный synthetic chat ID/token и HTTP endpoint на loopback `127.0.0.1/.../telegram`. | Локальная compatibility seam. Нет общего/production Telegram endpoint, real destination, runtime wiring или реальных Telegram requests/sends. Completion записывает только `simulated_sent`; это не реальная доставка. |
+| ADR-033 | Делать локальную eligibility явной: synthetic policy включает freshness settings; provider approval совпадает с активным baseline, а transition review совпадает с `transitionId` и `rawKey`. Проверять отдельно current generation/editorial state, HTTP source checks и successful cached ingestion. | Все freshness значения в локальной политике обязательны и не больше 24 часов; HTTP — не больше 10 минут. `approvedAt` и `reviewedAt` также проверяются по указанному окну. Эти цифры — консервативная тестовая настройка, production thresholds, review workflow и approvals остаются pending. |
+| ADR-034 | Ограничить candidate query максимум 50 и keyset cursor по `(created_at, transition_id)`; claim атомарно сверяет текущий transition/observation и provider generation. | CAS связывает immutable candidate с текущим событием и состоянием baseline в момент записи. Устаревший candidate или ingestion race не должен claim-иться. |
+| ADR-035 | Локально подавлять exact target, уже наступивший к текущему времени, и date-only target/offer expiry в тот же UTC день. | Дата не превращается в заданный час или countdown. Это conservative local eligibility rule; production target-expiry policy остаётся pending. |
+| ADR-036 | Повтор разрешать только для runtime-validated 429 с явным будущим `retryAt` не более чем на один час; максимум три попытки. Не восстанавливать claimed row по lease и не автоматически повторять timeout/ambiguous outcomes. | Persist failure после возможного send остаётся заблокированным/manual review; exactly-once не обещается. Реальный Telegram journal, retry policy и manual operations требуют отдельного production design/approval. |
+
+Код Stage 5 не меняет `src/index.ts` handlers и оставляет `readConfig()` в
+`dry_run`. Он не добавляет publish setter, API/admin route, Cloudflare resource,
+production migration или live-send workflow. Точные проверки и результаты
+фиксируются в [Stage 5 report](32_STAGE5_REPORT.md); актуальные ограничения и
+следующий handoff — в [33_STAGE5_HANDOFF.md](33_STAGE5_HANDOFF.md). ADR-032–036 не
+закрывают production freshness/approval thresholds, publisher activation,
+provider-specific approval, destinations or live delivery handling.
 
 Before altering stack/site hosting, claiming delivery without evidence, implementing new providers, making bot personal, adding visitor tracking, enabling auto-prod-deploy or changing copyright/license, document decision + alternatives + risk and wait for owner approval.
+
+Stage 5 review уточнение: candidate SELECT получает provider generation в том же
+снимке, что current payload/observation; более новое generation при evaluation
+подавляет candidate, а claim использует исходное generation. Это закрывает race
+при изменении только freshness metadata без material transition/observation.
+Cursor-page SQL имеет прямой tuple range predicate; D1 `EXPLAIN QUERY PLAN`
+проверяет seek, чтобы поздние страницы не сканировали уже пройденный prefix.
+Текущий Stage 4 guard оставляет Claude credit/offer correction/withdrawal в
+`needs_review`: renderer support сам по себе не расширяет domain eligibility.
+
+PR #5 follow-up adds local ADR-037: `maxEventAgeMs` separately bounds an existing
+source-aware action time (Codex verified delivery, Claude canonical effective).
+An exact historic time cannot be refreshed by candidate creation or review.
+Unknown action time and all offers need an explicit transition/rawKey-bound
+`currentRelevance` source confirmation with accepted evidence and its own time.
+Known future announcements retain exact/date/unknown evidence gates. This
+eligibility check never deletes D1 history; thresholds remain local/test-only,
+with no production approval or activation. Delivery timestamps in message copy
+are labelled source-reported and do not establish per-account effective time.
+
+Local ADR-038: cancellation is best effort and started once; the client never
+awaits the underlying cancel hook. Response parsing releases the reader lock in
+`finally` where possible, and catches asynchronous cancellation rejections.
+Timeout/abort/parse failure remain uncertain and never allow automatic retry.
 
 ## Items for owner to confirm later (not blockers for Stage 0)
 

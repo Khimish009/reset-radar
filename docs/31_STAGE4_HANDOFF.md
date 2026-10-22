@@ -1,39 +1,67 @@
 # 31 — Передача контекста после локального Stage 4
 
-Дата: **2026-10-22, Europe/Moscow**. Текущая разрешённая задача — только
-`prompts/START_STAGE4.md`: owner принял Stage 3 с PR #3 fixes и разрешил локальные
-D1/normalization/policy/baseline/journal. Stage 5 не разрешён.
+Сохранено **2026-10-22, Europe/Moscow**. Текущая просьба владельца — подготовить
+prompt следующей фазы и сохранить контекст, **не реализовывать Stage 5**.
+[START_STAGE5.md](../prompts/START_STAGE5.md) подготовлен для отдельного явного
+назначения: только локальный client/templates/publisher и HTTP substitutes,
+без настоящих Telegram requests, deployment или Stage 6. Его отправка/явное
+поручение выполнить файл принимает локальный Stage 4; подготовка сама по себе
+не является таким поручением и не утверждает production policy.
 
-**Работать с результатом в `/Users/salman/pet_projects/reset-radar`**, ветка
-`feat/stage4-d1-policy`, база `2190622c0ace8f539b3eed788e33a9d68bbcdd91`.
-После проверок и консолидации владелец отдельно разрешил локальный commit всего
-результата Stage 4 вместе с подготовительными документами и Git handoff.
-Фактический SHA смотреть в `git log -1`; перед продолжением проверить
-status/staged/unstaged/untracked и актуальное поручение. Push/PR не разрешены.
+## Проверенная Git-база и PR #4
 
-После Stage 4 владелец отдельно разрешил локальную консолидацию Git. Конфликты
-после применения Stage 3 stash на старый main сняты после проверенного backup;
-local `main` fast-forward-нут с `0268056` до `2190622`, без нового commit.
-Временный `/private/tmp/reset-radar-stage4` переключён на detached HEAD того же
-SHA, ветка Stage 4 открыта в основной папке. Все 24 changed/new файла перенесены;
-перед обновлением этих трёх документов проверено побайтовое совпадение полного
-дерева из 153 файлов с подготовленной копией Stage 4. Код, tests, migration и
-конфигурация не изменялись при переносе.
+Рабочая папка: **`/Users/salman/pet_projects/reset-radar`**. При подготовке
+основная копия была чистой, ветка `main`, HEAD/local main/origin/main:
+**`2a0a958941220dd1f9e8daf65e6ff666bcf52aed`**.
 
-`stash@{0}` сохранён: `909e0e63c399e5b7f1e0dc42c7c1631df2cb34e1`.
-Проверенный backup файлов обеих копий и полного `.git` (включая оба index и stash):
-`/private/tmp/reset-radar-git-recovery-20261022-3quhwgym`.
-SHA-256 manifest и `transfer-verification.json` находятся внутри backup.
-Временный worktree тоже сохранён с исходными незакоммиченными файлами Stage 4;
-новые правки теперь делать только в основной папке, чтобы копии не расходились.
-Не применять этот stash повторно поверх Stage 4: его четыре документа уже учтены.
-Details: [фактический report](30_STAGE4_REPORT.md).
+Stage 4 сохранён в **`712175673485360479a0141a771d7f0519781b23`**:
+`feat: add local D1 ingestion and policy storage`, 24 файла. Владелец отдельно
+разрешил только этот локальный commit, и агент его создал; старое разрешение
+не распространяется на подготовку нового prompt/handoff или будущую реализацию.
 
-PR #3 повторно проверен merged; CI P2 SHA successful; разрешённый fetch получил
-remote main `2190622`. Оба P2 присутствуют по ancestry. Исторические docs28/29
-и START_STAGE4 перенесены из подготовительных правок исходной копии. До нового
-поручения на локальный commit результат был незакоммиченным; merge Stage 4,
-push и PR не выполнялись.
+Read-only GitHub connector подтвердил:
+
+- [PR #4](https://github.com/Khimish009/reset-radar/pull/4) closed/merged,
+  `merged_at=2026-10-21T21:53:45Z`, merge SHA `2a0a958941220dd1f9e8daf65e6ff666bcf52aed`.
+- Head PR — `712175673485360479a0141a771d7f0519781b23`; его
+  [CI run #11](https://github.com/Khimish009/reset-radar/actions/runs/39681931234)
+  completed/success. Это CI implementation SHA, а не утверждение о новом запуске
+  тестов при подготовке handoff или о всех workflow для merge SHA.
+- Локально `7121756` — ancestor текущего main. PR #3 merge `2190622` и оба Stage 3
+  P2 также входят в базу. Push/PR/merge PR #4 выполнил владелец/внешний процесс;
+  агент в этой подготовке их не выполнял.
+
+Remote main не обновлялся командой fetch в этой подготовке; приведённые
+local refs и подтверждённый GitHub merge не заменяют следующую проверку.
+В новой сессии сначала проверить status/staged/unstaged/untracked и актуальное
+состояние PR/main. В папке останутся незакоммиченные docs/prompt этой подготовки:
+не терять их при создании `feat/stage5-telegram-publisher`. Если использовать
+новый clone до сохранения этих правок отдельным разрешённым commit, новых
+prompt/handoff в нём не будет.
+
+## История восстановления рабочей копии — больше не blocker
+
+Ранее Stage 3 stash применили к старому main `0268056`, возник unmerged index.
+После отдельного разрешения владельца создан verified backup, конфликты сняты,
+local main fast-forward-нут до `2190622`, ветка Stage 4 открыта в основной папке.
+Все 24 changed/new файла перенесены; проверено полное дерево из 153 файлов,
+после чего обновлены только recovery docs. Stage 4 затем закоммичен и уже merged.
+
+Старый `stash@{0}` сохранён: **`909e0e63c399e5b7f1e0dc42c7c1631df2cb34e1`**.
+Он содержит четыре подготовительных документа Stage 3; они уже учтены в Stage 4.
+**Не выполнять повторный stash pop/apply поверх main/Stage 5.**
+
+Дополнительные локальные копии на этой машине сохранены:
+
+- `/private/tmp/reset-radar-stage4` — detached HEAD `2190622` со старыми
+  незакоммиченными файлами Stage 4. Это fallback, не актуальная рабочая база.
+- `/private/tmp/reset-radar-git-recovery-20261022-3quhwgym` — SHA-256 verified
+  backup файлов обеих копий и полного `.git`, including indexes/stash/reflogs.
+  Внутри `manifest.json`, `transfer-verification.json`, `consolidation-result.json`.
+
+При продолжении не редактировать эти копии и не удалять stash/worktree/backup
+без отдельного разрешения. Нормальная работа идёт из основной папки с main,
+который уже содержит Stage 4. История и проверки: [report](30_STAGE4_REPORT.md).
 
 ## Реализованные интерфейсы
 
@@ -64,7 +92,31 @@ push и PR не выполнялись.
   `loadVersion` читает настоящий прежний payload, поэтому replay сохраняет
   lineage. Codex IDs не связывать по времени/тексту.
 
-## Проверки и ограничения
+## Ограничения, важные для Stage 5
+
+`D1Repository` пока не умеет читать очередь candidates или вести общий Telegram
+journal: имеются только `claimSynthetic/completeSynthetic/getDelivery` и SQL
+`synthetic_deliveries` с CHECK destination=`synthetic:`. Publication candidate
+не означает production eligibility. `publishApprovedAt` изначально NULL,
+activation setter отсутствует. Нельзя просто передать настоящий chat ID в
+synthetic API или считать successful mock outcome реальной публикацией.
+
+Для Stage 5 нужны явные bounded candidate queries, client/templates/publisher
+interfaces и обоснованный journal seam. Только forward local migration, без
+переписывания применённой `0001` и без ослабления её synthetic guards. В positive
+integration tests — явная simulation и test-only policy/approvals; отсутствие
+baseline/approval/freshness policy блокирует send. `dry_run` не вызывает client,
+не создаёт send claims и не ставит sent. Worker config продолжает принимать
+только dry_run, runtime wiring и real Telegram E2E не разрешены.
+
+Renderer должен различать `upstreamReportedDelivery`, `record.delivered` и
+`verifiedDelivery/action/reviewedEvidence`: ненулевой reported timestamp сам по
+себе не даёт текст «подтверждена доставка». Claude applied может иметь неизвестное
+время применения. Expected exact/date/unknown и date-only offer expiry не
+превращаются в fake timestamps/countdown. Internal audit/rationale не публичны.
+Production threshold, correlation, activation workflow и live send policy pending.
+
+## Ранее выполненные проверки Stage 4
 
 Typecheck/lint PASS, полный Vitest **226 passed / 3 opt-in skipped**, Stage 0
 verify **139 PASS**, local migration PASS. Stage 4 opt-in HTTP simulation с
@@ -100,7 +152,9 @@ Production completeness/truth/eligibility, stale threshold, correlation,
 activation и реальные sends всё ещё pending. No-op Worker, Cron off, dry_run
 сохранены. Website/public data endpoints/Telegram publisher не добавлены.
 
-Разрешён только отдельный локальный commit текущего результата. После него
-остановиться. Push/PR/слияние Stage 4 в main, remote D1/deploy/Telegram sends
-и **Stage 5 требуют отдельного нового разрешения**.
+Stage 4 commit и PR #4 уже существуют; не создавать их повторно. Текущая
+подготовка не разрешает новый commit/push/PR/merge или реализацию Stage 5.
+Для начала новой фазы владелец должен явно поручить выполнить START_STAGE5.md.
+Тогда разрешается только его локальный scope; remote D1/deploy/Telegram sends
+и **Stage 6 всё равно требуют отдельного нового разрешения**.
 **Не развёрнуто / не опубликовано.**
