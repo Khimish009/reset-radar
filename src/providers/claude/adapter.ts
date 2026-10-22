@@ -20,7 +20,7 @@ export function createClaudeAdapterState(): ClaudeAdapterState {
   return { http: createClaudeHttpState(), histories: new Map() };
 }
 
-/** Unwired local adapter; Worker scheduled/fetch handlers never instantiate it. */
+/** Claude history/status adapter; the scheduled dry-run runtime supplies bounded options. */
 export function createClaudeAdapter(
   dependencies: RuntimeDependencies,
   state = createClaudeAdapterState(),

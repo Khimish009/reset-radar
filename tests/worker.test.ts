@@ -18,17 +18,17 @@ function setupWorker() {
 }
 
 describe('Worker foundation', () => {
-  it('runs repeated scheduled no-ops without network, D1 or background work', () => {
+  it('runs repeated scheduled no-ops without network, D1 or background work', async () => {
     const { handler, fetch, lines } = setupWorker();
-    const env = new Proxy({ APP_ENV: 'staging', PUBLISH_MODE: 'dry_run' }, {
+    const env = new Proxy({ APP_ENV: 'staging', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'off' }, {
       get(target, key) {
-        if (key === 'APP_ENV' || key === 'PUBLISH_MODE') return target[key];
+        if (key === 'APP_ENV' || key === 'PUBLISH_MODE' || key === 'INGEST_MODE') return target[key];
         throw new Error('Unexpected resource access');
       },
     });
     const context = { waitUntil: vi.fn(), passThroughOnException: vi.fn() };
     for (let i = 0; i < 3; i += 1) {
-      Reflect.apply(handler.scheduled, handler, [scheduled, env, context]);
+      await Reflect.apply(handler.scheduled, handler, [scheduled, env, context]);
     }
     expect(lines).toHaveLength(3);
     expect(lines[0]).toContain('scheduled_noop');
@@ -38,19 +38,39 @@ describe('Worker foundation', () => {
     expect(context.waitUntil).not.toHaveBeenCalled();
   });
 
-  it('fails closed for a publishing configuration and logs no configuration values', () => {
+  it('fails closed for a publishing configuration and logs no configuration values', async () => {
     const { handler, fetch, lines } = setupWorker();
-    expect(() => handler.scheduled(scheduled, {
+    await expect(handler.scheduled(scheduled, {
       APP_ENV: 'staging', PUBLISH_MODE: 'private-token',
-    })).toThrowError(/^Unsupported Stage 1 configuration$/);
+    })).rejects.toThrowError(/^Unsupported runtime configuration$/);
     expect(lines).toEqual(['{"level":"error","event":"configuration_rejected"}']);
     expect(fetch).not.toHaveBeenCalled();
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
-  it('exports both Cloudflare entry points and keeps the default scheduled handler inert', () => {
+  it('does not inspect bindings when production is opted in or an active local run lacks D1', async () => {
+    const { handler, fetch, lines } = setupWorker();
+    const env = new Proxy({ APP_ENV: 'production', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'dry_run' }, {
+      get(target, key) {
+        if (key === 'APP_ENV' || key === 'PUBLISH_MODE' || key === 'INGEST_MODE') return target[key];
+        throw new Error('Inactive production must not read a resource binding');
+      },
+    });
+    await expect(handler.scheduled(scheduled, env)).rejects.toThrowError(/^Unsupported runtime configuration$/);
+    await handler.scheduled(scheduled, {
+      APP_ENV: 'local', PUBLISH_MODE: 'dry_run', INGEST_MODE: 'dry_run',
+    });
+    expect(lines).toEqual([
+      '{"level":"error","event":"configuration_rejected"}',
+      '{"level":"error","event":"scheduled_missing_database"}',
+    ]);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('exports both Cloudflare entry points and keeps the default scheduled handler inert', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    worker.scheduled(scheduled, {});
+    await worker.scheduled(scheduled, {});
     expect(worker.fetch(new Request('https://example.invalid/')).status).toBe(404);
     expect(log).toHaveBeenCalledWith(expect.stringContaining('scheduled_noop'));
     expect(globalThis.fetch).not.toHaveBeenCalled();

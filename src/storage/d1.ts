@@ -157,7 +157,10 @@ export function createD1Repository(db: D1Database): D1Repository {
       return activation(row);
     },
 
-    async loadEvents(provider) {
+    async loadEvents(provider, limit) {
+      if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 1 || limit > 10_001)) {
+        throw new Error('invalid_event_read_limit');
+      }
       const result = await db.prepare(
         `SELECT e.id, e.provider, e.upstream, e.external_id AS externalId,
                 e.material_hash AS materialHash, e.observation_key AS observationKey,
@@ -168,8 +171,8 @@ export function createD1Repository(db: D1Database): D1Repository {
            FROM events e
            LEFT JOIN event_versions v ON v.transition_id = e.transition_id
           WHERE e.provider = ?1
-          ORDER BY e.event_date DESC, e.id DESC`,
-      ).bind(provider).all<EventRow>();
+          ORDER BY e.event_date DESC, e.id DESC LIMIT ?2`,
+      ).bind(provider, limit ?? -1).all<EventRow>();
       return result.results.map((row) => ({
         id: row.id,
         provider: row.provider,

@@ -147,6 +147,28 @@ does not apply to this stage.
 - [ ] `dry_run` makes no client call and creates no simulation journal row; local simulation uses only the fixed synthetic chat ID/token. Live staging/production destinations remain untested and require separate authorization.
 - [ ] Timezone conversions and date-only expiry avoid invented clock precision.
 
+### Stage 6 — локальная scheduled integration
+
+Новые tests должны проходить через `createWorker().scheduled()` с injected
+clock/fetch/logger и настоящим Miniflare D1. Полный Stage 6 требует будущего
+отдельно разрешённого remote observation; локальный HTTP substitute его не заменяет.
+
+- Explicit local/staging dry-run opt-in; default/missing/invalid config, missing
+  DB и production безопасны; HTTP 501/404/405/HEAD/OPTIONS остаются инертными.
+- Replay, overlap между отдельными Worker instances и persisted restart
+  сохраняют detection/history/ETag, CAS и независимые provider baselines.
+- Page/record budgets не дают baseline или частичный event import; failed
+  provider/backoff не скрывается успешным provider и не удаляет историю.
+- Zero Telegram network/claims и ноль новых записей в обоих send journals,
+  `publish_approved_at IS NULL`, needs_review/reasons без автоматических approvals.
+- Opt-in `STAGE6_SIMULATION_URL` проходит loopback HTTP → adapters → handler
+  orchestration → D1; map только известных источников, без pass-through.
+
+Команды и реальные результаты, включая skipped opt-in tests и независимое review:
+[Stage 6 local report](34_STAGE6_LOCAL_REPORT.md). Retention case Stage 4 сохраняет
+20s timeout, 103 real commits и generations 4–103; глобальные таймауты/параллелизм
+не меняются. Website build неприменим.
+
 ## D1 and API
 
 - [ ] Local migrations up/down or reversible documented practice; indices support sorted pagination efficiently.

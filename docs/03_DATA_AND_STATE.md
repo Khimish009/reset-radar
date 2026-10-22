@@ -2,6 +2,13 @@
 
 **Stages 4–5: локальная реализация.** SQL в `migrations/0001_stage4.sql`, `migrations/0002_stage5.sql` и код `src/storage/` описывают текущую локальную схему. Это не production migration, публичная проекция или утверждение окончательной production policy.
 
+Stage 6 локально подключает тот же ingestion к `scheduled()` только по явному
+local/staging opt-in. Применённые migrations не переписаны, новых нет. Partial
+history и record budget rejection сохраняют source/health state без baseline
+или частичного event commit; CAS остаётся границей overlap. Ни один scheduled
+dry-run не вызывает publisher и не пишет в оба send journals. Точные budgets,
+проверки и ограничения: [Stage 6 local report](34_STAGE6_LOCAL_REPORT.md).
+
 ## Таблицы и границы данных
 
 | Таблица | Назначение и ограничения |

@@ -145,6 +145,20 @@ awaits the underlying cancel hook. Response parsing releases the reader lock in
 `finally` where possible, and catches asynchronous cancellation rejections.
 Timeout/abort/parse failure remain uncertain and never allow automatic retry.
 
+### Локальные решения Stage 6 — 2026-10-22
+
+Владелец принял Stage 5 из merged PR #5 и разрешил только локальную подготовку
+по START_STAGE6. Эти решения не закрывают stable-staging acceptance:
+
+| ID | Локальное решение | Основание и границы |
+|---|---|---|
+| ADR-039 | Подключить scheduled ingestion к существующим D1/adapter interfaces только через явные `APP_ENV=local|staging`, `PUBLISH_MODE=dry_run`, `INGEST_MODE=dry_run` и DB binding. Default/off и production не опрашивают источники. | Отдельный opt-in предотвращает polling при обычном deploy или missing config; отсутствующий binding даёт фиксированный safe code. `fetch()` не читает env/DB и не запускает работу. Все поставляемые targets сохраняют dry_run/Cron off. |
+| ADR-040 | Ограничить invocation до 4 Claude history pages по 25 записей, 100 accepted records/provider и 5 Claude + 1 Codex network requests; сохранить transport timeout 10s/body limit 2MiB и существующие cache/backoff. | Превышение бюджета не даёт частичного event commit или baseline. Новый запуск начинает полный согласованный walk, используя сохранённый scoped cache. Это границы операций, не обещание жёсткого wall-clock deadline для D1. Если upstream больше бюджета, baseline остаётся incomplete до отдельно проверенного изменения лимита/дизайна. |
+| ADR-041 | Scheduled dry-run возвращает результаты ingestion с явной блокировкой real publication; Stage 5 simulation service не использовать как runtime real publisher. | Не создавать synthetic/production approvals ради previews. Сохранить needs_review/reasons/history и оба journals без новых записей. Real client/journal, evidence workflow, freshness thresholds, destinations и реальные requests требуют отдельных решений. Overlap защищён D1 CAS, без заявления о distributed mutex или exactly-once. |
+
+Фактические проверки и ограничения: [Stage 6 local report](34_STAGE6_LOCAL_REPORT.md),
+дальнейшие remote gates: [runbook](07_DEPLOYMENT_RUNBOOK.md).
+
 ## Items for owner to confirm later (not blockers for Stage 0)
 
 1. Actual GitHub `owner`/repo URL and verified Telegram handles (`@resetradarai`, `@resetradaraibot` suggested).

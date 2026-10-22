@@ -1,57 +1,61 @@
-# 10 — Production monitoring, errors and rollbacks
+# 10 — Operations, monitoring and rollback
 
-## Stage 5 local simulation boundary
+## Stage 6 runtime boundary
 
-Stage 5 publisher is a direct local service and is not connected to Worker
-handlers. Runtime configuration continues to require `PUBLISH_MODE=dry_run`;
-Cron remains disabled. Preview mode stops before the client and creates no row
-in the simulation journal. The only implemented HTTP client path is a local
-loopback substitute using the fixed synthetic chat/token. It cannot address a
-real Telegram endpoint or destination; a simulated response is not delivery
-evidence.
+The scheduled Worker now has a local dry-run ingestion path backed by D1. It is active only when `INGEST_MODE=dry_run`, `APP_ENV` is explicitly `local` or `staging`, `PUBLISH_MODE=dry_run` is explicit, and binding `DB` exists. Missing or `off` `INGEST_MODE` means inactive. Invalid configuration and missing DB fail closed with fixed safe codes. Production cannot enable this path. Checked-in base, local, staging and production Wrangler configs leave the flag absent and keep Cron at `[]`.
 
-The separate `telegram_simulation_deliveries` journal is restricted to the
-`stage5_local_simulation` environment and `synthetic:` destinations. Inspect
-only its simulated state when checking local tests. A `claimed` row has no lease
-recovery and must remain blocked for manual review after a crash. A retryable
-row is eligible only after validated HTTP/API 429 data supplies a future
-`retryAt` within one hour; the publisher allows at most three attempts. A timeout,
-disconnect, malformed response or failed completion write after the mock call
-may have occurred remains ambiguous and must not trigger automatic retry.
+The runtime invokes ingestion only from `scheduled()`; public `fetch()` remains the read-only/skeleton HTTP surface and does not sync, assess, publish or change admin state. Stage 5 publisher, Telegram client and simulation journal are not imported by the runtime. Dry-run preserves `needs_review` reasons and returns the publication summary `{available:false,state:'blocked',reason:'no_real_publisher'}`; it does not create approvals, call a Telegram client, claim a send, or write either existing journal (`synthetic_deliveries` and `telegram_simulation_deliveries`). No real-send journal exists in this stage.
 
-Freshness and approvals in simulation are explicit synthetic test inputs. They
-are baseline-bound and transition/rawKey-bound; tests keep current generation
-and editorial review, HTTP source checks and successful cached-ingestion times
-distinct. Local maximums are 24 hours, with HTTP at most 10 minutes. None of
-these values establish production thresholds or grant publication approval.
+Local per-invocation limits are: up to four Claude pages of 25 records (100 maximum), one Codex request, five Claude plus one Codex request total, 10-second HTTP timeout and 2 MiB response body. The runtime reads at most 101 prior canonical rows per provider to check the 100-record capacity. If stored history is larger, it commits the fixed incomplete reason `stored_record_limit`, leaves canonical events and source rows unchanged, and makes no upstream requests. This invocation remains incomplete and cannot complete a new baseline; an already completed baseline is preserved. A capacity change needs a later owner-approved design before retry. A snapshot exceeding the accepted full-import cap is rejected without partial events or a completed baseline. One provider failure must not suppress independent work or success from the other provider. D1 work has bounded operation counts, but elapsed D1 work is not hard-cancelled by a wall-clock timeout; measure actual CPU, rows and duration in authorized staging before making a cost or latency claim.
 
-## Periodic checks (operator)
+Local tests substitute both fixed source URLs with loopback fixtures and prohibit pass-through. Real staging invocation contacts the configured upstreams; it requires explicit owner authorization even with publisher disabled. No runtime setting in this stage authorizes Telegram traffic.
 
-- Confirm both providers' `last_success_at`, last HTTP status, `stale` flag and latest accepted event revision.
-- Inspect Cron trigger delivery, D1 row reads/writes/storage, Worker request counts and CPU usage, Telegram delivery failures and `uncertain_manual_review` queue.
-- Verify public API 200/304/CORS/latency and website source timestamps; check site mobile occasionally.
-- Review corrections, withdrawn announcements, new unknown enums and community API changelog.
+## Safe telemetry
 
-## Severity and response
+The fixed event codes currently emitted by the scheduled path are `scheduled_noop`, `scheduled_missing_database`, `scheduled_run_failure`, `configuration_rejected`, `provider_sync_success`, `provider_sync_incomplete`, `provider_sync_failure`, `provider_sync_concurrent`, `scheduled_run_complete` and `publish_unavailable`. Current fields are limited to the allowlisted `environment`, `publishMode`, `provider` and `durationMs`; `status` is accepted by the logger sanitizer but the scheduled path does not currently emit it. The structured logger drops unrecognized event codes and fields. Do not add URLs, query strings, payloads, event summaries, editorial rationale, Telegram text, tokens, account IDs, raw exception messages, stack traces, request/page/record counts or D1 operation counts unless a reviewed code change adds bounded fields to the logger contract. Review emitted logs in the Stage 6 report before enabling staging observation; never infer health from a missing log line.
 
-| Incident | Primary response |
+For each provider, the operator should establish whether a complete baseline exists, latest successful sync time, most recent request result, stale/error state, and whether the newest accepted revision changed. Keep `announced_at`, source-reported `delivered_at`, detection time, and ingestion time distinct. A partial/oversized/failed import is not a baseline. A successful poll with no new events is not the same as a failed poll.
+
+## Staging observation (future, separately authorized)
+
+The first staging deploy remains inactive (`INGEST_MODE` absent or `off`) and has `triggers.crons: []`. Before making real provider requests, obtain explicit authorization for a bounded observation. Then the owner may separately approve a staging-only config setting `INGEST_MODE=dry_run` and enabling Cron at the five-minute target. Monitor both provider outcomes and D1 usage through at least two complete independent baselines. Record the deployed SHA, environment, observation interval, success/failure/partial result per provider, D1 rows read/written, CPU/duration and the owner's budget comparison. Stop and keep the system disabled if either source is partial or repeatedly fails, D1 usage is unmeasured, or the budget is not accepted. No history blast or Telegram publication is allowed.
+
+The operator may inspect Cloudflare Workers logs, invocation metrics and D1 dashboard/query metadata. Report counts by provider and fixed event code outside the application logs; avoid high-cardinality labels such as IDs, URLs or arbitrary upstream values. D1 query metadata includes rows read/written and duration; compare those values over a recorded window with account-level D1 metrics. Worker invocation count alone is not a D1 cost estimate.
+
+## Cost and quota monitoring
+
+Track measured daily D1 rows read/written, storage, Worker invocations and CPU/duration against a written owner budget with a stop threshold below plan limits. D1 Free plan limits currently listed by Cloudflare are 5 million rows read/day, 100,000 rows written/day and 5 GB total account storage. Cloudflare states that Free daily row-limit excess causes D1 queries to fail until the limit resets. The current per-database storage maximum is 500 MB on Free and 10 GB on Paid; the maximum D1 queries per Worker invocation is 50 on Free and 1,000 on Paid. These provider limits may change and do not prove this workload fits within Free usage or will remain free. Before remote staging, count and measure actual D1 queries per scheduled invocation against the selected plan; do not assume batching hides multiple statements. Record the account plan and measurement window; recheck [current D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/) and [limits](https://developers.cloudflare.com/d1/platform/limits/) before any cost decision. The September 2026 [limit enforcement notice](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/) documents query failures after daily Free limits.
+
+At five-minute cadence the theoretical count is 288 invocations/day (8,640 over 30 days) if every trigger runs. This is a planning figure only. Derive actual reads/writes and runtime duration from the observed invocation data; do not extrapolate from event totals alone. Public API/dashboard traffic is a later Stage 9 cost dimension.
+
+## Incident response
+
+| Signal | Response |
 |---|---|
-| Claimed reset unsupported by evidence | pause provider publication, preserve event and source snapshot, investigate, post clearly sourced correction if justified |
-| Upstream 429/503/schema mismatch | exponential/capped backoff, mark provider stale, retain last D1 snapshot, do not mark historical events withdrawn |
-| D1 quota exceeded | pause nonessential requests, optimize query/index/caches, show degraded website status; never silently invent results |
-| Telegram token leak | revoke/rotate via BotFather, update Worker secret with owner approval, audit unexpected posts |
-| Telegram ambiguous timeout | mark uncertain, no blind retry; verify channel message manually |
-| API public traffic surge | serve cached responses / protective rate limits and monitor quota; no dynamic joins that scan full history |
-| GitHub Pages not loading | check Pages workflow and `/reset-radar/` asset path; roll back to last approved release |
+| Missing/invalid runtime config or DB binding | Keep ingestion inactive; inspect only sanitized fixed error code and reviewed config keys. Do not put config values into logs. |
+| One upstream fails, times out, returns 429/503, or changes schema | Preserve its last D1 snapshot and mark that provider failed/stale; allow the independent provider outcome to remain visible. Respect existing cache/backoff; do not infer withdrawal from absence. |
+| Partial/oversized history | Do not mark provider baseline complete or persist a partial import as a full baseline. Keep observation disabled until the issue is understood. |
+| D1 query failure or budget threshold reached | Disable Cron and runtime gate using the reviewed staging config; retain data. Inspect D1 metrics/indexed query paths and current account limits before resuming. |
+| Unexpected runtime behavior or high CPU/duration | Disable Cron first, then set `INGEST_MODE` absent/`off`; redeploy only under owner authorization. Preserve logs with fixed codes and review the exact SHA. |
+| Telegram token leak or unexpected message | Stage 6 should have no real token or sender. If a later approved integration exists, owner revokes/rotates the token, pauses its publication path, audits the channel, and follows that integration's separate incident procedure. |
+| Ambiguous Telegram send | Not applicable to Stage 6 runtime. Any future real publisher must preserve `uncertain_manual_review` and require manual verification; never blind-retry. |
 
-## Operational display truth
+## Disable and rollback
 
-The website/API should distinguish **source unavailable** from **no new event**. “Последнее подтверждённое событие” is not synonymous with “your quota is now available”. Display per-source sync timestamps and stale warning. If a provider baseline is missing, say monitoring incomplete. Avoid site labels like “updated just now” unless they refer precisely to recent successful sync, not event time.
+1. Remove scheduled execution first by deploying the reviewed staging config with `triggers.crons: []`; Cloudflare documents that an explicit empty array removes deployed Cron triggers, while omitting the property may leave them in place. Verify the trigger list in Cloudflare. If Wrangler access is unavailable, the owner can remove it through the dashboard and verify removal.
+2. Set `INGEST_MODE` absent or `off`, keep `PUBLISH_MODE=dry_run`, and redeploy the reviewed staging config. Confirm the exact Worker environment and SHA.
+3. If code rollback is needed, owner selects a known reviewed Worker version or deploys the last reviewed SHA/config. Do not assume Worker rollback reverts D1 writes.
+4. Preserve D1 records and migration history. Do not delete the database or reverse migrations as an incident shortcut. Review backup/Time Travel options and prepare a separate owner-approved restoration action if needed.
+5. Resume only after the cause is understood, safe config is reviewed, D1 budget is measured, and the owner authorizes another observation.
 
-## Financial guardrails
+Production remains inactive and Cron-off. Production D1, runtime activation, publication, public API and deployment require later, separate owner gates. The Stage 6 local result is not stable-staging acceptance.
 
-Cloudflare Free is an aspiration, not a promise of zero cost under indefinite traffic. Estimate upstream calls (5 min: 8,640 runs/30d) plus public API traffic. Cache `/stats` for at least ~5 min when appropriate, `/status` and `/events` for ~1 min, indexed D1 query paths; measure actual cost and stop uncontrolled behavior before paid upgrade.
+## Operational truth and references
 
-## Launch log template
+The dashboard/API should distinguish **source unavailable** from **no new event** and show last successful ingestion per source. “Latest confirmed event” does not mean a user's quota is available. Preserve source-reported event semantics and event provenance; don't convert a date-only offer expiry into a precise countdown.
 
-Record date, git SHA, Stage, environment, exact approved action, reviewer, staging/prod D1 names, Telegram destination verified (handle only), CI build URL, smoke results, rollback instructions. For local Stage 5, record the loopback simulation and synthetic destination only; never record credentials or raw sensitive environment dumps. Real Telegram publication, runtime wiring, remote migration or deployment requires a separate owner authorization.
+Cloudflare documentation checked 2026-10-22: [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/) (Cron runs in UTC; explicit empty `crons` removes triggers), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), and [D1 Free-tier limit enforcement](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/). See [deployment runbook](07_DEPLOYMENT_RUNBOOK.md) for owner gates and documented Wrangler commands.
+
+## Launch / observation record template
+
+Record date, reviewed SHA, exact separately authorized action, Wrangler version, environment, staging DB name and private ID reference, migration state, Worker version, Cron state, runtime flag state, `PUBLISH_MODE`, each provider's complete-baseline status, observation interval, sanitized fixed-code outcomes, D1 rows read/written/storage, CPU/duration, owner budget/stop threshold, reviewer and disable/rollback action. Never record credentials, raw environment dumps, raw upstream payloads, full source URLs or Telegram message contents. No remote observation record is created by local Stage 6.

@@ -31,6 +31,8 @@ interface CacheSnapshot {
 export interface IngestOptions {
   readonly assessments?: readonly LocalAssessment[];
   readonly claudeHistory?: { readonly limit?: number; readonly maxPages?: number };
+  /** Optional caller-owned snapshot cap. Unset preserves the direct service contract. */
+  readonly maxRecords?: number;
 }
 export interface IngestResult {
   readonly provider: Provider;
@@ -181,11 +183,30 @@ function statusEvents(status: ClaudeStatus): ClaudeEvent[] {
     .filter((event): event is ClaudeEvent => event !== null);
 }
 
-/** Locally callable orchestration. Worker scheduled()/fetch() deliberately do not import it. */
+/** Provider ingestion used by the opt-in scheduled dry-run runtime and local callers. */
 export function createIngestionService(repository: D1Repository, dependencies: RuntimeDependencies) {
   async function ingestProvider(provider: Provider, options: IngestOptions = {}): Promise<IngestResult> {
+    if (options.maxRecords !== undefined &&
+        (!Number.isInteger(options.maxRecords) || options.maxRecords < 1 || options.maxRecords > 100)) {
+      throw new Error('invalid_record_budget');
+    }
     const activation = await repository.loadProvider(provider);
-    const [previous, sources] = await Promise.all([repository.loadEvents(provider), repository.loadSources(provider)]);
+    const eventLimit = options.maxRecords === undefined ? undefined : options.maxRecords + 1;
+    const [previous, sources] = await Promise.all([
+      repository.loadEvents(provider, eventLimit), repository.loadSources(provider),
+    ]);
+    if (options.maxRecords !== undefined && previous.length > options.maxRecords) {
+      const at = dependencies.clock.now().toISOString();
+      const result = await repository.commitSnapshot({
+        provider, expectedGeneration: activation.generation, at, complete: false, events: [], sources,
+        status: 'partial', reason: 'stored_record_limit',
+      });
+      return {
+        provider, complete: false, committed: result.committed,
+        baselineCompleted: result.baselineCompleted,
+        reason: result.committed ? 'stored_record_limit' : 'concurrent_sync',
+      };
+    }
     const assessments = options.assessments ?? [];
     if (new Set(assessments.map((a) => a.recordKey)).size !== assessments.length) {
       throw new Error('duplicate_local_assessment');
@@ -202,22 +223,28 @@ export function createIngestionService(repository: D1Repository, dependencies: R
       if (!response.ok) reason = response.code;
       else {
         const feed: CodexFeed = response.value;
-        const now = dependencies.clock.now();
-        for (const raw of feed.events) {
-          const opts = await normalizationOptions(provider, raw, oldById.get(codexStorageIdentity('event', raw.id)), assessments, now, detections, repository);
-          events.push(withSourceTimes(await normalizeCodexEvent(raw, feed, opts), feed.generated_at, null));
+        const recordCount = feed.events.length + (feed.scheduled ? 1 : 0);
+        if (options.maxRecords !== undefined && recordCount > options.maxRecords) {
+          reason = 'record_budget_exceeded';
+        } else {
+          const now = dependencies.clock.now();
+          for (const raw of feed.events) {
+            const opts = await normalizationOptions(provider, raw, oldById.get(codexStorageIdentity('event', raw.id)), assessments, now, detections, repository);
+            events.push(withSourceTimes(await normalizeCodexEvent(raw, feed, opts), feed.generated_at, null));
+          }
+          if (feed.scheduled) {
+            const raw = feed.scheduled;
+            const opts = await normalizationOptions(provider, raw, oldById.get(codexStorageIdentity('scheduled', raw.url)), assessments, now, detections, repository);
+            events.push(withSourceTimes(await normalizeCodexScheduled(raw, feed, opts), feed.generated_at, null));
+          }
+          complete = true;
         }
-        if (feed.scheduled) {
-          const raw = feed.scheduled;
-          const opts = await normalizationOptions(provider, raw, oldById.get(codexStorageIdentity('scheduled', raw.url)), assessments, now, detections, repository);
-          events.push(withSourceTimes(await normalizeCodexScheduled(raw, feed, opts), feed.generated_at, null));
-        }
-        complete = true;
       }
     } else {
       const adapter = createClaudeAdapter(dependencies, { http: state as ClaudeHttpState, histories: new Map() });
       const [history, status] = await Promise.all([adapter.readHistory(options.claudeHistory), adapter.readStatus()]);
-      if (!history.ok) reason = history.code;
+      if (!history.ok) reason = history.code === 'page_limit' && options.claudeHistory
+        ? 'history_page_budget_exceeded' : history.code;
       else if (!status.ok) reason = status.code;
       else if (history.snapshot.meta.content_revision !== status.value.meta.content_revision) reason = 'inconsistent_status_revision';
       else if (status.value.data.filters.audience !== 'all' || status.value.data.filters.window !== 'any' ||
@@ -236,6 +263,9 @@ export function createIngestionService(repository: D1Repository, dependencies: R
             break;
           }
           union.set(raw.id, raw);
+        }
+        if (reason === null && options.maxRecords !== undefined && union.size > options.maxRecords) {
+          reason = 'record_budget_exceeded';
         }
         if (reason === null) {
           const now = dependencies.clock.now();
