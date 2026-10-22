@@ -180,12 +180,17 @@ versions/evidence или завершение partial baseline не являют
 | B. Уменьшить работу existing atomic repository | Спроектировать групповые prepared writes/идемпотентное обновление, сравнить rows/SQL/CPU на том же harness, сохранить CAS, audit observations/versions и rollback | Отдельно выбрать scope; само уменьшение SQL не решает feed>100 или full-baseline protocol |
 | C. Ввести durable bootstrap/snapshot protocol по нескольким invocations | Отдельный ADR/schema review для manifest, provider-scoped generation/snapshot identity, bounded chunks, restart/overlap и atomic finalization полного baseline; старый canonical snapshot доступен до завершения | Существенный новый protocol: требуется отдельное owner assignment до реализации; возможны только forward migrations |
 
-Сейчас варианты B/C не реализуются. До active remote staging необходимо
-выбрать допустимый scope и принять ограничения A либо отдельно поручить
-capacity design. Подробные измерения и go/no-go —
-[continuation report](36_STAGE6_PREFLIGHT_REPORT.md). Account/plan/budget/target,
-remote D1, migrations, inactive deploy, observation и Telegram остаются
-раздельными gates. Stage 7–11 не назначены.
+**Обновление 2026-10-22: proposed, owner choice pending.** Владелец отдельно
+назначил локальную capacity design/decision фазу через CONTINUE_STAGE6_CAPACITY.
+[Decision record38](38_STAGE6_CAPACITY_DECISION.md) содержит bounded A,
+минимальный repository change set B, manifest/chunk/finalization C, измерительную
+матрицу и owner inputs. Рекомендован C с grouped writes внутри chunks, но выбор
+владельцем не сделан. B/C не реализованы; plan/cost budget не выбран.
+Следующий предлагаемый gate — отдельное local C implementation assignment,
+ещё без remote действий. Unknown account/plan/budget/target и remote accounting
+сохраняют active staging NO-GO. Stage6 stable acceptance pending, Stage7 следует
+после завершения Stage6 и отдельного назначения. Текущий результат/checks/review:
+[handoff39](39_STAGE6_CAPACITY_HANDOFF.md).
 
 ## Items for owner to confirm later (not blockers for Stage 0)
 

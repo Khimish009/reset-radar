@@ -6,30 +6,46 @@
 [workload evidence](evidence/stage6-2026-10-22/workload.md),
 [official limits](evidence/stage6-2026-10-22/cloudflare-preflight.md).
 
+**Последнее задание — сохранить контекст и подготовить промпт новой сессии.**
+Подготовлен [CONTINUE_STAGE6_CAPACITY](../prompts/CONTINUE_STAGE6_CAPACITY.md)
+для отдельного будущего назначения: local capacity/budget design и конкретный
+owner decision, без реализации protocol/remote действий. Подготовка не начинает
+эту фазу и не назначает Stage7. Preflight уже merged через PR#7; сведения ниже
+обновлены после проверки remote refs/CI.
+
 **NO-GO для активного remote staging. Не развёрнуто / не опубликовано.
 Реальный staging E2E не выполнен. Stable-staging acceptance pending.**
 
 ## База, дерево и Git permissions
 
-Workspace `/Users/salman/pet_projects/reset-radar`, локальная ветка
-`feat/stage6-staging-preflight`, HEAD/main/origin/main:
-**`22ebefe1e1a6243df4a0e769417dbbe184f1c5a4`**, merge PR #6. Read-only GitHub
-повторно подтвердил remote main и merged PR #6 с implementation
-**`7b4e1294761e60288a829aa4b4f8d377d7b3b455`**. Fetch не требовался.
-CI #17 implementation SHA success; merge CI #18 остаётся **failure**.
-Нового CI/rerun, commit/push/PR/merge нет. Старые stash/worktrees/recovery
-artifacts не менялись; stash повторно не применять.
+Workspace `/Users/salman/pet_projects/reset-radar`. После отчёта владелец явно
+разрешил commit/push; агент создал и успешно отправил проверенный preflight:
+**`7a9eedf21942f22aa4e671542d59b6778ffa7bac`**,20files. Сохранённая исходная
+docs/prompt подготовка включена в этот commit; повторно переносить её не нужно.
 
-**Последующее разрешение владельца:** после отчёта отдельно разрешены commit и
-push подготовленного результата в `feat/stage6-staging-preflight`. Исторические
-записи об отсутствии Git operations выше относятся к завершению local preflight.
-Это разрешение не открывает PR/merge, remote/live Cloudflare/upstream/Telegram
-или следующие этапы. Реализация после review не менялась; актуальные commit SHA,
-upstream ref и исход push нужно проверять по Git history/remote.
+Read-only GitHub теперь подтвердил:
 
-При старте существовали unstaged README/docs08/34/35/checklist и untracked
-CI18 evidence/CONTINUE_STAGE6; всё сохранено. Новые edits перечислены в report.
-Staged diff пуст. Продолжение не получает Git permissions из прежних сессий.
+- [PR#7](https://github.com/Khimish009/reset-radar/pull/7) merged
+  **2026-10-22T10:23:42Z**, merge/remote main
+  **`1bfbe98aa7574b77f18ffebfe9ee77ced150c4ff`**.
+- [CI#19](https://github.com/Khimish009/reset-radar/actions/runs/39762425082)
+  на7a9eedf и [merge CI#20](https://github.com/Khimish009/reset-radar/actions/runs/39762767428)
+  на1bfbe98 — **completed/success**, включая typecheck/lint/tests/offline verify.
+- PR/merge выполнял владелец/внешний процесс. Агент PR/merge/rerun/branch deletion
+  не выполнял. После merge remote feature ref вернул404.
+- Local HEAD/ветка `feat/stage6-staging-preflight` и её local tracking ref —
+  **7a9eedf**. Local main/origin/main остаются **22ebefe**, отставая от remote
+  main. В этой docs-only подготовке fetch/switch/merge/reset не выполнялись.
+
+Историческая база: PR#6 merge22ebefe, implementation7b4e129, CI17success и
+CI18failure; timeout локально исправлен в preflight, CI19/20 зелёные. Не выдавать
+historical CI18 за текущий failed main. [Remote evidence](evidence/stage6-2026-10-22/pr7-ci.md).
+Новый зелёный CI не доказывает stable staging или remote quotas.
+
+При старте этой подготовки дерево чистое; после неё остаются только local
+docs/prompt edits. Staged diff пуст. Новое commit/push/PR/merge не разрешено:
+permission для7a9eedf использовано. Старые stash/worktrees/recovery artifacts
+не менялись; старый stash повторно не применять.
 
 ## Что изменилось
 
@@ -91,6 +107,11 @@ report/handoff, code unchanged.
 Local scope завершён, **работа остановлена**. Не продолжать автоматически
 capacity implementation, remote gate или следующий stage по этому handoff.
 
+Новый [prompt](../prompts/CONTINUE_STAGE6_CAPACITY.md) разрешит только после
+отдельного назначения подготовить ADR/options, минимальный implementation
+change set и regression/measurement plan для решения владельца. До выбора A/B/C
+и account/plan/budget нет оснований автоматически начинать remote или Stage7.
+
 ## Точный следующий owner decision
 
 Сначала рассмотреть local report/ADR-042 и подтвердить account/profile, plan/
@@ -112,3 +133,37 @@ Real Telegram design/journal/eligibility, token/channel setup и любые ре
 Telegram API requests/sends остаются раздельными решениями. Токен в чат не
 нужен. Production и Stage7–11 не назначены. После локального отчёта остановиться;
 новое продолжение — только по новому явно ограниченному owner assignment.
+
+## Проверки docs-only подготовки новой сессии
+
+В этой подготовке runtime/tests/config/migrations/dependencies/CI/Postman не
+менялись. Application tests/typecheck/lint заново не запускались; численные
+результаты выше относятся к preflight commit7a9eedf.
+
+Изменены README, docs08/36/37, owner checklist, новые CONTINUE_STAGE6_CAPACITY
+и pr7-ci evidence. `git diff --check` PASS; **76 local link targets,0 broken**;
+Stage0 offline verify **139 PASS**. Protected-path diff к HEAD подтверждает
+отсутствие изменений runtime/tests/config/migrations/package/dependencies/CI/
+Postman/AGENTS. Staged diff пуст; новых commit/push/PR/merge не выполнялось.
+
+Независимый `stage6_capacity_prompt_review` | reviewer | **gpt-6.1-sol** |
+reasoning **high** завершён: substantial critical/high/medium findings нет.
+Проверены новый prompt, current/historical context, ADR/runbook/workload facts,
+regressions и границы design/implementation/remote/Stage7. Reviewer самостоятельно
+сделал diff-check, проверил changed paths и local refs; GitHub не запрашивал,
+runtime tests не запускал, файлов не менял. Remote evidence прочитано и сверено
+с предоставленными фактическими результатами. После review изменён только этот
+итоговый абзац; code не менялся.
+
+Подготовка сохранена локально, **работа остановлена**. Новый prompt запускается
+только отдельным явным назначением в следующей сессии. **Не развёрнуто /
+не опубликовано. Реальный staging E2E не выполнен.**
+
+## Новое отдельное назначение — 2026-10-22
+
+После сохранённой выше подготовки владелец явно назначил
+CONTINUE_STAGE6_CAPACITY только для local design/decision, checks/review/report.
+Исторические preflight facts и evidence выше сохранены. Новый proposed результат:
+[decision38](38_STAGE6_CAPACITY_DECISION.md); **актуальный handoff**:
+[39_STAGE6_CAPACITY_HANDOFF](39_STAGE6_CAPACITY_HANDOFF.md). Protocol не реализован;
+remote/Stage7 не назначены.

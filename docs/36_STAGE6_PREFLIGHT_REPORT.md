@@ -210,3 +210,26 @@ volume, production truth/eligibility или completeness официальной 
 отдельно разрешённых Git/workflow действий. Новый PR не создавался. Recovery
 stash/worktrees/backups не изменялись. Нефатальный dependency warning
 `DEP0040 punycode` не устранялся обновлением dependencies вне scope.
+
+## После отчёта: commit/push и внешний merge PR#7
+
+Отдельное разрешение владельца на commit/push выполнено агентом:
+**`7a9eedf21942f22aa4e671542d59b6778ffa7bac`**,20files, ветка
+`feat/stage6-staging-preflight`. Push успешен; реализации после review не меняли.
+PR#7 создал/merged владелец или внешний процесс, не агент.
+
+Read-only GitHub подтвердил [PR#7](https://github.com/Khimish009/reset-radar/pull/7)
+merged2026-10-22T10:23:42Z, merge/main
+**`1bfbe98aa7574b77f18ffebfe9ee77ced150c4ff`**;
+[CI#19](https://github.com/Khimish009/reset-radar/actions/runs/39762425082) на7a9eedf
+и [merge CI#20](https://github.com/Khimish009/reset-radar/actions/runs/39762767428)
+на1bfbe98 — **success**. [Evidence](evidence/stage6-2026-10-22/pr7-ci.md).
+Таким образом, failed CI18 остаётся историческим фактом, но не состоянием
+текущего remote main. Зелёные CI не закрывают stable-staging acceptance.
+
+Следующее задание — только сохранить контекст и подготовить
+[CONTINUE_STAGE6_CAPACITY](../prompts/CONTINUE_STAGE6_CAPACITY.md). Он при будущем
+явном назначении открывает local design/decision фазу Stage6, не implementation
+нового protocol/remote действия/Stage7. Эта подготовка не коммитилась и не
+пушилась; старое разрешение не переносится. Current local/remote refs и
+проверки подготовки — в [handoff](37_STAGE6_PREFLIGHT_HANDOFF.md).

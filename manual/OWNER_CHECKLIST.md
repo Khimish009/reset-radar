@@ -89,9 +89,19 @@
 - [x] Owner explicitly assigned [CONTINUE_STAGE6](../prompts/CONTINUE_STAGE6.md) for local CI #18 diagnosis/fix, D1 workload/capacity preflight, checks and independent review only.
 - [ ] Review [new preflight report](../docs/36_STAGE6_PREFLIGHT_REPORT.md) and [handoff](../docs/37_STAGE6_PREFLIGHT_HANDOFF.md); local passing checks do not override failed merge CI or prove stable staging.
 - [x] After the preflight report, owner separately authorized commit and push of the reviewed result to `feat/stage6-staging-preflight` only; PR/merge and remote/live service operations remain separate gates.
+- [x] Agent committed/pushed `7a9eedf`; read-only verification found PR #7 merged by owner/external process as `1bfbe98`, PR CI #19 and merge CI #20 successful. No staging acceptance follows from merge/CI.
 - [ ] Confirm account/profile, effective Workers plan/D1 limits, shared quota headroom, staging target/region, maximum cost and numeric stop thresholds before remote decisions; no automatic Paid upgrade.
 - [ ] Decide the capacity scope in ADR-042: accept the current bound for a short observation or separately assign a repository/bootstrap design. Do not delete history or treat partial baseline as complete.
 - [ ] Separately authorize only staging D1 creation after the preceding review; actual ID/binding, migrations, inactive deploy and upstream/Cron window remain later separate gates in the runbook.
+
+## Stage 6 capacity — local design assigned; owner choice pending
+
+- [x] Save [CONTINUE_STAGE6_CAPACITY](../prompts/CONTINUE_STAGE6_CAPACITY.md) with current commit/merge/CI, local ref drift, tested workload facts, ADR options and permission boundaries.
+- [x] Owner explicitly assigned that prompt for local design/decision, checks/review/report only; protocol implementation and remote operations remain excluded.
+- [ ] Review [capacity decision38](../docs/38_STAGE6_CAPACITY_DECISION.md) and [handoff39](../docs/39_STAGE6_CAPACITY_HANDOFF.md); choose A/B/C. Recommendation C is proposed, not owner approval.
+- [ ] Supply safe account/profile label, effective plan/limits/headroom, target/region, history/cadence and numeric maximum spend/stop budgets; all currently unknown.
+- [ ] Exactly next proposed gate: separately assign **local C implementation** using docs38 §9, with its acceptance/measurement matrix; no remote permission. If choosing A instead, after prerequisites authorize only isolated staging D1 creation, not migrations/deploy/reads.
+- [ ] Complete Stage 6 stable-staging acceptance before a separate Stage 7 assignment.
 
 ## Worker/D1 staging (later; separate authorization)
 
