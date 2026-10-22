@@ -6,6 +6,11 @@
 независимое review и commit/push только в его ветку. Дальнейшая фаза требует
 нового задания владельца.
 
+Последнее назначение: стабилизировать только timeout retention-теста после
+CI run #14 failure на `f8cb4ec854dd6a90f00a84ff6670c86103d9ab84`, пройти проверки
+и независимое review, commit/push в ту же ветку и дождаться успешного нового CI.
+Три предыдущих Stage 5 fixes повторно приняты; архитектура не пересматривается.
+
 ## Рабочая база и сохранённая подготовка
 
 Папка `/Users/salman/pet_projects/reset-radar`, локальная ветка
@@ -113,8 +118,17 @@ python3 docs/evidence/stage0-2026-10-21/verify.py
 git diff --check
 ```
 
-Miniflare/workerd требует loopback-доступа. Не запускать два полных D1 набора
-одновременно: при конкуренции существующий retention test может превысить 5s.
+Miniflare/workerd требует loopback-доступа. Обычный параллельный Vitest сохранён.
+Retention test с 103 реальными D1 commits имеет собственный timeout 20s после
+failure run #14 на старом лимите 5s. Глобальный timeout не менялся. Loop проверяет
+каждый successful commit, итоговый generation 103, последние 100 generations
+4–103, очистку source/commit guards и сохранность исходного event. Начальный CAS
+generation цикла исправлен: прежний fixture молча пропускал один stale attempt.
+CI-fix local verification: три обычных параллельных Vitest прогона **299 PASS /
+4 skipped** каждый, `test:d1` **55 PASS**, typecheck/lint PASS, verify139/diff-check
+PASS. `pr5_ci_timeout_review` завершён без существенных замечаний. После push
+нужно дождаться результата нового GitHub Actions; SHA/run/result фиксируются в
+GitHub и итоговом сообщении владельцу. Доверять только local green недостаточно.
 Opt-in simulation и shutdown команды: [evidence](evidence/stage5-2026-10-22/simulation.md).
 Previews всех truth cases: [previews](evidence/stage5-2026-10-22/previews.md).
 

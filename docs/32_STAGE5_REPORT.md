@@ -226,3 +226,58 @@ limits (в tests 5min, максимум 24h; HTTP максимум 10min) не �
 policy. Historic records продолжают храниться; backward policy без нового limit
 fail closed. Exactly-once и real live E2E не заявляются.
 **Не развёрнуто / не опубликовано. Stage 6 не начат.**
+
+## CI retention timeout — финальная доработка PR #5
+
+Владелец отдельно поручил исправить CI run #14 failure после принятия трёх
+предыдущих fixes. Стартовая база — `f8cb4ec854dd6a90f00a84ff6670c86103d9ab84`,
+ветка `feat/stage5-telegram-publisher`, дерево чистое; remote/PR head совпали.
+
+Прочитан job log `119697310819` из
+[run #14](https://github.com/Khimish009/reset-radar/actions/runs/39740812693):
+typecheck/lint success; 298 tests passed, один retention test прерван на **5034ms**
+ошибкой `Test timed out in 5000ms`, 4 opt-in skipped. D1/SQLite error в логе нет;
+остальные tests завершились, весь Vitest занял 30.22s. Это свидетельство
+недостаточного test budget под нагрузкой, не бесконечного production retry.
+
+Локально исходный test завершился за **1510ms** отдельно и **1709ms** в обычном
+параллельном полном наборе. На этой машине исходный timeout не воспроизведён;
+CI log — непосредственное evidence отказа на Ubuntu runner. Первый локальный
+redirected запуск упёрся в sandbox loopback EPERM и повторён с разрешённым
+доступом; это отдельная средовая ошибка, не D1 failure.
+
+Только у `tests/stage4-storage.test.ts` retention case установлен **20_000ms**,
+с комментарием о последовательных D1 commits. Все 103 настоящих repository
+commitSnapshot вызова сохранены; SQL/D1 не заменялись fixtures/mock, чтобы
+сохранить проверку всей retention границы. Глобальный Vitest timeout, worker
+parallelism, production source и зависимости не менялись; test не отключён.
+
+Новая проверка `result.committed` выявила отдельную ошибку старого fixture:
+первая итерация после двух начальных commits передавала stale expectedGeneration
+и игнорировала CAS refusal. Цикл исправлен на актуальный generation; теперь
+доказаны все commits, generation **103**, точные последние generations **4–103**,
+100 Claude/0 Codex sync rows, отсутствие source/commit guard остатков и наличие
+исходного canonical event. Очистка transient cache проверяется до и после loop.
+Таким образом увеличение timeout не подменяет проверки целостности данных.
+
+Финальные команды на исправленном коде:
+
+| Проверка | Результат |
+|---|---|
+| `npm run typecheck` | PASS |
+| `npm run lint` | PASS |
+| `npm test` / reporter-only verbose variant | **Три обычных параллельных прогона: 299 PASS / 4 skipped каждый** |
+| `npm run test:d1` | **55 PASS** |
+| `python3 docs/evidence/stage0-2026-10-21/verify.py` | **139 PASS** |
+| `git diff --check` | PASS |
+
+Измеренные retention durations после исправления: **3422ms** и **1680ms**;
+третий полный прогон с обычным reporter занял 10.17s и также прошёл.
+Независимый `pr5_ci_timeout_review` (reviewer, gpt-6.1-sol, high) завершён без
+существенных замечаний. Reviewer проверил diff и реальный retention SQL;
+дублирующий targeted run после трёх full и D1 не потребовался.
+
+Проверка нового remote CI обязательна после commit/push и до итогового сообщения.
+Его фактические SHA/run/result фиксируются в итоговом отчёте владельцу и GitHub;
+их нельзя утверждать до запуска CI. Commit/push разрешены только в существующую
+ветку PR #5, без merge, deployment, remote D1 и real Telegram.

@@ -237,6 +237,8 @@ describe('Stage 4 D1 storage', () => {
     expect((await repo.loadEvents('claude')).map((stored) => stored.id)).toEqual(['claude:resets:reset-1']);
   });
 
+  // 103 real D1 commits cross the retention boundary. Shared CI runners can
+  // exceed Vitest's 5s default; keep a bounded 20s budget for this test only.
   it('clears expired transient source representations on explicit null and retains only 100 sync runs per provider', async () => {
     const { db } = await testDb();
     const repo = createD1Repository(db);
@@ -257,18 +259,25 @@ describe('Stage 4 D1 storage', () => {
     expect(await repo.loadSources('claude')).toEqual([]);
 
     for (let generation = 2; generation <= 102; generation += 1) {
-      await repo.commitSnapshot(commitArgs({
-        expectedGeneration: generation - 1,
+      const result = await repo.commitSnapshot(commitArgs({
+        expectedGeneration: generation,
         at: new Date(Date.parse('2026-10-21T10:00:00.000Z') + generation * 60_000).toISOString(),
         complete: false,
         events: [],
         sources: [],
         status: 'failed',
       }));
+      expect(result.committed).toBe(true);
     }
     expect(await scalar(db, "SELECT COUNT(*) AS value FROM sync_runs WHERE provider = 'claude'")).toBe(100);
     expect(await scalar(db, "SELECT COUNT(*) AS value FROM sync_runs WHERE provider = 'codex'")).toBe(0);
-  });
+    const retained = await db.prepare("SELECT generation FROM sync_runs WHERE provider = 'claude' ORDER BY run_id").all<{ generation: number }>();
+    expect(retained.results.map((row) => row.generation)).toEqual(Array.from({ length: 100 }, (_, index) => index + 4));
+    expect(await repo.loadProvider('claude')).toMatchObject({ generation: 103 });
+    expect(await scalar(db, 'SELECT COUNT(*) AS value FROM source_state')).toBe(0);
+    expect(await scalar(db, 'SELECT COUNT(*) AS value FROM commit_guards')).toBe(0);
+    expect((await repo.loadEvents('claude')).map((stored) => stored.id)).toEqual([event().id]);
+  }, 20_000);
 
   it('atomically claims only synthetic destinations, permits explicit retryable retries, and keeps ambiguous outcomes manual after restart', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'reset-radar-stage4-'));
